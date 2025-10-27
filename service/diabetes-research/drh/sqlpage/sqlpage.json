@@ -1,0 +1,5 @@
+{
+  "database_url": "sqlite://DRH.cgmdata.sqlite.db?mode=rwc",
+  "allow_exec": true,
+  "port": 9227
+}
