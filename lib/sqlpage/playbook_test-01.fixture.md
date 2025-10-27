@@ -1,7 +1,7 @@
 ---
 siteName: Demo
 sqlpage-conf:
-  database_url: "sqlite://app.db"
+  database_url: ${env.SPRY_DB ?? "sqlite://app.db"}
   listen_on: "0.0.0.0:8080"
   web_root: "./"
   site_prefix: "/sqlpage"
@@ -14,6 +14,7 @@ sqlpage-conf:
     issuer_url: "https://issuer.example/"
     client_id: "abc"
     client_secret: "shh"
+env: ${JSON.stringify(env)}
 ---
 
 ## Intro
@@ -51,12 +52,13 @@ replacement.
 -- this is the ${cell.info} cell on line ${cell.startLine}
 -- this is the path in test-partial: ${path}
 -- this is the cell in test-partial: ${cell?.kind}
+-- this is the partial itself from in test-partial: ${safeJsonStringify(partial)}
 -- this is the newLocal in test-partial: ${newLocal}
 ```
 
 ```sql debug.sql
 -- markdown link (mdLink): ${md.link("simpleText", "simpleURL")}
--- sqlCat: ${sqlCat`prefix-${"col"}-mid-${"other"}-suffix`}
+-- sqlCat: ${cat`prefix-${"col"}-mid-${"other"}-suffix`}
 -- site prefixed: ${ctx.sitePrefixed("test")}
 
 -- partial 1 (error): ${await partial("non-existent")}

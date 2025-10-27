@@ -9,8 +9,13 @@ import {
 } from "jsr:@std/fmt@^1/colors";
 import { relative } from "jsr:@std/path@^1";
 import { ColumnDef, ListerBuilder } from "../universal/lister-tabular-tui.ts";
-import { shell, verboseInfoShellEventBus } from "../universal/shell.ts";
 import {
+  errorOnlyShellEventBus,
+  shell,
+  verboseInfoShellEventBus,
+} from "../universal/shell.ts";
+import {
+  errorOnlyTaskEventBus,
   executeDAG,
   ok,
   Task,
@@ -24,7 +29,8 @@ export type LsTaskRow = {
   name: string;
   notebook: string;
   language: string;
-  deps?: string[];
+  descr: string;
+  deps?: string;
   error?: unknown;
 };
 
@@ -86,17 +92,23 @@ export async function ls<Provenance>(tasks: TaskCell<Provenance>[]) {
       name: t.taskId(),
       notebook: String(t.provenance),
       language: t.language,
-      deps: t.taskDeps?.(),
+      deps: (t.taskDeps?.() ?? []).join(", "),
+      descr: (String(t.parsedInfo?.flags["descr"]) ?? "").replace(
+        "undefined",
+        "",
+      ),
     } satisfies LsTaskRow;
   });
 
   await new ListerBuilder<LsTaskRow>()
-    .declareColumns("name", "notebook", "language", "deps", "error")
+    .declareColumns("name", "notebook", "language", "deps", "descr", "error")
     .from(tasksList)
     .field("name", "name", lsTaskIdField())
     .field("language", "language", lsLanguageField())
-    .field("notebook", "notebook", lsColorPathField("Notebook"))
+    .field("deps", "deps")
+    .field("descr", "descr")
     .field("error", "error", { header: "Err" })
+    .field("notebook", "notebook", lsColorPathField("Notebook"))
     .sortBy("name").sortDir("asc")
     .build()
     .ls(true);
@@ -110,7 +122,9 @@ export async function executeTasks<T extends Task>(
   type Context = { runId: string };
 
   const sh = shell({
-    bus: verbose ? verboseInfoShellEventBus({ style: verbose }) : undefined,
+    bus: verbose
+      ? verboseInfoShellEventBus({ style: verbose })
+      : errorOnlyShellEventBus({ style: verbose ? verbose : "rich" }),
   });
 
   const exec = new TaskExecutorBuilder<Task, Context>()
@@ -123,7 +137,9 @@ export async function executeTasks<T extends Task>(
   const summary = await executeDAG(plan, exec, {
     eventBus: verbose
       ? verboseInfoTaskEventBus<T, Context>({ style: verbose })
-      : undefined,
+      : errorOnlyTaskEventBus<T, Context>({
+        style: verbose ? verbose : "rich",
+      }),
   });
   if (summarize) console.dir({ summary });
   return summary;

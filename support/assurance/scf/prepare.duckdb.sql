@@ -123,11 +123,19 @@ FROM read_xlsx(getvariable('scf_xls_source'),
                sheet='SCF 2025.3',
                all_varchar = true);
 
-CREATE TABLE "scf_authoritative_source" AS
+CREATE TABLE "scf_authoritative_source_raw" AS
 SELECT getvariable('scf_xls_source') AS scf_xls_source, *
 FROM read_xlsx(getvariable('scf_xls_source'),
                sheet='Authoritative Sources',
                all_varchar = true);
+
+CREATE TABLE "scf_authoritative_source" AS
+ 
+SELECT * REPLACE (regexp_replace(
+      regexp_replace("Mapping Column Header", '[\r\n]+', ' ', 'g'),
+      '\s+', ' ', 'g'
+    )  AS "Mapping Column Header")
+FROM scf_authoritative_source_raw;
 
 CREATE TABLE "scf_assessment_objective" AS
 SELECT getvariable('scf_xls_source') AS scf_xls_source, *
@@ -326,7 +334,7 @@ DROP TABLE IF EXISTS scf."scf_data_privacy_mgmt_principle";
 DROP TABLE IF EXISTS scf."scf_xls_sheet";
 DROP TABLE IF EXISTS scf."scf_compliance_regime_control_column";
 DROP VIEW IF EXISTS scf."scf_regime_control";
-DROP TABLE IF EXISTS scf."scf_regime_control_unpivoted";
+DROP TABLE IF EXISTS scf."scf_regime_control_unpivoted"; 
 
 CREATE TABLE scf."scf_control" AS SELECT * FROM "scf_control";
 CREATE TABLE scf."scf_domain_principle" AS SELECT * FROM "scf_domain_principle";

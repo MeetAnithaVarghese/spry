@@ -49,7 +49,6 @@
 
 import { z } from "jsr:@zod/zod@4";
 import { eventBus } from "./event-bus.ts";
-import process from "node:process";
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Zod v4 metadata & description helpers                                      */
@@ -559,12 +558,7 @@ export function envLoader<S extends z.ZodRawShape>(opts?: {
         (opts?.strategy ?? Naming.screamingSnake)(key, zsub, m);
       const envName = [opts?.prefix, base].filter(Boolean).join("_")
         .toUpperCase();
-
-      const raw =
-        (typeof Deno !== "undefined" ? Deno.env.get(envName) : undefined) ??
-          (process?.env ? process.env[envName] : undefined);
-
-      return raw ?? undefined;
+      return Deno.env.get(envName);
     },
   };
 }

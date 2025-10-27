@@ -1,4 +1,5 @@
 // content-acquisition.ts
+import { retry, type RetryOptions } from "jsr:@std/async@^1";
 import { fromFileUrl, isAbsolute, join, normalize } from "jsr:@std/path@^1";
 
 export enum SourceRelativeTo {
@@ -35,6 +36,7 @@ export type SourceOpts = {
   fetchFn?: FetchLike;
   realPath?: boolean;
   etag?: string; // If-None-Match
+  retry?: RetryOptions;
 };
 
 export class ProvenanceError extends Error {
@@ -53,8 +55,18 @@ export class ProvenanceError extends Error {
   }
 }
 
-const isHttp = (u: URL) => u.protocol === "http:" || u.protocol === "https:";
-const isFile = (u: URL) => u.protocol === "file:";
+export const isTextHttpUrl = (s: string) => {
+  try {
+    return isHttpUrl(new URL(s));
+  } catch {
+    return false;
+  }
+};
+
+export const isHttpUrl = (u: URL) =>
+  u.protocol === "http:" || u.protocol === "https:";
+
+export const isFileUrl = (u: URL) => u.protocol === "file:";
 
 function parseCharset(ctype?: string): string {
   if (!ctype) return "utf-8";
@@ -74,6 +86,12 @@ async function readRemote(url: URL, opts: SourceOpts): Promise<RemoteContent> {
     allowedHosts,
     fetchFn,
     etag,
+    retry: retryOptions = {
+      maxAttempts: 5,
+      minTimeout: 10,
+      multiplier: 2,
+      jitter: 0,
+    },
   } = opts;
 
   if (allowedHosts && allowedHosts.length && !allowedHosts.includes(url.host)) {
@@ -83,7 +101,8 @@ async function readRemote(url: URL, opts: SourceOpts): Promise<RemoteContent> {
     );
   }
 
-  const doFetch: FetchLike = fetchFn ?? ((u) => fetch(u));
+  const doFetch: FetchLike = fetchFn ??
+    ((u) => retry(() => fetch(u), retryOptions));
   const ctrl = new AbortController();
   const tm = setTimeout(() => ctrl.abort(), timeoutMs);
 
@@ -189,7 +208,7 @@ async function sourceContentImpl(
       ? provenance
       : new URL(provenance, baseUrl);
 
-    if (isFile(url)) {
+    if (isFileUrl(url)) {
       let path = fromFileUrl(url);
       path = normalize(path);
       if (opts.realPath) {
@@ -208,7 +227,7 @@ async function sourceContentImpl(
       }
     }
 
-    if (isHttp(url)) {
+    if (isHttpUrl(url)) {
       return await readRemote(url, opts);
     }
 
@@ -220,7 +239,7 @@ async function sourceContentImpl(
 
   // Local filesystem mode
   if (provenance instanceof URL) {
-    if (!isFile(provenance)) {
+    if (!isFileUrl(provenance)) {
       throw new ProvenanceError(
         `Only file: URLs allowed in LocalFs mode (got ${provenance.protocol})`,
         "UNSUPPORTED_SCHEME",
@@ -382,5 +401,121 @@ export async function safeSourceText(
       // ignore
     }
     return { nature: "error", error: err, source: src };
+  }
+}
+
+// Lazy byte stream from file (opens on first read)
+export const lazyFileBytesReader = (path: string) => {
+  let file: Deno.FsFile | null = null;
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      file = await Deno.open(path, { read: true });
+      const reader = file.readable.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) controller.enqueue(value);
+        }
+        controller.close();
+      } catch (e) {
+        controller.error(e);
+      } finally {
+        try {
+          reader.releaseLock();
+        } catch { /* ignore */ }
+        try {
+          file?.close();
+        } catch { /* ignore */ }
+      }
+    },
+    cancel() {
+      try {
+        file?.close();
+      } catch { /* ignore */ }
+    },
+  });
+};
+
+// Lazy byte stream from URL (fetches on first read)
+export const lazyUrlBytesReader = (url: string) =>
+  new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
+        if (res.body) {
+          const reader = res.body.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value) controller.enqueue(value);
+            }
+            controller.close();
+          } catch (e) {
+            controller.error(e);
+          } finally {
+            try {
+              reader.releaseLock();
+            } catch { /* ignore */ }
+          }
+        } else {
+          // Fallback: no body stream available; enqueue full payload
+          const text = await res.text();
+          const bytes = new TextEncoder().encode(text);
+          controller.enqueue(bytes);
+          controller.close();
+        }
+      } catch (e) {
+        controller.error(e);
+      }
+    },
+  });
+
+/**
+ * Return the relative portion of `url` from `base` as a valid filesystem path.
+ * - If same origin, computes relative path.
+ * - If different origin or invalid URL, normalizes to a valid fs-safe path.
+ */
+export function relativeUrlAsFsPath(base: string, url: string): string {
+  // relativeUrlAsFsPath("https://example.com/dir/", "https://example.com/dir/a/b.txt");
+  // → "a/b.txt"
+
+  // relativeUrlAsFsPath("https://example.com/", "https://other.com/path/file.json");
+  // → "other.com/path/file.json"
+
+  // relativeUrlAsFsPath("/root/", "/root/sub/thing.sql");
+  // → "sub/thing.sql"
+
+  // relativeUrlAsFsPath("/root/", "https://api.example.com/v1/data?id=1#top");
+  // → "api.example.com/v1/data_id=1_top"
+  try {
+    const from = new URL(url, base);
+    const baseUrl = new URL(base, base);
+
+    // If different origins, sanitize to a filesystem-safe path
+    if (from.origin !== baseUrl.origin) {
+      return normalize(
+        from.hostname +
+          from.pathname.replace(/^\/+/, "").replace(/[:?&#]/g, "_"),
+      );
+    }
+
+    // Same origin → compute relative portion
+    let rel = from.pathname.startsWith(baseUrl.pathname)
+      ? from.pathname.slice(baseUrl.pathname.length)
+      : from.pathname;
+
+    if (from.search) rel += from.search.replace(/[?&#]/g, "_");
+    if (from.hash) rel += from.hash.replace(/[?&#]/g, "_");
+
+    return normalize(rel.replace(/^\/+/, ""));
+  } catch {
+    // Fallback for non-URL inputs (e.g., local paths)
+    const path = url.startsWith(base)
+      ? url.slice(base.length).replace(/^\/+/, "")
+      : url;
+    return normalize(join(".", path));
   }
 }

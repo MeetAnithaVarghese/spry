@@ -1,7 +1,7 @@
 import {
   assert,
+  assertArrayIncludes,
   assertEquals,
-  assertFalse,
   assertGreater,
   assertMatch,
 } from "jsr:@std/assert@^1";
@@ -15,7 +15,6 @@ import {
   type MarkdownCell,
   type Notebook,
   notebooks,
-  parsedTextComponents,
   parsedTextFlags,
 } from "./notebook.ts";
 
@@ -32,9 +31,11 @@ function isMarkdown<T extends Record<string, unknown>>(
   return c.kind === "markdown";
 }
 
-async function loadFixture(): Promise<string> {
+async function loadFixture(
+  src = "./notebook_test-fixture-01.md",
+): Promise<string> {
   const safeText = await safeSourceText(
-    new URL("./notebook_test-fixture-01.md", import.meta.url),
+    new URL(src, import.meta.url),
     SourceRelativeTo.Module,
   );
   if (safeText.nature === "error") {
@@ -50,7 +51,16 @@ Deno.test("Markdown Notebook core - complex fixture", async (t) => {
 
   // Parse with the core — pass a single string (valid Source)
   const out: Notebook<string>[] = [];
-  for await (const nb of notebooks({ provenance: "prime", content: md })) {
+  for await (
+    const nb of notebooks({
+      provenance: "prime",
+      content: md,
+      import: async (src) =>
+        typeof src === "string"
+          ? await loadFixture(src)
+          : await loadFixture(src[0]),
+    })
+  ) {
     out.push(nb);
   }
 
@@ -83,6 +93,7 @@ Deno.test("Markdown Notebook core - complex fixture", async (t) => {
       "markdown",
       "code",
       "markdown",
+      "code",
       "code",
       "code",
       "markdown",
@@ -162,185 +173,134 @@ Deno.test("Markdown Notebook core - complex fixture", async (t) => {
     assertMatch(cell.source, /raw code block without an explicit language/);
   });
 
-  await t.step("final markdown cell - trailing paragraph after HR", () => {
+  await t.step("imported cell - content is replaced with CSV fixture", () => {
     const cell = nb.cells[15];
+    assert(isCode(cell));
+    assertEquals(cell.language, "csv");
+    assertMatch(cell.source, /id,name,qty/);
+  });
+
+  await t.step("final markdown cell - trailing paragraph after HR", () => {
+    const cell = nb.cells[16];
     assert(isMarkdown(cell));
     assertMatch(cell.text, /trailing paragraph/);
   });
 });
 
-Deno.test("parsedTextFlags", async (t) => {
+Deno.test("parsedTextFlags — array & string input with POSIX-style tokenization", async (t) => {
+  await t.step("array input: collects bare tokens and simple flags", () => {
+    const argv = ["build", "src/main.ts", "--out=dist", "--verbose"];
+    const { bareTokens, flags } = parsedTextFlags(argv);
+
+    assertEquals(bareTokens, ["build", "src/main.ts"]);
+    assertEquals(flags.out, "dist");
+    assertEquals(flags.verbose, true);
+  });
+
+  await t.step("array input: spaced values and equals values", () => {
+    const argv = ["--out", "dist", "-t=release", "-k", "value"];
+    const { bareTokens, flags } = parsedTextFlags(argv);
+
+    assertEquals(bareTokens, []);
+    assertEquals(flags.out, "dist");
+    assertEquals(flags.t, "release");
+    assertEquals(flags.k, "value");
+  });
+
+  await t.step("array input: repeated flags promote and append", () => {
+    const argv = ["--tag", "a", "--tag=b", "--tag", "c"];
+    const { bareTokens, flags } = parsedTextFlags(argv);
+
+    assertEquals(bareTokens, []);
+    assert(Array.isArray(flags.tag));
+    assertArrayIncludes(flags.tag as string[], ["a", "b", "c"]);
+  });
+
+  await t.step("array input: boolean flags repeat -> array of 'true'", () => {
+    const argv = ["--force", "--force"];
+    const { flags } = parsedTextFlags(argv);
+
+    assert(Array.isArray(flags.force));
+    assertEquals(flags.force, ["true", "true"]);
+  });
+
+  await t.step("array input: short flags with/without values", () => {
+    const argv = ["-v", "-o=dist", "-t", "debug"];
+    const { bareTokens, flags } = parsedTextFlags(argv);
+
+    assertEquals(bareTokens, []);
+    assertEquals(flags.v, true);
+    assertEquals(flags.o, "dist");
+    assertEquals(flags.t, "debug");
+  });
+
+  await t.step("array input: bare tokens exclude consumed values", () => {
+    const argv = ["run", "--file", "app.ts", "extra", "-m", "fast"];
+    const { bareTokens, flags } = parsedTextFlags(argv);
+
+    assertEquals(bareTokens, ["run", "extra"]);
+    assertEquals(flags.file, "app.ts");
+    assertEquals(flags.m, "fast");
+  });
+
+  await t.step("array input: base defaults and overwrite + append", () => {
+    const base = { out: "build", v: false as boolean, tag: ["x"] as string[] };
+    const argv = ["--out", "dist", "--v", "--tag", "a"];
+    const { bareTokens, flags } = parsedTextFlags(argv, base);
+
+    assertEquals(bareTokens, []);
+    assertEquals(flags.out, "dist");
+    assertEquals(flags.v, true);
+    assert(Array.isArray(flags.tag));
+    assertEquals(flags.tag, ["x", "a"]);
+  });
+
+  await t.step("array input: repeat after first -> array continuation", () => {
+    const argv = ["--mode=dev", "--mode", "prod"];
+    const { flags } = parsedTextFlags(argv);
+
+    assert(Array.isArray(flags.mode));
+    assertEquals(flags.mode, ["dev", "prod"]);
+  });
+
   await t.step(
-    "parses long and short flags with space-separated values",
+    "string input: POSIX tokenization with quotes and escapes",
     () => {
-      const out = parsedTextFlags(["--host", "localhost", "-p", "8080"]);
-      assertEquals(out, { host: "localhost", p: "8080" });
+      const line = String
+        .raw`build "src/main.ts" --out=dist --tag a --tag "b c" -v --path "C:\\Program Files\\X" --msg \"ok\" plain`;
+      const { bareTokens, flags } = parsedTextFlags(line);
+
+      // tokenization expectations
+      assertEquals(bareTokens, ["build", "src/main.ts", "plain"]);
+      assertEquals(flags.out, "dist");
+      assert(Array.isArray(flags.tag));
+      assertEquals(flags.tag, ["a", "b c"]);
+      assertEquals(flags.v, true);
+      assertEquals(flags.path, "C:\\Program Files\\X");
+      assertEquals(flags.msg, '"ok"'); // outside quotes, backslash escapes -> literal "
     },
   );
 
-  await t.step("parses --key=value and -k=value forms", () => {
-    const out = parsedTextFlags(["--user=alice", "-p=9000"]);
-    assertEquals(out, { user: "alice", p: "9000" });
-  });
-
-  await t.step("collects repeated flags into arrays (no base)", () => {
-    const out = parsedTextFlags(["--tag=a", "--tag", "b", "--tag=c"]);
-    assertEquals(out, { tag: ["a", "b", "c"] });
-    assert(Array.isArray(out.tag));
-  });
-
   await t.step(
-    "promotes string to array on repeat when base has empty string",
+    "string input: values after flags are consumed, not bare",
     () => {
-      const out = parsedTextFlags(["--role", "admin", "--role", "editor"]);
-      assertEquals(out, { role: ["admin", "editor"] });
+      const line = `run --file app.ts extra -m fast`;
+      const { bareTokens, flags } = parsedTextFlags(line);
+
+      assertEquals(bareTokens, ["run", "extra"]);
+      assertEquals(flags.file, "app.ts");
+      assertEquals(flags.m, "fast");
     },
   );
 
-  await t.step("appends to existing array when base starts as array", () => {
-    const out = parsedTextFlags(["--scope", "read", "--scope", "write"], {
-      scope: ["openid"],
-    });
-    assertEquals(out, { scope: ["openid", "read", "write"] });
-  });
-
-  await t.step("ignores flags without a value", () => {
-    const out = parsedTextFlags(["--foo", "--bar", "x"]);
-    // "--bar x" is set.
-    assertEquals(out, { bar: "x", foo: true });
-  });
-
-  await t.step("does not treat next flag as a value", () => {
-    const out = parsedTextFlags(["--a", "--b", "val"]);
-    assertEquals(out, { a: true, b: "val" });
-  });
-
   await t.step(
-    "short flags collect independently from similarly named long flags",
+    "string input: handles end-of-options markers & lone dashes as bare",
     () => {
-      const out = parsedTextFlags(["--t", "long", "-t", "short"]);
-      // Keys are exactly what's after the dashes; they are the same key "t"
-      assertEquals(out, { t: ["long", "short"] });
+      const line = `-- - --`;
+      const { bareTokens, flags } = parsedTextFlags(line);
+
+      assertEquals(bareTokens, []);
+      assertEquals(Object.keys(flags).length, 0);
     },
   );
-
-  await t.step("mixed ordering and forms", () => {
-    const out = parsedTextFlags([
-      "--env=prod",
-      "-r",
-      "us-east-1",
-      "--env",
-      "staging",
-      "-r=eu-west-1",
-    ]);
-    assertEquals(out, {
-      env: ["prod", "staging"],
-      r: ["us-east-1", "eu-west-1"],
-    });
-  });
-
-  await t.step("merges with provided base object without mutating it", () => {
-    const base = { host: "127.0.0.1", tag: ["base"] as string[] };
-    const out = parsedTextFlags(["--host", "0.0.0.0", "--tag", "a"], base);
-    assertEquals(out, { host: "0.0.0.0", tag: ["base", "a"] });
-    assertEquals(base, { host: "127.0.0.1", tag: ["base"] }); // unchanged
-  });
-});
-
-Deno.test("parsedTextComponents", async (t) => {
-  await t.step("returns false for undefined", () => {
-    assertFalse(parsedTextComponents(undefined as unknown as string));
-  });
-
-  await t.step("returns false for empty string", () => {
-    assertFalse(parsedTextComponents(""));
-  });
-
-  await t.step("returns false for whitespace-only", () => {
-    assertFalse(parsedTextComponents("   \t\n  "));
-  });
-
-  await t.step("single token only", () => {
-    const r = parsedTextComponents("echo");
-    assert(r !== false);
-    assertEquals(r.first, "echo");
-    assertEquals(r.argv, []);
-    assertEquals(r.argsText, "");
-    assertEquals(typeof r.flags, "function");
-  });
-
-  await t.step("single token with trailing spaces", () => {
-    const r = parsedTextComponents("  echo   ");
-    assert(r !== false);
-    assertEquals(r.first, "echo");
-    assertEquals(r.argv, []);
-    assertEquals(r.argsText, "");
-  });
-
-  await t.step("two tokens", () => {
-    const r = parsedTextComponents("echo hi");
-    assert(r !== false);
-    assertEquals(r.first, "echo");
-    assertEquals(r.argv, ["hi"]);
-    assertEquals(r.argsText, "hi");
-  });
-
-  await t.step("multiple tokens (spaces collapse)", () => {
-    const r = parsedTextComponents("echo   hello    world");
-    assert(r !== false);
-    assertEquals(r.first, "echo");
-    assertEquals(r.argv, ["hello", "world"]);
-    assertEquals(r.argsText, "hello world");
-  });
-
-  await t.step("tabs and newlines treated as separators", () => {
-    const r = parsedTextComponents("cmd\ta\tb\nc");
-    assert(r !== false);
-    assertEquals(r.first, "cmd");
-    assertEquals(r.argv, ["a", "b", "c"]);
-    assertEquals(r.argsText, "a b c");
-  });
-
-  await t.step("leading dashes as first token (e.g., --help)", () => {
-    const r = parsedTextComponents("--help");
-    assert(r !== false);
-    assertEquals(r.first, "--help");
-    assertEquals(r.argv, []);
-    assertEquals(r.argsText, "");
-  });
-
-  await t.step("complex CLI-like example with repeated flags", () => {
-    const r = parsedTextComponents("bash name --dep X --dep Y");
-    assert(r !== false);
-    assertEquals(r.first, "bash");
-    assertEquals(r.argv, ["name", "--dep", "X", "--dep", "Y"]);
-    assertEquals(r.argsText, "name --dep X --dep Y");
-    // We don't call r.flags() here to avoid requiring parsedTextFlags in the test.
-    assertEquals(typeof r.flags, "function");
-  });
-
-  await t.step("unicode tokens", () => {
-    const r = parsedTextComponents("run café crème");
-    assert(r !== false);
-    assertEquals(r.first, "run");
-    assertEquals(r.argv, ["café", "crème"]);
-    assertEquals(r.argsText, "café crème");
-  });
-
-  await t.step("quotes are not special (split on whitespace only)", () => {
-    const r = parsedTextComponents(`cmd "hello world" again`);
-    assert(r !== false);
-    // Note the quotes remain attached to tokens; no shell-like parsing.
-    assertEquals(r.first, "cmd");
-    assertEquals(r.argv, [`"hello`, `world"`, "again"]);
-    assertEquals(r.argsText, `"hello world" again`);
-  });
-
-  await t.step("mixed spacing with leading/trailing whitespace", () => {
-    const r = parsedTextComponents("   git   commit   -m   initial   ");
-    assert(r !== false);
-    assertEquals(r.first, "git");
-    assertEquals(r.argv, ["commit", "-m", "initial"]);
-    assertEquals(r.argsText, "commit -m initial");
-  });
 });

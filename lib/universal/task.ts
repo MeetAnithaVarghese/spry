@@ -1179,3 +1179,121 @@ export function verboseInfoTaskEventBus<
 
   return bus;
 }
+
+/**
+ * Create a minimal logging bus that only prints errors.
+ *
+ * - Listens to `"task:end"` and prints a line **only** when `result.success === false`.
+ * - Also listens to top-level `"error"` events (thrown during execution).
+ * - When available, prints the `stderr()` payload (decoded as UTF-8) after the header line.
+ *
+ * Usage:
+ *   const bus = errorOnlyTaskEventBus<{...}>({ style: "rich" });
+ *   await executeDAG(plan, exec, { eventBus: bus, ctx });
+ */
+export function errorOnlyTaskEventBus<
+  T extends Task,
+  Context,
+>(init: { style: "plain" | "rich" }) {
+  const fancy = init.style === "rich";
+  const bus = eventBus<TaskExecEventMap<T, Context>>();
+
+  // Emojis (rich only)
+  const E = {
+    err: "💥",
+    stop: "⏹️",
+    cross: "❌",
+    page: "📄",
+  } as const;
+
+  // Colors
+  const c = {
+    tag: (s: string) => (fancy ? bold(red(s)) : s),
+    id: (s: string) => (fancy ? bold(cyan(s)) : s),
+    err: (s: string) => (fancy ? red(s) : s),
+    faint: (s: string) => (fancy ? dim(s) : s),
+  };
+
+  // Emoji helpers
+  const em = {
+    err: (s: string) => (fancy ? `${E.err} ${s}` : s),
+    stop: (s: string) => (fancy ? `${E.stop} ${s}` : s),
+    cross: (s: string) => (fancy ? `${E.cross} ${s}` : s),
+    page: (s: string) => (fancy ? `${E.page} ${s}` : s),
+  };
+
+  const decode = (u?: Uint8Array) => {
+    if (!u || !(u instanceof Uint8Array)) return undefined;
+    try {
+      return new TextDecoder().decode(u);
+    } catch {
+      return `<<${u.byteLength} bytes: non-UTF8>>`;
+    }
+  };
+
+  const fmtPairs = (obj: Record<string, unknown>) =>
+    Object.entries(obj)
+      .filter(([, v]) => v != null && v !== "")
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join(" ");
+
+  // Print only failing task completions
+  bus.on("task:end", ({ id, result }) => {
+    if (result.success) return;
+
+    const header =
+      `${c.tag("[task]")} ${em.stop(em.cross("fail"))} ${c.id(id)} ` +
+      c.err(
+        fmtPairs({
+          code: (result as Any).exitCode, // tolerate field name
+          startedAt: (result as Any).startedAt?.toISOString?.(),
+          endedAt: (result as Any).endedAt?.toISOString?.(),
+        }),
+      );
+
+    console.error(header);
+
+    // If there’s stderr, print it on following lines
+    const bytes = result.stderr?.();
+    const text = decode(bytes);
+    if (text && text.length) {
+      const label = `${c.tag("[stderr]")} ${em.page("")}`;
+      // Print multi-line stderr exactly as-is after a label line
+      console.error(label);
+      console.error(text);
+    }
+
+    // If there’s an Error object, include its name/message (stack left to caller)
+    // deno-lint-ignore no-explicit-any
+    const errObj = (result as any).error;
+    if (errObj instanceof Error) {
+      console.error(
+        `${c.tag("[error]")} ${em.err(`${errObj.name}: ${errObj.message}`)}`,
+      );
+    } else if (errObj != null) {
+      console.error(`${c.tag("[error]")} ${em.err(String(errObj))}`);
+    }
+  });
+
+  // Print executor-level thrown errors
+  bus.on("error", ({ message, cause, taskId, stage }) => {
+    const line = `${c.tag("[error]")} ${em.err(message)} ` +
+      fmtPairs({
+        task: taskId ? c.id(taskId) : undefined,
+        stage,
+      });
+    console.error(line);
+
+    if (cause instanceof Error) {
+      console.error(
+        `${c.tag("[cause]")} ${em.err(`${cause.name}: ${cause.message}`)}`,
+      );
+      if (cause.stack) console.error(c.faint(cause.stack));
+    } else if (cause != null) {
+      console.error(`${c.tag("[cause]")} ${String(cause)}`);
+    }
+  });
+
+  // Do NOT log plan/run events here — this bus is intentionally error-only
+  return bus;
+}

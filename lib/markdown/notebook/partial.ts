@@ -1,7 +1,7 @@
 import { globToRegExp, isGlob, normalize } from "jsr:@std/path@^1";
 import { z, ZodType } from "jsr:@zod/zod@4";
-import { parsedTextComponents } from "./notebook.ts";
 import { jsonToZod } from "../../universal/zod-aide.ts";
+import { parsedTextFlags } from "./notebook.ts";
 
 /** Render function for partials */
 type InjectContentFn = (
@@ -60,23 +60,16 @@ export type FencedBlockPartial = z.infer<typeof mdFencedBlockPartialSchema>;
  *   fbPartial("plain_partial", "no injection flags => plain partial");
  */
 export function fbPartialCandidate(
-  info: string,
+  pi: ReturnType<typeof parsedTextFlags>,
   source: string,
   zodSchemaSpec?: Record<string, unknown>,
   init?: {
     registerIssue: (message: string, content: string, error?: unknown) => void;
   },
 ): FencedBlockPartial {
-  // Parse flags (safe default if parsing not available)
-  const ptc = parsedTextComponents(info);
-  const parsed = ptc ? ptc : {
-    first: info.trim(),
-    argv: [],
-    flags: () => ({}) as Record<string, unknown>,
-  };
-
-  const identity = (parsed.first ?? info).trim();
-  const flags = parsed.flags() as Record<string, unknown>;
+  // the first token is usually the word PARTIAL and the second is name/identity
+  const identity = (pi.secondToken ?? "plain").trim();
+  const { flags } = pi;
 
   // Collect optional injection globs
   const injectGlobs = flags.inject === undefined

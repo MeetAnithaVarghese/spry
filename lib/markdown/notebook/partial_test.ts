@@ -4,6 +4,7 @@ import {
   assertStringIncludes,
   assertThrows,
 } from "jsr:@std/assert@^1";
+import { parsedTextFlags } from "./notebook.ts";
 import { fbPartialCandidate, fbPartialsCollection } from "./partial.ts";
 
 // Helper: normalize sync-or-async renderer to a Promise result
@@ -16,7 +17,10 @@ async function render(
 
 Deno.test("fbPartial() basic and injectable behaviors", async (t) => {
   await t.step("creates a plain partial without injection", async () => {
-    const p = fbPartialCandidate("plain", "hello world");
+    const p = fbPartialCandidate(
+      parsedTextFlags("PARTIAL plain"),
+      "hello world",
+    );
     assertEquals(p.identity, "plain");
     assertEquals(p.injection, undefined);
     const r = await render(p, {});
@@ -27,7 +31,10 @@ Deno.test("fbPartial() basic and injectable behaviors", async (t) => {
   await t.step(
     "creates an injectable with --inject and default prepend",
     () => {
-      const p = fbPartialCandidate("header --inject **/*.sql", "-- HEADER");
+      const p = fbPartialCandidate(
+        parsedTextFlags("PARTIAL header --inject **/*.sql"),
+        "-- HEADER",
+      );
       assertEquals(p.injection?.mode, "prepend");
       assertEquals(p.injection?.globs, ["**/*.sql"]);
     },
@@ -35,7 +42,7 @@ Deno.test("fbPartial() basic and injectable behaviors", async (t) => {
 
   await t.step("creates an injectable with --append mode", () => {
     const p = fbPartialCandidate(
-      "footer --inject **/*.sql --append",
+      parsedTextFlags("PARTIAL footer --inject **/*.sql --append"),
       "-- FOOTER",
     );
     assertEquals(p.injection?.mode, "append");
@@ -43,14 +50,14 @@ Deno.test("fbPartial() basic and injectable behaviors", async (t) => {
 
   await t.step("creates an injectable with both prepend+append", () => {
     const p = fbPartialCandidate(
-      "wrap --inject **/*.sql --prepend --append",
+      parsedTextFlags("PARTIAL wrap --inject **/*.sql --prepend --append"),
       "-- BEGIN\n-- END",
     );
     assertEquals(p.injection?.mode, "both");
   });
 
   await t.step("validates arguments when zodSchemaSpec provided", async () => {
-    const p = fbPartialCandidate("withArgs", "Hi", {
+    const p = fbPartialCandidate(parsedTextFlags("PARTIAL withArgs"), "Hi", {
       name: { type: "string" },
     });
     const r = await render(p, { name: "Bob" });
@@ -58,7 +65,7 @@ Deno.test("fbPartial() basic and injectable behaviors", async (t) => {
   });
 
   await t.step("returns error content for invalid locals", async () => {
-    const p = fbPartialCandidate("withArgs", "Hi", {
+    const p = fbPartialCandidate(parsedTextFlags("PARTIAL withArgs"), "Hi", {
       name: { type: "string" },
     });
     const r = await render(p, { name: 123 });
@@ -71,7 +78,7 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
   const col = fbPartialsCollection();
 
   await t.step("registers and retrieves plain partials", async () => {
-    const p = fbPartialCandidate("plain", "content");
+    const p = fbPartialCandidate(parsedTextFlags("PARTIAL plain"), "content");
     col.register(p);
     const got = col.get("plain");
     assert(got);
@@ -80,8 +87,8 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
   });
 
   await t.step("handles duplicates according to policy", async () => {
-    const p1 = fbPartialCandidate("dupe", "a");
-    const p2 = fbPartialCandidate("dupe", "b");
+    const p1 = fbPartialCandidate(parsedTextFlags("PARTIAL dupe"), "a");
+    const p2 = fbPartialCandidate(parsedTextFlags("PARTIAL dupe"), "b");
 
     // overwrite
     col.register(p1);
@@ -106,9 +113,12 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
   });
 
   await t.step("indexes injectables for glob matching", () => {
-    const inj1 = fbPartialCandidate("header --inject **/*.sql", "-- H");
+    const inj1 = fbPartialCandidate(
+      parsedTextFlags("PARTIAL header --inject **/*.sql"),
+      "-- H",
+    );
     const inj2 = fbPartialCandidate(
-      "footer --inject reports/*.sql --append",
+      parsedTextFlags("PARTIAL footer --inject reports/*.sql --append"),
       "-- F",
     );
     col.register(inj1);
@@ -122,7 +132,10 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
   });
 
   await t.step("compose() applies prepend mode correctly", async () => {
-    const inj = fbPartialCandidate("wrap --inject **/*.txt", "HEADER");
+    const inj = fbPartialCandidate(
+      parsedTextFlags("PARTIAL wrap --inject **/*.txt"),
+      "HEADER",
+    );
     col.register(inj);
 
     const result = await col.compose({
@@ -139,7 +152,7 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
     const localCol = fbPartialsCollection(); // fresh, no earlier injectables
 
     const inj = fbPartialCandidate(
-      "wrap2 --inject **/*.sql --prepend --append",
+      parsedTextFlags("PARTIAL wrap2 --inject **/*.sql --prepend --append"),
       "WRAP",
     );
     localCol.register(inj);
@@ -161,7 +174,7 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
       const localCol = fbPartialsCollection(); // fresh to avoid surprises
 
       const bad = fbPartialCandidate(
-        "bad --inject **/*.oops",
+        parsedTextFlags("PARTIAL bad --inject **/*.oops"),
         "BAD",
         { name: { type: "string" } }, // schema expects string
       );
@@ -197,7 +210,7 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
 
       // Wrapper requires { name: string }
       const bad = fbPartialCandidate(
-        "bad2 --inject **/*.oops",
+        parsedTextFlags("PARTIAL bad2 --inject **/*.oops"),
         "BAD",
         { name: { type: "string" } },
       );
@@ -228,7 +241,7 @@ Deno.test("fbPartialsCollection() core behaviors", async (t) => {
     "compose() catches thrown wrapper errors gracefully",
     async () => {
       const throwingPartial = fbPartialCandidate(
-        "thrower --inject **/*.boom",
+        parsedTextFlags("PARTIAL thrower --inject **/*.boom"),
         "ignored",
       );
 
@@ -259,11 +272,11 @@ Deno.test("fbPartialsCollection() integration with multiple injectables", async 
     "selects most specific match (fewer wildcards, longer literal)",
     async () => {
       const generic = fbPartialCandidate(
-        "generic --inject **/*.sql",
+        parsedTextFlags("PARTIAL generic --inject **/*.sql"),
         "GENERIC",
       );
       const specific = fbPartialCandidate(
-        "specific --inject reports/*.sql",
+        parsedTextFlags("PARTIAL specific --inject reports/*.sql"),
         "SPECIFIC",
       );
       col.register(generic);

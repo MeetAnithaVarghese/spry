@@ -82,6 +82,10 @@ This is a raw code block without an explicit language.
 It should become a code cell with language "text".
 ```
 
+```csv --import notebook_test-fixture-01.csv
+This is a code block whose content will be replaced with the imported CSV.
+```
+
 ---
 
 This trailing paragraph appears after a thematic break and should be included in

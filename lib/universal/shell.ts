@@ -288,6 +288,7 @@ export function shell(init?: {
     spawnShebang,
     denoTaskEval,
     auto,
+    splitArgvLine,
   };
 }
 
@@ -407,6 +408,103 @@ export function verboseInfoShellEventBus(init: { style: "plain" | "rich" }) {
     const txt = mode === "shebang" ? "shebang" : "eval-lines";
     const msg = `${c.tag("[auto]")} ${em.gear(txt)}`;
     console.info(msg);
+  });
+
+  return bus;
+}
+
+/**
+ * Create an error-focused event bus for Shell events.
+ *
+ * Only logs errors — ignores successful runs.
+ * Displays concise diagnostics with decoded `stderr` output
+ * when available. Style can be `"plain"` or `"rich"` for
+ * emoji + ANSI-colored output.
+ *
+ * Pass the returned `bus` into `shell({ bus })`.
+ *
+ * Example:
+ * ```ts
+ * const bus = errorOnlyShellEventBus({ style: "rich" });
+ * const sh = shell({ bus });
+ * await sh.spawnText("deno run missing.ts");
+ * ```
+ */
+export function errorOnlyShellEventBus(init: { style: "plain" | "rich" }) {
+  const fancy = init.style === "rich";
+  const bus = eventBus<ShellBusEvents>();
+
+  const E = {
+    cross: "❌",
+    boom: "💥",
+    warn: "⚠️",
+    page: "📄",
+    broom: "🧹",
+  } as const;
+
+  const c = {
+    tag: (s: string) => (fancy ? bold(magenta(s)) : s),
+    cmd: (s: string) => (fancy ? bold(cyan(s)) : s),
+    err: (s: string) => (fancy ? red(s) : s),
+    path: (s: string) => (fancy ? bold(s) : s),
+    faint: (s: string) => (fancy ? dim(s) : s),
+  };
+
+  const em = {
+    fail: (s: string) => (fancy ? `${E.cross} ${s}` : s),
+    boom: (s: string) => (fancy ? `${E.boom} ${s}` : s),
+    warn: (s: string) => (fancy ? `${E.warn} ${s}` : s),
+    page: (s: string) => (fancy ? `${E.page} ${s}` : s),
+    broom: (s: string) => (fancy ? `${E.broom} ${s}` : s),
+  };
+
+  function decode(u8: Uint8Array): string {
+    return new TextDecoder().decode(u8).trim();
+  }
+
+  // ---- listeners ----
+  bus.on("spawn:error", ({ cmd, args, error }) => {
+    console.error(
+      `${c.tag("[spawn]")} ${em.boom(c.cmd(cmd))} ${args.join(" ")} → ${
+        c.err(String(error instanceof Error ? error.message : error))
+      }`,
+    );
+  });
+
+  bus.on("spawn:done", ({ cmd, args, code, success, stderr }) => {
+    if (!success) {
+      console.error(
+        `${c.tag("[spawn]")} ${em.fail(c.cmd(cmd))} ${args.join(" ")} ${
+          c.err(`(code=${code})`)
+        }`,
+      );
+      const msg = decode(stderr);
+      if (msg) console.error(c.err(msg));
+    }
+  });
+
+  bus.on("task:line:done", ({ index, line, code, success, stderr }) => {
+    if (!success) {
+      console.error(
+        `${c.tag("[task]")} ${em.fail(`L${index}`)} ${
+          c.err(`(code=${code})`)
+        } ${c.faint(line)}`,
+      );
+      const msg = decode(stderr);
+      if (msg) console.error(c.err(msg));
+    }
+  });
+
+  bus.on("shebang:cleanup", ({ path, ok, error }) => {
+    if (!ok) {
+      console.error(
+        `${c.tag("[shebang]")} ${em.broom("cleanup")} ${c.path(path)} → ${
+          em.warn(
+            String(error ?? "unknown error"),
+          )
+        }`,
+      );
+    }
   });
 
   return bus;

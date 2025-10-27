@@ -1,14 +1,15 @@
 import { z } from "jsr:@zod/zod@4";
 import {
+  CodeCell,
   fbPartialCandidate,
   fbPartialsCollection,
   Issue,
   mdFencedBlockPartialSchema,
   notebooks,
-  parsedTextComponents,
   Playbook,
   PlaybookCodeCell,
   playbooks,
+  pseudoCellsGenerator,
   Source,
 } from "../markdown/notebook/mod.ts";
 import {
@@ -156,40 +157,6 @@ export type TaskDirectiveInspector<
   },
 ) => TaskDirective | false;
 
-const parsedInfoCache = new Map<string, ReturnType<typeof parsedInfoPrime>>();
-
-export function parsedInfoPrime(candidate?: string) {
-  const ptc = parsedTextComponents(candidate);
-  if (!ptc) return false;
-
-  return {
-    ...ptc,
-    identity: (idIfMissing: string) =>
-      ptc.argv.length > 0 ? ptc.argv[0] : idIfMissing,
-    deps: () => {
-      const flags = ptc.flags();
-      return "dep" in flags
-        ? (typeof flags.dep === "boolean"
-          ? undefined
-          : typeof flags.dep === "string"
-          ? [flags.dep]
-          : flags.dep)
-        : undefined;
-    },
-  };
-}
-
-export function parsedInfo(candidate?: string) {
-  if (!candidate) return false;
-
-  let pi = parsedInfoCache.get(candidate);
-  if (typeof pi === "undefined") {
-    pi = parsedInfoPrime(candidate);
-    parsedInfoCache.set(candidate, pi);
-  }
-  return pi;
-}
-
 export function partialsInspector<
   Provenance,
   Frontmatter extends Record<string, unknown> = Record<string, unknown>,
@@ -197,11 +164,12 @@ export function partialsInspector<
   I extends Issue<Provenance> = Issue<Provenance>,
 >(): TaskDirectiveInspector<Provenance, Frontmatter, CellAttrs, I> {
   return ({ cell, registerIssue }) => {
-    const pi = parsedInfo(cell.info);
-    if (pi && pi.first.toLocaleUpperCase() == "PARTIAL") {
+    if (!cell.parsedInfo) return false;
+    const pi = cell.parsedInfo;
+    if (pi && pi.firstToken?.toLocaleUpperCase() == "PARTIAL") {
       const fbc = {
         nature: "PARTIAL",
-        partial: fbPartialCandidate(pi.argsText, cell.source, cell.attrs, {
+        partial: fbPartialCandidate(cell.parsedInfo, cell.source, cell.attrs, {
           registerIssue,
         }),
       };
@@ -245,14 +213,21 @@ export function spawnableTDI<
   return ({ cell }) => {
     const language = isValidLanguage(cell);
     if (!language) return false;
-    const pi = parsedInfo(cell.info);
-    if (!pi) return false; // TODO: should we warn about this or ignore it?
+    if (!cell.info) return false;
+    const pi = cell.parsedInfo;
+    if (!pi || !pi.firstToken) return false;
     return {
       nature: "TASK",
-      identity: pi.first,
+      identity: pi.firstToken,
       source: cell.source,
       language,
-      deps: pi.deps(),
+      deps: "dep" in pi.flags
+        ? (typeof pi.flags.dep === "boolean"
+          ? undefined
+          : typeof pi.flags.dep === "string"
+          ? [pi.flags.dep]
+          : pi.flags.dep)
+        : undefined,
     };
   };
 }
@@ -283,6 +258,12 @@ export class TaskDirectives<
   CellAttrs extends Record<string, unknown> = Record<string, unknown>,
   I extends Issue<Provenance> = Issue<Provenance>,
 > {
+  readonly virtualCells = pseudoCellsGenerator<
+    Provenance,
+    Frontmatter,
+    CellAttrs,
+    I
+  >();
   readonly tdInspectors: TaskDirectiveInspector<
     Provenance,
     Frontmatter,
@@ -485,9 +466,16 @@ export class TaskDirectives<
     sources: () => AsyncGenerator<
       Source<Provenance> & { fmSchema?: z.ZodType }
     >,
-    init?: Parameters<
-      TaskDirectives<Provenance, Frontmatter, CellAttrs, I>["register"]
-    >[2],
+    init?:
+      & Parameters<
+        TaskDirectives<Provenance, Frontmatter, CellAttrs, I>["register"]
+      >[2]
+      & {
+        onVirtual?: (
+          cell: CodeCell<Provenance, CellAttrs>,
+          pb: Playbook<Provenance, Frontmatter, CellAttrs, I>,
+        ) => void;
+      },
   ) {
     const registerIssue = (...i: I[]) =>
       i.forEach((i) => this.registerIssue(i));
@@ -495,6 +483,7 @@ export class TaskDirectives<
       (await Array.fromAsync(sources())).map((s) => [s.provenance, s]),
     );
 
+    const { cellsFrom } = this.virtualCells;
     for await (
       const pb of playbooks(
         async function* () {
@@ -531,7 +520,14 @@ export class TaskDirectives<
       this.playbooks.push(pb);
       for (const cell of pb.cells) {
         if (cell.kind === "code") {
-          this.register(cell, pb, init);
+          if (cell.language === "import") {
+            for await (const c of cellsFrom(cell, pb)) {
+              if (init?.onVirtual) init.onVirtual(c, pb);
+              this.register(c, pb);
+            }
+          } else {
+            this.register(cell, pb, init);
+          }
         }
       }
     }

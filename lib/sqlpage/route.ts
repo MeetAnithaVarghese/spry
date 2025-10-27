@@ -94,6 +94,20 @@ export function pathExtensions(path: string) {
   };
 }
 
+export function muateRoutePaths(route: PageRoute, path: string) {
+  if (!route.path) {
+    route.path = path;
+    const extensions = pathExtensions(route.path);
+    route.pathBasename = extensions.basename;
+    route.pathBasenameNoExtn = extensions.basename.split(".")[0];
+    route.pathDirname = dirname(route.path);
+    route.pathExtnTerminal = extensions.terminal;
+    route.pathExtns = extensions.extensions;
+    return true;
+  }
+  return false;
+}
+
 export async function resolvedRoutes(candidates: Iterable<PageRoute>) {
   const forest = await pathTree<PageRoute, string>(
     candidates,
