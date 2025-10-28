@@ -284,12 +284,6 @@ SELECT
   This section provides an overview of the files that have been accepted and converted into database format for research purposes. The conversion process ensures that data from various sources is standardized, making it easier for researchers to analyze and draw meaningful insights.
   Additionally, the corresponding database table names generated from these files are listed for reference.' as contents;
 
-SET total_rows = (SELECT COUNT(*) FROM drh_study_files_table_info);
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
-
 SELECT 'table' AS component,
   TRUE AS sort,
   TRUE AS search;
@@ -300,25 +294,8 @@ SELECT
   table_name
 FROM drh_study_files_table_info
 ORDER BY file_name ASC
-LIMIT $limit
-OFFSET $offset;
-
-SELECT
-  'text' AS component,
-  (
-    SELECT CASE WHEN CAST($current_page AS INTEGER) > 1
-      THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')'
-      ELSE ''
-    END
-  )
-  || ' '
-  || '(Page ' || $current_page || ' of ' || $total_pages || ') '
-  || (
-    SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER)
-      THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')'
-      ELSE ''
-    END
-  ) AS contents_md;
+${pagination.limit}; 
+${pagination.navigation} 
 
 ```
 
@@ -399,14 +376,7 @@ SELECT
     '
     Reminder: Keep updating and re-running the process until you see no entries in the log below.' as contents;
 
--- Pagination setup
-SET total_rows = (SELECT COUNT(*) FROM drh_vandv_orch_issues);
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
 
--- ✅ Show message or table depending on total_rows
 SELECT
   'alert' AS component,
   'success' AS color,
@@ -415,7 +385,7 @@ SELECT
 WHERE (SELECT COUNT(*) FROM drh_vandv_orch_issues) = 0;
 
 
--- ✅ Show table only if there are records
+
 SELECT 'table' AS component,
   TRUE AS sort,
   TRUE AS search
@@ -424,20 +394,8 @@ WHERE (SELECT COUNT(*) FROM drh_vandv_orch_issues) > 0;
 SELECT *
 FROM drh_vandv_orch_issues
 WHERE (SELECT COUNT(*) FROM drh_vandv_orch_issues) > 0
-LIMIT $limit
-OFFSET $offset;
-
--- ✅ Pagination footer (only if records exist)
-SELECT
-  'text' AS component,
-  (SELECT CASE WHEN CAST($current_page AS INTEGER) > 1 
-      THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END)
-  || ' '
-  || '(Page ' || $current_page || ' of ' || $total_pages || ') '
-  || (SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER) 
-      THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END)
-  AS contents_md
-WHERE (SELECT COUNT(*) FROM drh_vandv_orch_issues) > 0;
+${pagination.limit}; 
+${pagination.navigation}
 
 ```
 
@@ -543,34 +501,23 @@ FROM
     FROM
         drh_device_file_count_view;
 
-        SELECT
-'text' as component,
-'# Participant Dashboard' as contents_md;
+    
+    ${paginate("participant_dashboard_cached")}
 
-    SET total_rows = (SELECT COUNT(*) FROM participant_dashboard_cached );
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
 
-  -- Display uniform_resource table with pagination
+  
   SELECT 'table' AS component,
         'participant_id' as markdown,
         TRUE AS sort,
         TRUE AS search;        
 --   SELECT tenant_id,format('[%s]('||sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '/drh/participant-info/index.sql?participant_id='||'%s)',
-    SELECT tenant_id,participant_id,gender,age,study_arm,baseline_hba1c,cgm_devices,cgm_files,tir,tar_vh,tar_h,tbr_l,tbr_vl,tar,tbr,gmi,percent_gv,gri,days_of_wear,data_start_date,data_end_date FROM participant_dashboard_cached
-  LIMIT $limit
-  OFFSET $offset;
+    SELECT tenant_id,participant_id,gender,age,study_arm,baseline_hba1c,cgm_devices,cgm_files,tir,tar_vh,tar_h,tbr_l,tbr_vl,tar,tbr,gmi,percent_gv,gri,days_of_wear,data_start_date,data_end_date FROM participant_dashboard_cached    
+    order by participant_id
+${pagination.limit}; 
 
-  SELECT 'text' AS component,
-    (SELECT CASE WHEN CAST($current_page AS INTEGER) > 1 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END)
-    || ' '
-    || '(Page ' || $current_page || ' of ' || $total_pages || ") "
-    || (SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END)
-    AS contents_md
+
+${pagination.navigation}
 ;
-        ;
 ```
 
 
@@ -703,27 +650,17 @@ Participants are individuals who volunteer to take part in CGM research studies.
 
       ' as contents_md;
 
-      SET total_rows = (SELECT COUNT(*) FROM drh_participant );
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
+    
 
     -- Display uniform_resource table with pagination
     SELECT 'table' AS component,
           TRUE AS sort,
           TRUE AS search;
     SELECT * FROM drh_participant
-     LIMIT $limit
-    OFFSET $offset; 
+    ${pagination.limit}; 
 
-    SELECT 'text' AS component,
-    (SELECT CASE WHEN CAST($current_page AS INTEGER) > 1 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END)
-    || ' '
-    || '(Page ' || $current_page || ' of ' || $total_pages || ") "
-    || (SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END)
-    AS contents_md
-;
+
+${pagination.navigation}
         ;
 
 
@@ -815,27 +752,14 @@ CGM file metadata provides essential information about the Continuous Glucose Mo
 
 ' as contents_md;
 
-SET total_rows = (SELECT COUNT(*) FROM drh_cgmfilemetadata_view );
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
 
 -- Display uniform_resource table with pagination
 SELECT 'table' AS component,
     TRUE AS sort,
     TRUE AS search;
 SELECT * FROM drh_cgmfilemetadata_view
-LIMIT $limit
-OFFSET $offset;
-
-SELECT 'text' AS component,
-    (SELECT CASE WHEN CAST($current_page AS INTEGER) > 1 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END)
-    || ' '
-    || '(Page ' || $current_page || ' of ' || $total_pages || ") "
-    || (SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END)
-    AS contents_md
-;
+${pagination.limit}; 
+${pagination.navigation}
         ;
 
 ```
@@ -892,28 +816,13 @@ This combined view enables researchers to perform comparative analyses, evaluate
 
 ' as contents_md;
 
-SET total_rows = (SELECT COUNT(*) FROM combined_cgm_tracing );
-SET limit = COALESCE($limit, 50);
-SET offset = COALESCE($offset, 0);
-SET total_pages = ($total_rows + $limit - 1) / $limit;
-SET current_page = ($offset / $limit) + 1;
-
 -- Display uniform_resource table with pagination
 SELECT 'table' AS component,
     TRUE AS sort,
     TRUE AS search;
 SELECT * FROM combined_cgm_tracing 
-LIMIT $limit
-OFFSET $offset;
-
-SELECT 'text' AS component,
-    (SELECT CASE WHEN CAST($current_page AS INTEGER) > 1 THEN '[Previous](?limit=' || $limit || '&offset=' || ($offset - $limit) || ')' ELSE '' END)
-    || ' '
-    || '(Page ' || $current_page || ' of ' || $total_pages || ") "
-    || (SELECT CASE WHEN CAST($current_page AS INTEGER) < CAST($total_pages AS INTEGER) THEN '[Next](?limit=' || $limit || '&offset=' || ($offset + $limit) || ')' ELSE '' END)
-    AS contents_md
-;
-        ;
+${pagination.limit}; 
+${pagination.navigation};
 
 
 ```
