@@ -67,7 +67,7 @@ DUCK_DB_FILE="DRH.studydata.duckdb"
 SQLITE_DB_FILE="resource-surveillance.sqlite.db"
 
 # 1. The name required by the hard-coded Sqlpage configuration (The FINAL file)
-FINAL_DB_NAME="DRH.cgmdata.sqlite.db"
+FINAL_DB_NAME="DRH.studydata.sqlite.db"
 ARCHIVE_DIR="study-db-archive"
 ARCHIVE_BASE_NAME="DRH.${STUDY_NAME}"
 # Full Pattern will be: DRh.flexi-cgm-study.V001.sqlite.db

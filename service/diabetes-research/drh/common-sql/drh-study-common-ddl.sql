@@ -225,34 +225,50 @@ WHERE
 -- VIEW 11: drh_study_vanity_metrics_details
 -- Drops and recreates the view to calculate key high-level (vanity) metrics per study,
 -- such as participant count, average age, female percentage, and a list of investigators.
+
 DROP VIEW IF EXISTS drh_study_vanity_metrics_details;
-CREATE VIEW drh_study_vanity_metrics_details AS
-SELECT 
-    party.party_id AS tenant_id,
-    s.study_id, 
-    s.study_name, 
-    s.study_description, 
-    s.start_date, 
-    s.end_date, 
-    s.nct_number, 
+
+CREATE VIEW
+    drh_study_vanity_metrics_details AS
+SELECT
+    (
+        select
+            party_id
+        from
+            party
+        limit
+            1
+    ) as tenant_id,
+    s.study_id,
+    s.study_name,
+    s.study_description,
+    s.start_date,
+    s.end_date,
+    s.nct_number,
     COUNT(DISTINCT p.participant_id) AS total_number_of_participants,
     ROUND(AVG(p.age), 2) AS average_age,
-    -- Converted CAST(... AS DOUBLE) to CAST(... AS REAL) for floating point arithmetic
-    (CAST(SUM(CASE WHEN p.gender = 'F' THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 AS percentage_of_females,
-    -- Converted STRING_AGG to GROUP_CONCAT
-    GROUP_CONCAT(DISTINCT i.investigator_name, ', ') AS investigators
-FROM uniform_resource_study s
-LEFT JOIN drh_participant p ON s.study_id = p.study_id
-LEFT JOIN uniform_resource_investigator i ON s.study_id = i.study_id
-CROSS JOIN (SELECT party_id FROM party LIMIT 1) party
-GROUP BY 
-    s.study_id, 
-    s.study_name, 
-    s.study_description, 
-    s.start_date, 
-    s.end_date, 
-    s.nct_number,
-    party.party_id;
+    (
+        CAST(
+            SUM(
+                CASE
+                    WHEN p.gender = 'F' THEN 1
+                    ELSE 0
+                END
+            ) AS FLOAT
+        ) / COUNT(*)
+    ) * 100 AS percentage_of_females,
+    GROUP_CONCAT (DISTINCT i.investigator_name) AS investigators
+FROM
+    uniform_resource_study s
+    LEFT JOIN drh_participant p ON s.study_id = p.study_id
+    LEFT JOIN uniform_resource_investigator i ON s.study_id = i.study_id
+GROUP BY
+    s.study_id,
+    s.study_name,
+    s.study_description,
+    s.start_date,
+    s.end_date,
+    s.nct_number;
 
 -- VIEW 12: drh_device_file_count_view
 -- Drops and recreates the view to count the number of distinct files per device name

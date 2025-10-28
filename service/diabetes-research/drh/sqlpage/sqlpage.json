@@ -1,5 +1,6 @@
 {
-  "database_url": "sqlite://DRH.cgmdata.sqlite.db?mode=rwc",
+  "database_url": "sqlite://DRH.studydata.sqlite.db?mode=rwc",
+  "web_root": "./dev-src.auto",
   "allow_exec": true,
   "port": 9227
 }
