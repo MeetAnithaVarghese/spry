@@ -34,6 +34,7 @@ While you're developing, Spry's `dev-src.auto` generator should be used:
 
 ```bash prepare-sqlpage-dev --descr "Generate the dev-src.auto directory to work in SQLPage dev mode"
 ./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json
+./create-raw-cgm-sql-files.sh 
 ```
 
 ```bash clean --descr "Clean up the project directory's generated artifacts"
@@ -112,16 +113,15 @@ SELECT 'shell' AS component,
        'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/sql.min.js' AS javascript,
        'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/handlebars.min.js' AS javascript,
        'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js' AS javascript,
-       'https://app.devl.drh.diabetestechnology.org/js/d3-aide.js' AS javascript,
+        '/static//d3-aide.js' AS javascript,
         '/js/chart-component.js' AS javascript,  
         '{"link":"https://drh.diabetestechnology.org/","title":"DRH Home","target": "__blank"}' AS menu_item, 
-        '{"link":"https://www.diabetestechnology.org/index.shtml","title":"DTS Home","target": "__blank"}' AS menu_item, 
-        '/static/stacked-bar-chart.js' AS javascript_module,
-       'https://app.devl.drh.diabetestechnology.org/js/wc/d3/stacked-bar-chart.js' AS javascript_module,
-       'https://app.devl.drh.diabetestechnology.org/js/wc/d3/gri-chart.js' AS javascript_module,
-       'https://app.devl.drh.diabetestechnology.org/js/wc/d3/dgp-chart.js' AS javascript_module,
-       'https://app.devl.drh.diabetestechnology.org/js/wc/d3/agp-chart.js' AS javascript_module,
-       'https://app.devl.drh.diabetestechnology.org/js/wc/formula-component.js' AS javascript_module
+        '{"link":"https://www.diabetestechnology.org/index.shtml","title":"DTS Home","target": "__blank"}' AS menu_item,         
+       '/static/stacked-bar-chart.js' AS javascript_module,
+       '/static/gri-chart.js' AS javascript_module,
+       '/static/dgp-chart.js' AS javascript_module,
+       '/static/agp-chart.js' AS javascript_module,
+       '/static/formula-component.js' AS javascript_module
        ;
 
 SET resource_json = sqlpage.read_file_as_text('spry.d/auto/resource/${path}.auto.json');
@@ -558,7 +558,8 @@ SET current_page = ($offset / $limit) + 1;
         'participant_id' as markdown,
         TRUE AS sort,
         TRUE AS search;        
-  SELECT tenant_id,format('[%s]('||sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '/drh/participant-info/index.sql?participant_id='||'%s)',participant_id, participant_id) as participant_id,gender,age,study_arm,baseline_hba1c,cgm_devices,cgm_files,tir,tar_vh,tar_h,tbr_l,tbr_vl,tar,tbr,gmi,percent_gv,gri,days_of_wear,data_start_date,data_end_date FROM participant_dashboard_cached
+--   SELECT tenant_id,format('[%s]('||sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '/drh/participant-info/index.sql?participant_id='||'%s)',
+    SELECT tenant_id,participant_id,gender,age,study_arm,baseline_hba1c,cgm_devices,cgm_files,tir,tar_vh,tar_h,tbr_l,tbr_vl,tar,tbr,gmi,percent_gv,gri,days_of_wear,data_start_date,data_end_date FROM participant_dashboard_cached
   LIMIT $limit
   OFFSET $offset;
 
@@ -862,7 +863,7 @@ SELECT 'table' AS component,
         'Column Count' as align_right,
         TRUE as sort,
         TRUE as search;
-SELECT '[' || table_name || '](raw-cgm/' || table_name || '.sql)' AS "Table"
+SELECT '[' || table_name || '](cgm-data/raw-cgm/' || table_name || '.sql)' AS "Table"
 FROM drh_raw_cgm_table_lst;
 
 

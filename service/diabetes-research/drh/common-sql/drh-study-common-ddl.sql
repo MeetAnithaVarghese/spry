@@ -402,62 +402,62 @@ ORDER BY
 -- This generates a self-contained SQL file for display/pagination of each raw table in a web interface.
 WITH
     raw_cgm_table_name AS (
-        -- Select all table names
+        -- Select all table names to iterate over
         SELECT
             table_name
         FROM
             drh_raw_cgm_table_lst
-    ) INSERT
-    OR IGNORE INTO sqlpage_files (path, contents)
-SELECT
-    'drh/cgm-data/raw-cgm/' || table_name || '.sql' AS path,
-    '
-    SELECT ''dynamic'' AS component, sqlpage.run_sql(''shell/shell.sql'') AS properties;
-    -- not including breadcrumbs from sqlpage_aide_navigation
-    -- not including page title from sqlpage_aide_navigation
-
-    SELECT ''breadcrumb'' as component;
-    WITH RECURSIVE breadcrumbs AS (
-        SELECT
-            COALESCE(abbreviated_caption, caption) AS title,
-            COALESCE(url, path) AS link,
-            parent_path, 0 AS level,
-            namespace
-        FROM sqlpage_aide_navigation
-        WHERE namespace = ''prime'' AND path = ''drh/cgm-data''
-        UNION ALL
-        SELECT
-            COALESCE(nav.abbreviated_caption, nav.caption) AS title,
-            COALESCE(nav.url, nav.path) AS link,
-            nav.parent_path, b.level + 1, nav.namespace
-        FROM sqlpage_aide_navigation nav
-        INNER JOIN breadcrumbs b ON nav.namespace = b.namespace AND nav.path = b.parent_path
     )
-    SELECT title, link FROM breadcrumbs ORDER BY level DESC;
-    SELECT ''' || table_name || ''' || '' Table'' AS title, ''#'' AS link;
-    
+-- INSERT OR IGNORE the dynamically generated file content into sqlpage_files
+INSERT OR IGNORE INTO sqlpage_files (path, contents)
+SELECT    
+    'drh/cgm-data/raw-cgm/' || table_name || '.sql' AS path,    
+    '    
+    SELECT ''shell'' AS component,
+       ''Diabetes Research Hub Edge'' AS title,
+       NULL AS icon,
+       ''https://drh.diabetestechnology.org/_astro/favicon.CcrFY5y9.ico'' AS favicon,
+       ''https://drh.diabetestechnology.org/images/diabetic-research-hub-logo.png'' AS image,
+       ''fluid'' AS layout,
+       true AS fixed_top_menu,
+       ''/'' AS link,
+       ''{"link":"/","title":"Home"}'' AS menu_item,
+       ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js'' AS javascript,
+       ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/sql.min.js'' AS javascript,
+       ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/handlebars.min.js'' AS javascript,
+       ''https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/json.min.js'' AS javascript,
+        ''/static//d3-aide.js'' AS javascript,
+        ''/js/chart-component.js'' AS javascript,  
+        ''{"link":"https://drh.diabetestechnology.org/","title":"DRH Home","target": "__blank"}'' AS menu_item, 
+        ''{"link":"https://www.diabetestechnology.org/index.shtml","title":"DTS Home","target": "__blank"}'' AS menu_item,         
+       ''/static/stacked-bar-chart.js'' AS javascript_module,
+       ''/static/gri-chart.js'' AS javascript_module,
+       ''/static/dgp-chart.js'' AS javascript_module,
+       ''/static/agp-chart.js'' AS javascript_module,
+       ''/static/formula-component.js'' AS javascript_module
+       ;
+   
     SELECT ''title'' AS component, ''' || table_name || ''' AS contents;
     
-
-    -- Initialize pagination variables using SQLPage/SQLite extensions
+    
     SET total_rows = (SELECT COUNT(*) FROM ''' || table_name || ''');
     SET limit = COALESCE($limit, 50);
     SET offset = COALESCE($offset, 0);
     SET total_pages = ($total_rows + $limit - 1) / $limit;
     SET current_page = ($offset / $limit) + 1;
 
-    -- Display table with pagination
+    
     SELECT ''table'' AS component,
         TRUE AS sort,
         TRUE AS search;
     SELECT * FROM ''' || table_name || '''
     LIMIT $limit
-    OFFSET $offset;    
+    OFFSET $offset; 
 
-    -- Generate pagination links
+    -- 4. Generate Pagination Links
     SELECT ''text'' AS component,
         (SELECT CASE WHEN $current_page > 1 THEN ''[Previous](?limit='' || $limit || ''&offset='' || ($offset - $limit) || '')'' ELSE '''' END) || '' '' ||
-        ''(Page '' || $current_page || '' of '' || $total_pages || '')'' || '' '' ||
+        ''(__Page '' || $current_page || '' of '' || $total_pages || ''__)'' || '' '' ||
         (SELECT CASE WHEN $current_page < $total_pages THEN ''[Next](?limit='' || $limit || ''&offset='' || ($offset + $limit) || '')'' ELSE '''' END)
         AS contents_md;
     '
