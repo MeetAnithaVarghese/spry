@@ -30,7 +30,10 @@
     "types/mdast": "npm:@types/mdast@^4",
     "types/unist": "npm:@types/unist",
     "unist-util-visit": "npm:unist-util-visit@^5",
+    "unist-util-visit-parents": "https://esm.sh/unist-util-visit-parents@6",
     "unist-util-select": "https://esm.sh/unist-util-select@5",
+    "unist-util-map": "https://esm.sh/unist-util-map@4",
+    "unist-util-filter": "https://esm.sh/unist-util-filter@5",
     "github-slugger": "npm:github-slugger"
   }
 }

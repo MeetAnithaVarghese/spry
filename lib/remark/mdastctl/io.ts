@@ -45,7 +45,6 @@ import {
   uniqueSources,
 } from "../../universal/resource.ts";
 import { isCodePartialNode } from "../plugin/node/code-partial.ts";
-import codeSpawnablePlugin from "../plugin/node/code-spawnable.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -80,7 +79,6 @@ export function mardownParserPipeline(init: {
         codePartialsCollec?.register(cp);
       },
     })
-    .use(codeSpawnablePlugin) // mark sh | bash and other "executables" (should come after codePartialsPlugin)
     .use(nodeClassifierPlugin, {
       // classifies nodes using instructions from markdown document and headings frontmatter
       // be sure that all frontmatter plugins are run before this

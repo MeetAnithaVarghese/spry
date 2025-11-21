@@ -1,19 +1,23 @@
 import { visit } from "unist-util-visit";
 import { markdownASTs, Yielded } from "../remark/mdastctl/io.ts";
 import {
+  CodeWithFrontmatterData,
   CodeWithFrontmatterNode,
+  isCodeWithFrontmatterNode,
 } from "../remark/plugin/node/code-frontmatter.ts";
 
 import { z } from "@zod/zod";
-import { codePartialsCollection } from "../remark/plugin/node/code-partial.ts";
+import { Code, Node } from "types/mdast";
 import {
-  CodeSpawnableNode,
-  isCodeSpawnableNode,
-} from "../remark/plugin/node/code-spawnable.ts";
+  codePartialsCollection,
+  isCodePartialNode,
+} from "../remark/plugin/node/code-partial.ts";
+import { languageRegistry } from "../universal/code.ts";
 import { depsResolver } from "../universal/depends.ts";
 import { eventBus } from "../universal/event-bus.ts";
 import { gitignore } from "../universal/gitignore.ts";
 import { unsafeInterpolator } from "../universal/interpolate.ts";
+import { PosixPIQuery, queryPosixPI } from "../universal/posix-pi.ts";
 import { shell, ShellBusEvents } from "../universal/shell.ts";
 import {
   executeDAG,
@@ -29,6 +33,9 @@ import { safeJsonStringify } from "../universal/tmpl-literal-aide.ts";
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
+const flexibleTextSchema = z.union([z.string(), z.array(z.string())]);
+export type FlexibleText = z.infer<typeof flexibleTextSchema>;
+
 /**
  * codeSpawnablePiFlags = {
  *   capture?: string;
@@ -42,25 +49,80 @@ type Any = any;
  *   - if I is present → interpolate = I
  */
 export const codeSpawnablePiFlagsSchema = z.object({
+  descr: z.string().optional(),
+  dep: flexibleTextSchema.optional(), // collected as multiple --dep
   capture: z.string().optional(),
   interpolate: z.boolean().optional(),
+  silent: z.boolean().optional(),
+  gitignore: z.union([z.string(), z.boolean()]).optional(),
+  graph: flexibleTextSchema.optional(),
 
-  C: z.string().optional(),
-  I: z.boolean().optional(),
-}).transform((raw) => ({
-  capture: raw.C ?? raw.capture,
-  interpolate: raw.I ?? raw.interpolate,
-}));
+  // shortcuts
+  /* capture */ C: z.string().optional(),
+  /* dep */ D: flexibleTextSchema.optional(),
+  /* graph */ G: flexibleTextSchema.optional(),
+  /* interpolate */ I: z.boolean().optional(),
+}).transform((raw) => {
+  const depRaw = raw.D ?? raw.dep;
+  const graphRaw = raw.G ?? raw.graph;
+  const capture = raw.C ?? raw.capture;
+  return {
+    description: raw.descr,
+    deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
+    capture,
+    captureDest: capture
+      ? capture.startsWith("./") ? "file" as const : "memory" as const
+      : undefined,
+    interpolate: raw.I ?? raw.interpolate,
+    gitignore: raw.gitignore,
+    graphs: graphRaw
+      ? typeof graphRaw === "string" ? [graphRaw] : graphRaw
+      : undefined,
+    silent: raw.silent,
+  };
+});
 
 export type CodeSpawnablePiFlags = z.infer<typeof codeSpawnablePiFlagsSchema>;
 
-export function spawnableDepsResolver<
-  SpawnablePiFlags extends Record<string, unknown>,
->(
-  catalog: Iterable<CodeSpawnableNode<SpawnablePiFlags>>,
-  init?: {
-    onImplicitTasksError?: () => void;
-  },
+export const spawnableLangIds = ["shell"] as const;
+export type SpawnableLangIds = typeof spawnableLangIds[number];
+export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
+  const langSpec = languageRegistry.get(lid);
+  if (!langSpec) throw new Error("this should never happen");
+  return langSpec;
+});
+
+/** The structured enrichment attached to a code node by this plugin. */
+export type CodeSpawnable = {
+  readonly identity: string;
+  readonly piq: PosixPIQuery<CodeSpawnablePiFlags>;
+  readonly cspif: CodeSpawnablePiFlags;
+};
+
+export const CODESPAWNABLE_KEY = "codeSpawnable" as const;
+export type CodeSpawnableData = CodeWithFrontmatterData & {
+  readonly codeSpawnable: CodeSpawnable;
+  [key: string]: unknown;
+};
+
+export type CodeSpawnableNode = Code & { data: CodeSpawnableData };
+
+export type SpawnableTask = Task<{ code: CodeSpawnableNode }>;
+
+/**
+ * Type guard: returns true if a node is a `code` node that already
+ * carries CodeSpawnable data at the default store key.
+ */
+export function isCodeSpawnableNode(node: Node): node is CodeSpawnableNode {
+  if (node.type === "code" && node.data && CODESPAWNABLE_KEY in node.data) {
+    return true;
+  }
+  return false;
+}
+
+export function spawnableDepsResolver(
+  catalog: Iterable<CodeSpawnableNode>,
+  init?: { onImplicitTasksError?: () => void },
 ) {
   const { onImplicitTasksError } = init ?? {};
 
@@ -184,29 +246,22 @@ export function spawnableDepsResolver<
 
 export type TaskExecContext = { runId: string };
 
-export type TaskExecCapture<SpawnablePiFlags extends Record<string, unknown>> =
-  {
-    cell: CodeSpawnableNode<SpawnablePiFlags>;
-    ctx: TaskExecContext;
-    interpResult: Awaited<
-      ReturnType<
-        ReturnType<
-          typeof execTasksState<SpawnablePiFlags>
-        >["interpolateUnsafely"]
-      >
-    >;
-    execResult?: Awaited<ReturnType<ReturnType<typeof shell>["auto"]>>;
+export type TaskExecCapture = {
+  cell: CodeSpawnableNode;
+  ctx: TaskExecContext;
+  interpResult: Awaited<
+    ReturnType<ReturnType<typeof execTasksState>["interpolateUnsafely"]>
+  >;
+  execResult?: Awaited<ReturnType<ReturnType<typeof shell>["auto"]>>;
 
-    text: () => string;
-    json: () => unknown;
-  };
+  text: () => string;
+  json: () => unknown;
+};
 
-export const typicalOnCapture = async <
-  SpawnablePiFlags extends Record<string, unknown>,
->(
+export const typicalOnCapture = async (
   ci: string,
-  tec: TaskExecCapture<SpawnablePiFlags>,
-  capturedTaskExecs: Record<string, TaskExecCapture<SpawnablePiFlags>>,
+  tec: TaskExecCapture,
+  capturedTaskExecs: Record<string, TaskExecCapture>,
 ) => {
   if (ci.startsWith("./")) {
     await Deno.writeTextFile(ci, ensureTrailingNewline(tec.text()));
@@ -215,21 +270,18 @@ export const typicalOnCapture = async <
   }
 };
 
-export const gitignorableOnCapture = async <
-  SpawnablePiFlags extends Record<string, unknown>,
->(
+export const gitignorableOnCapture = async (
   ci: string,
-  tec: TaskExecCapture<SpawnablePiFlags>,
-  capturedTaskExecs: Record<string, TaskExecCapture<SpawnablePiFlags>>,
+  tec: TaskExecCapture,
+  capturedTaskExecs: Record<string, TaskExecCapture>,
 ) => {
   if (ci.startsWith("./")) {
     await Deno.writeTextFile(ci, ensureTrailingNewline(tec.text()));
-    const { pi } = tec.cell.data.codeSpawnable;
-    const gitIgnore = pi.getFlag("gitignore");
-    if (gitIgnore) {
+    const { gitignore: ignore } = tec.cell.data.codeSpawnable.cspif;
+    if (ignore) {
       const gi = ci.slice("./".length);
-      if (typeof gitIgnore === "string") {
-        await gitignore(gi, gitIgnore);
+      if (typeof ignore === "string") {
+        await gitignore(gi, ignore);
       } else {
         await gitignore(gi);
       }
@@ -239,23 +291,21 @@ export const gitignorableOnCapture = async <
   }
 };
 
-export function execTasksState<
-  SpawnablePiFlags extends Record<string, unknown>,
->(
+export function execTasksState(
   tasks: Iterable<{ code: CodeWithFrontmatterNode }>,
   partialsCollec: ReturnType<typeof codePartialsCollection>,
   opts?: {
     unsafeInterp?: ReturnType<typeof unsafeInterpolator>;
     onCapture?: (
       ci: string,
-      tec: TaskExecCapture<SpawnablePiFlags>,
-      capturedTaskExecs: Record<string, TaskExecCapture<SpawnablePiFlags>>,
+      tec: TaskExecCapture,
+      capturedTaskExecs: Record<string, TaskExecCapture>,
     ) => void | Promise<void>;
   },
 ) {
   const capturedTaskExecs = {} as Record<
     string,
-    TaskExecCapture<SpawnablePiFlags>
+    TaskExecCapture
   >;
   const defaults: Required<typeof opts> = {
     unsafeInterp: unsafeInterpolator({
@@ -271,14 +321,12 @@ export function execTasksState<
   } = opts ?? {};
   const td = new TextDecoder();
 
-  const isCapturable = (
-    cell: CodeWithFrontmatterNode,
-  ) => ("capture" in cell.data.codeFM.pi.flags ||
-    "C" in cell.data.codeFM.pi.flags);
+  const isCapturable = (cell: CodeSpawnableNode) =>
+    cell.data.codeSpawnable.cspif.capture;
 
   const prepTaskExecCapture = (
     tec: Pick<
-      TaskExecCapture<SpawnablePiFlags>,
+      TaskExecCapture,
       "cell" | "ctx" | "interpResult" | "execResult"
     >,
   ) => {
@@ -294,10 +342,10 @@ export function execTasksState<
       }
     };
     const json = () => JSON.parse(text());
-    return { ...tec, text, json } satisfies TaskExecCapture<SpawnablePiFlags>;
+    return { ...tec, text, json } satisfies TaskExecCapture;
   };
 
-  const captureTaskExec = async (cap: TaskExecCapture<SpawnablePiFlags>) => {
+  const captureTaskExec = async (cap: TaskExecCapture) => {
     const { cell: { data: { codeFM: { pi } } } } = cap;
     const captureFlags = [
       pi.flags.capture,
@@ -315,7 +363,7 @@ export function execTasksState<
 
   // "unsafely" means we're using JavaScript "eval"
   async function interpolateUnsafely(
-    cell: { code: CodeSpawnableNode<SpawnablePiFlags> },
+    cell: { code: CodeSpawnableNode },
     ctx: TaskExecContext,
   ): Promise<
     & { status: false | "unmodified" | "mutated" }
@@ -328,9 +376,8 @@ export function execTasksState<
       error: unknown;
     })
   > {
-    const qppi = cell.code.data.codeSpawnable.pi;
-    const source = cell.code.value;
-    if (!qppi.hasFlag("interpolate", "I")) {
+    const { value: source, data: { codeSpawnable: { cspif } } } = cell.code;
+    if (!cspif.interpolate) {
       return { status: "unmodified", source };
     }
 
@@ -387,8 +434,7 @@ export function execTasksState<
 export type ExecTasksState = ReturnType<typeof execTasksState>;
 
 export async function executeTasks<
-  SpawnablePiFlags extends Record<string, unknown>,
-  T extends Task & { code: CodeSpawnableNode<SpawnablePiFlags> },
+  T extends SpawnableTask,
   Context extends TaskExecContext = TaskExecContext,
 >(
   plan: TaskExecutionPlan<T>,
@@ -403,7 +449,7 @@ export async function executeTasks<
   return await executeDAG(plan, async (task, ctx) => {
     const interpResult = await tei.interpolateUnsafely(task, ctx);
     if (interpResult.status) {
-      const execResult = await sh.auto(interpResult.source);
+      const execResult = await sh.auto(interpResult.source, undefined, task);
       if (isCapturable(task.code)) {
         await captureTaskExec(
           prepTaskExecCapture({
@@ -421,30 +467,109 @@ export async function executeTasks<
   }, { eventBus: opts?.tasksBus });
 }
 
-export async function markdownTasks<
-  SpawnablePiFlags extends Record<string, unknown>,
->(
+/**
+ * Creates a predicate function that determines whether a `CodeSpawnableNode`
+ * should be considered "in graph" based on optional candidate graph names.
+ *
+ * Behavior:
+ *
+ * - **If `candidates` is provided and non-empty:**
+ *   - Only tasks whose `cspif.graphs` array contains **at least one** of the
+ *     candidate graph names will pass (return `true`).
+ *   - Tasks with no `cspif.graphs` field fail (return `false`).
+ *
+ * - **If `candidates` is omitted or an empty array:**
+ *   - This switches to "exclude anything with a graph name" mode.
+ *   - Tasks **with one or more graph names** return `false`.
+ *   - Tasks **with no graph names** return `true`.
+ *
+ * In short:
+ * - With candidates → **include only matching graph nodes**.
+ * - Without candidates → **exclude all graph-associated nodes**, include the rest.
+ *
+ * @param candidates Optional list of graph names used for inclusion filtering.
+ * @returns A predicate `(task: CodeSpawnableNode) => boolean` implementing the above logic.
+ */
+export function isInGraphFn(candidates?: string[]) {
+  if (candidates && candidates.length) {
+    const graphs = new Set(candidates);
+    return (task: CodeSpawnableNode) => {
+      const { cspif } = task.data.codeSpawnable;
+      if (!cspif.graphs) return false;
+      return cspif.graphs.filter((g) => graphs.has(g)) ? true : false;
+    };
+  } else {
+    return (task: CodeSpawnableNode) => {
+      const { cspif } = task.data.codeSpawnable;
+      return cspif.graphs && cspif.graphs.length > 0 ? false : true;
+    };
+  }
+}
+
+export async function markdownTasks(
   mdASTs: ReturnType<typeof markdownASTs>,
+  options?: { includeTask?: (node: CodeSpawnableNode) => boolean },
 ) {
+  const isSpawnable = (code: Code) =>
+    spawnableLangSpecs.find((lang) =>
+      lang.id == code.lang || lang.aliases?.find((a) => a == code.lang)
+    );
+
   const tasksWithOrigin: {
     taskId: () => string; // satisfies Task interface
     taskDeps: () => string[]; // satisfies Task interface
-    code: CodeSpawnableNode<SpawnablePiFlags>;
+    code: CodeSpawnableNode;
     md: Yielded<typeof mdASTs>;
   }[] = [];
   for await (const md of mdASTs) {
     visit(md.mdastRoot, "code", (code) => {
-      if (isCodeSpawnableNode<SpawnablePiFlags>(code)) {
-        const { codeSpawnable } = code.data;
-        tasksWithOrigin.push({
-          taskId: () => codeSpawnable.identity,
-          taskDeps: () => codeSpawnable.pi.getTextFlagValues("dep"),
-          code,
-          md,
-        });
+      if (
+        isSpawnable(code) && isCodeWithFrontmatterNode(code) &&
+        !isCodePartialNode(code)
+      ) {
+        // spawnable code nodes must have at least an identifier
+        if (code.data.codeFM.pi.posCount) {
+          if (!(code.data as Any)[CODESPAWNABLE_KEY]) {
+            const ppiq = queryPosixPI<CodeSpawnablePiFlags>(
+              code.data.codeFM.pi,
+              undefined,
+              { zodSchema: codeSpawnablePiFlagsSchema },
+            );
+            const cspif = ppiq.safeFlags();
+            if (cspif.success) {
+              const cs: CodeSpawnable = {
+                identity: ppiq.getFirstBareWord()!,
+                piq: ppiq,
+                cspif: cspif.data,
+              };
+              (code.data as Any)[CODESPAWNABLE_KEY] = cs;
+            } else {
+              console.error(
+                `Error reading code spawnable flags (line ${code.position?.start.line}): ${cspif.error} in \n ${
+                  JSON.stringify(code.data.codeFM.pi)
+                }`,
+              );
+            }
+          }
+
+          // verifies that it's properly guarded
+          if (
+            isCodeSpawnableNode(code) &&
+            (!options?.includeTask || options.includeTask(code))
+          ) {
+            const { codeSpawnable } = code.data;
+            tasksWithOrigin.push({
+              taskId: () => codeSpawnable.identity,
+              taskDeps: () => codeSpawnable.cspif.deps ?? [],
+              code,
+              md,
+            });
+          }
+        }
       }
     });
   }
+
   // we want to resolve dependencies in tasks across all markdowns loaded
   const dr = spawnableDepsResolver(tasksWithOrigin.map((t) => t.code));
   return tasksWithOrigin.map((t) => {

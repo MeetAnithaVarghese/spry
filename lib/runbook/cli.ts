@@ -23,6 +23,7 @@ import { languageRegistry, LanguageSpec } from "../universal/code.ts";
 import { ColumnDef, ListerBuilder } from "../universal/lister-tabular-tui.ts";
 import {
   errorOnlyShellEventBus,
+  ShellBusEvents,
   verboseInfoShellEventBus,
 } from "../universal/shell.ts";
 import {
@@ -39,16 +40,16 @@ import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../universal/task-visuals.ts";
-import { Task } from "../universal/task.ts";
 import {
-  codeSpawnablePiFlagsSchema,
+  CodeSpawnablePiFlags,
   execTasksState,
   executeTasks,
   gitignorableOnCapture,
+  isInGraphFn,
   markdownTasks,
+  SpawnableTask,
   TaskExecContext,
 } from "./orchestrate.ts";
-import z from "@zod/zod";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -62,8 +63,11 @@ export type LsTaskRow = {
   deps?: string;
   flags: {
     isInterpolated: boolean;
-    isCaptured: boolean;
+    isSilent: boolean;
+    isCaptured: CodeSpawnablePiFlags["captureDest"];
+    isGitIgnored: boolean;
   };
+  graphs: string;
 };
 
 function lsFlagsField<Row extends LsTaskRow>():
@@ -74,7 +78,7 @@ function lsFlagsField<Row extends LsTaskRow>():
     defaultColor: gray,
     // deno-fmt-ignore
     format: (v) =>
-        `${brightYellow(v.isInterpolated ? "I" : " ")} ${blue(v.isCaptured ? "C" : " ")}`,
+        `${brightYellow(v.isInterpolated ? "I" : " ")} ${blue(v.isCaptured ? (v.isCaptured == "file" ? "CF" : "CM") : "  ")} ${v.isGitIgnored ? "G" : " "} ${v.isGitIgnored ? "S" : " "}`,
   };
 }
 
@@ -129,12 +133,15 @@ export enum VerboseStyle {
   Markdown = "markdown",
 }
 
-export function informationalEventBuses<T extends Task, Context>(
+export function informationalEventBuses<T extends SpawnableTask, Context>(
   verbose?: VerboseStyle,
 ) {
+  const emitStdOut = (ev: ShellBusEvents<T>["spawn:done"]) =>
+    ev.baggage?.code.data.codeSpawnable.cspif.silent ? false : true;
+
   if (!verbose) {
     return {
-      shellEventBus: errorOnlyShellEventBus({ style: "rich" }),
+      shellEventBus: errorOnlyShellEventBus<T>({ style: "rich", emitStdOut }),
       tasksEventBus: errorOnlyTaskEventBus<T, Context>({ style: "rich" }),
     };
   }
@@ -142,13 +149,13 @@ export function informationalEventBuses<T extends Task, Context>(
   switch (verbose) {
     case VerboseStyle.Plain:
       return {
-        shellEventBus: verboseInfoShellEventBus({ style: "plain" }),
+        shellEventBus: verboseInfoShellEventBus({ style: "plain", emitStdOut }),
         tasksEventBus: verboseInfoTaskEventBus<T, Context>({ style: "plain" }),
       };
 
     case VerboseStyle.Rich:
       return {
-        shellEventBus: verboseInfoShellEventBus({ style: "rich" }),
+        shellEventBus: verboseInfoShellEventBus({ style: "rich", emitStdOut }),
         tasksEventBus: verboseInfoTaskEventBus<T, Context>({ style: "rich" }),
       };
 
@@ -223,7 +230,9 @@ export class CLI {
   async markdownTasks(
     positional: string[],
     defaults: string[],
-    options?: Parameters<typeof markdownASTs>[1],
+    options?:
+      & Parameters<typeof markdownASTs>[1]
+      & Parameters<typeof markdownTasks>[1],
   ) {
     return await markdownTasks(
       markdownASTs(positional.length ? positional : defaults, {
@@ -231,8 +240,9 @@ export class CLI {
           console.error({ src, error });
           return false;
         },
-        ...options,
+        ...options, // for codePartialsCollec
       }),
+      options, // for "includeTask"
     );
   }
 
@@ -307,6 +317,13 @@ export class CLI {
       .type("visualStyle", new EnumType(ExecutionPlanVisualStyle))
       .arguments("[paths...:string]")
       .option(...verboseOpt)
+      .option(
+        "--graph <name:string>",
+        "Run only the nodes in provided graph(s)",
+        {
+          collect: true,
+        },
+      )
       .option("--summarize", "Emit summary after execution in JSON")
       .option("--visualize <style:visualStyle>", "Visualize the DAG")
       .action(
@@ -315,7 +332,10 @@ export class CLI {
           const tasks = await this.markdownTasks(
             paths,
             this.conf?.defaultFiles ?? [],
-            { codePartialsCollec: partialsCollec },
+            {
+              codePartialsCollec: partialsCollec,
+              includeTask: isInGraphFn(opts.graph),
+            },
           );
           const plan = executionPlan(tasks);
           if (opts?.visualize) {
@@ -368,22 +388,21 @@ export class CLI {
             this.conf?.defaultFiles ?? [],
           );
           const lsRows = tasks.map((task) => {
-            const { code: { data: { codeSpawnable: { pi } } } } = task;
-            const safePIF = z.safeParse(
-              codeSpawnablePiFlagsSchema,
-              task.code.data.codeFM.pi.flags,
-            );
+            const { code: { data: { codeSpawnable: { cspif } } } } = task;
             return {
               code: task.code,
               name: task.taskId(),
               deps: task.taskDeps().join(", "),
-              descr: pi.getTextFlag("descr") ?? "",
+              descr: cspif.description ?? "",
               origin: task.md.fileRef(task.code, Deno.cwd()),
               engine: sh.strategy(task.code.value),
               flags: {
-                isInterpolated: safePIF.data?.interpolate ? true : false,
-                isCaptured: safePIF.data?.capture ? true : false,
+                isInterpolated: cspif.interpolate ? true : false,
+                isCaptured: cspif.captureDest,
+                isGitIgnored: cspif.gitignore ? true : false,
+                isSilent: cspif.silent ?? false,
               },
+              graphs: cspif.graphs ? cspif.graphs.join(", ") : "",
             } satisfies LsTaskRow;
           });
 
@@ -406,6 +425,7 @@ export class CLI {
               "descr",
               "origin",
               "flags",
+              "graphs",
             )
             .requireAtLeastOneColumn(true)
             .color(useColor)
@@ -421,7 +441,19 @@ export class CLI {
           builder.field("descr", "descr", { header: "DESCR" });
           builder.field("origin", "origin", lsColorPathField("ORIGIN"));
           builder.field("flags", "flags", lsFlagsField());
-          builder.select("name", "deps", "flags", "descr", "origin", "engine");
+          builder.field("graphs", "graphs", {
+            header: "GRAPH",
+            defaultColor: yellow,
+          });
+          builder.select(
+            "name",
+            "deps",
+            "graphs",
+            "flags",
+            "descr",
+            "origin",
+            "engine",
+          );
 
           const lister = builder.build();
           await lister.ls(true);
