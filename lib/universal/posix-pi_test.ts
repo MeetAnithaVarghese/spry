@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertThrows } from "jsr:@std/assert@^1";
+import { assert, assertEquals, assertThrows } from "@std/assert";
 import { instructionsFromText, queryPosixPI } from "./posix-pi.ts";
 
 Deno.test("instructionsFromText basic and edge behaviors", async (t) => {

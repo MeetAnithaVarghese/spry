@@ -9,7 +9,7 @@
  * Focus-agnostic: usable for comments, linting, formatting, etc.
  */
 
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 
 /* -------------------------------------------------------------------------------------------------
  * Language registry (reusable beyond comments)

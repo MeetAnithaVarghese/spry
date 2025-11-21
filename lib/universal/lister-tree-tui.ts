@@ -15,7 +15,7 @@
 //     .dirFirst(true)
 //     .ls(true);
 
-import { gray } from "jsr:@std/fmt@1/colors";
+import { gray } from "@std/fmt/colors";
 import {
   humanSize,
   type Iterish,

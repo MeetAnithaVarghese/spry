@@ -86,7 +86,7 @@ import {
   magenta,
   red,
   yellow,
-} from "jsr:@std/fmt@1/colors";
+} from "@std/fmt/colors";
 import { eventBus } from "../universal/event-bus.ts";
 
 // deno-lint-ignore no-explicit-any

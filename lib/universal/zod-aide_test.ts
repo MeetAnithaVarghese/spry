@@ -3,8 +3,8 @@
 // Documentation-centric test suite for `jsonToZod` in zod-aide.ts.
 // Run: deno test -A lib/universal/zod-aide_test.ts
 
-import { assert, assertEquals, assertThrows } from "jsr:@std/assert@1.0.7";
-import { z } from "jsr:@zod/zod@4";
+import { assert, assertEquals, assertThrows } from "@std/assert";
+import { z } from "@zod/zod";
 import { jsonToZod } from "./zod-aide.ts";
 
 Deno.test("jsonToZod - documentation and behavior", async (t) => {

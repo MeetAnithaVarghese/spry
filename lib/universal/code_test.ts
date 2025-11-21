@@ -4,7 +4,7 @@ import {
   assertEquals,
   assertThrows,
 } from "jsr:@std/assert@1";
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 
 import { getLanguageByIdOrAlias } from "./code.ts";
 import {

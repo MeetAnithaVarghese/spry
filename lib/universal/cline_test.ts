@@ -21,7 +21,7 @@ import {
   assertEquals,
   assertFalse,
   assertStrictEquals,
-} from "jsr:@std/assert@^1";
+} from "@std/assert";
 import {
   amendClineFlags,
   clineFlagsAsCLI,

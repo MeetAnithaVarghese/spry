@@ -8,7 +8,7 @@
  *  - Multi-tags-per-line + typed tag values + boolean tags (no value => true)
  */
 
-import * as YAML from "jsr:@std/yaml@1";
+import * as YAML from "@std/yaml";
 import { LanguageSpec } from "./code.ts";
 
 /* -------------------------------------------------------------------------------------------------

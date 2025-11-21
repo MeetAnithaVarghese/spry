@@ -1,5 +1,5 @@
 // shell_test.ts
-import { assert, assertEquals, assertMatch } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertMatch } from "@std/assert";
 import { shell } from "./shell.ts";
 
 const td = new TextDecoder();

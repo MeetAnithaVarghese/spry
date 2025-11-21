@@ -1,11 +1,4 @@
-import {
-  bold,
-  cyan,
-  gray,
-  green,
-  magenta,
-  yellow,
-} from "jsr:@std/fmt@1/colors";
+import { bold, cyan, gray, green, magenta, yellow } from "@std/fmt/colors";
 
 /* ------------------------------------------------------------------------------------------------
  * Public helpers & shared types

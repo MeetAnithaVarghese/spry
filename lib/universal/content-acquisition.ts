@@ -1,6 +1,6 @@
 // content-acquisition.ts
-import { retry, type RetryOptions } from "jsr:@std/async@^1";
-import { fromFileUrl, isAbsolute, join, normalize } from "jsr:@std/path@^1";
+import { retry, type RetryOptions } from "@std/async";
+import { fromFileUrl, isAbsolute, join, normalize } from "@std/path";
 
 export enum SourceRelativeTo {
   LocalFs = "fs",

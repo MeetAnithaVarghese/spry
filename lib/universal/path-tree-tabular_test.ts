@@ -9,7 +9,7 @@
  * Subtests cover edge-cases (empty input, single root, index handling, prefixes/suffixes).
  */
 
-import { assert, assertEquals, assertMatch } from "jsr:@std/assert@^1";
+import { assert, assertEquals, assertMatch } from "@std/assert";
 import {
   forestToStatefulViews,
   forestToStatelessViews,

@@ -13,7 +13,7 @@
  *   deno test -A lib/universal/properties_test.ts
  */
 
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 import {
   assert,
   assertEquals,

@@ -1,5 +1,5 @@
 // lib/universal/zod-aide.ts
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 
 /**
  * Convert a JSON string (subset of JSON Schema) into a Zod schema.

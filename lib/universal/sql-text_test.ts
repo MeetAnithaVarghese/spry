@@ -6,7 +6,7 @@ import {
   assertMatch,
   assertNotStrictEquals,
   assertStrictEquals,
-} from "jsr:@std/assert@1";
+} from "@std/assert";
 import {
   ensureTrailingSemicolon,
   inlinedSQL,
