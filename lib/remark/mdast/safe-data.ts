@@ -7,19 +7,15 @@
 //   collectData, forEachData, hasAnyData
 // - createDataFactory(): key-based facade (no Zod, optional deep merge)
 // - createSafeDataFactory(): Zod-backed, never throws, delegates error
-//   handling to callbacks in options; exposes get (raw) and safeGet (validated)
+//   handling to callbacks in options; exposes get (raw, optional default)
+//   and safeGet (validated on existing data, optional default)
 // - createArrayDataFactory(): array-valued facade (no Zod)
 // - createSafeArrayDataFactory(): Zod-backed array factory, never throws,
-//   delegates error handling to callbacks in options; exposes get (raw)
-//   and safeGet (validated)
+//   delegates error handling to callbacks in options; exposes get/safeGet
+//   with optional default.
 //
 // Merging is controlled by options (merge?: boolean) instead of separate
 // factory types.
-//
-// This is broadly usable for things like:
-//   - issues, annotations, provenance
-//   - code metadata, partials, DAGs
-//   - classification, identities, schema hints
 
 import { z } from "@zod/zod";
 import type { Root } from "types/mdast";
@@ -121,7 +117,7 @@ export function isDataSupplier<
   key: Key,
 ): node is DataSupplierNode<N, Key, T> {
   const data = (node as { data?: Data }).data;
-  return !!data && Object.prototype.hasOwnProperty.call(data, key);
+  return !!data && key in data;
 }
 
 /**
@@ -271,15 +267,23 @@ export interface DataFactory<
 
   /**
    * Raw access: returns whatever is stored under the key (no validation).
+   *
+   * If `ifNotExists` is provided and the key is absent, it will be called to
+   * create a value, which is then attached to the node and returned.
    */
-  get<N extends Node>(node: N): T | undefined;
+  get<N extends Node>(
+    node: N,
+    ifNotExists?: (node: N) => T | null | undefined,
+  ): T | undefined;
 
   /**
-   * Validated access:
-   * - For "unsafe" factories (no schema), this is equivalent to get().
-   * - For "safe" factories, this runs Zod safeParse + callbacks.
+   * For "unsafe" factories (no schema), safeGet is equivalent to get().
+   * Signature is the same for ergonomic symmetry.
    */
-  safeGet<N extends Node>(node: N): T | undefined;
+  safeGet<N extends Node>(
+    node: N,
+    ifNotExists?: (node: N) => T | null | undefined,
+  ): T | undefined;
 
   /**
    * Type guard for nodes that have the key set.
@@ -330,13 +334,23 @@ export function nodeDataFactory<
       return attachData<N, Key, T>(node, key, next);
     },
 
-    get<N extends Node>(node: N): T | undefined {
-      return getData<T, N, Key>(node, key);
+    get<N extends Node>(node: N, ifNotExists?: (node: N) => T): T | undefined {
+      const existing = getData<T, N, Key>(node, key);
+      if (existing !== undefined) return existing;
+
+      if (!ifNotExists) return undefined;
+      const created = ifNotExists(node);
+      if (created === undefined) return undefined;
+      attachData<N, Key, T>(node, key, created);
+      return created;
     },
 
-    safeGet<N extends Node>(node: N): T | undefined {
-      // No schema in the unsafe factory, so safeGet is just get().
-      return getData<T, N, Key>(node, key);
+    safeGet<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T,
+    ): T | undefined {
+      // Unsafe factory: safeGet == get
+      return this.get(node, ifNotExists);
     },
 
     is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T> {
@@ -384,15 +398,24 @@ export interface ArrayDataFactory<
     ...items: readonly T[]
   ): DataSupplierNode<N, Key, T[]>;
 
-  // Raw access: always returns an array (empty if none stored yet)
-  get<N extends Node>(node: N): T[];
+  /**
+   * Raw access: always returns an array (empty if none stored yet).
+   *
+   * If `ifNotExists` is provided and no array is stored yet, it will be called
+   * to create an initial array, which is then attached and returned.
+   */
+  get<N extends Node>(
+    node: N,
+    ifNotExists?: (node: N) => T[],
+  ): T[];
 
   /**
-   * Validated access:
-   * - For "unsafe" factories (no schema), this is equivalent to get().
-   * - For "safe" factories, this runs Zod safeParse + callbacks.
+   * For "unsafe" factories (no schema), safeGet is equivalent to get().
    */
-  safeGet<N extends Node>(node: N): T[];
+  safeGet<N extends Node>(
+    node: N,
+    ifNotExists?: (node: N) => T[],
+  ): T[];
 
   // Type guard for nodes that have an array at this key
   is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T[]>;
@@ -431,15 +454,26 @@ export function nodeArrayDataFactory<
       return attachData<N, Key, T[]>(node, key, next);
     },
 
-    get<N extends Node>(node: N): T[] {
+    get<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T[],
+    ): T[] {
       const existing = getData<T[], N, Key>(node, key);
-      return (existing ?? []) as T[];
+      if (existing !== undefined) return existing as T[];
+
+      if (!ifNotExists) return [];
+      const created = ifNotExists(node);
+      if (!created) return [];
+      attachData<N, Key, T[]>(node, key, created);
+      return created;
     },
 
-    safeGet<N extends Node>(node: N): T[] {
-      // No schema in the unsafe factory, so safeGet is just get().
-      const existing = getData<T[], N, Key>(node, key);
-      return (existing ?? []) as T[];
+    safeGet<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T[],
+    ): T[] {
+      // Unsafe factory: safeGet == get
+      return this.get(node, ifNotExists);
     },
 
     is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T[]> {
@@ -584,7 +618,7 @@ function safeParseWithHandler<T>(
       error: z.ZodError<T>;
     }) => T | null | undefined)
     | undefined,
-  kind?:
+  kind:
     | "attach"
     | "existing"
     | "safeGet",
@@ -636,10 +670,13 @@ function safeParseWithHandler<T>(
  *   a replacement or skip attaching.
  * - On merge attach(): also safeParse the existing value; on error, call
  *   options.onExistingSafeParseError.
- * - On safeGet(): safeParse; on error, call options.onSafeGetSafeParseError.
- *   If no replacement, safeGet() returns undefined.
+ * - On safeGet(): safeParse existing stored value; on error, call
+ *   options.onSafeGetSafeParseError.
  *
  * - get(): returns raw stored value (no validation, no logging).
+ * - Both get/safeGet accept an optional `ifNotExists` callback:
+ *   - If no stored value and callback is provided, it is called to create
+ *     a value, which is attached and returned (no extra Zod or callbacks).
  */
 export function safeNodeDataFactory<
   Key extends string,
@@ -713,32 +750,52 @@ export function safeNodeDataFactory<
       return attachData<N, Key, T>(node, key, next);
     },
 
-    get<N extends Node>(node: N): T | undefined {
+    get<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T,
+    ): T | undefined {
       // Raw, unvalidated access: no Zod, no callbacks.
       const raw = getData<unknown, N, Key>(node, key);
-      return raw as T | undefined;
+      if (raw !== undefined) return raw as T;
+
+      if (!ifNotExists) return undefined;
+      const created = ifNotExists(node);
+      if (created === undefined) return undefined;
+      attachData<N, Key, T>(node, key, created);
+      return created;
     },
 
-    safeGet<N extends Node>(node: N): T | undefined {
+    safeGet<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T,
+    ): T | undefined {
       const raw = getData<unknown, N, Key>(node, key);
-      if (raw === undefined) return undefined;
 
-      const parsed = safeParseWithHandler<T>(
-        node,
-        raw,
-        schema,
-        options?.onSafeGetSafeParseError
-          ? (ctx) =>
-            options.onSafeGetSafeParseError?.({
-              node: ctx.node,
-              storedValue: ctx.storedValue,
-              error: ctx.error,
-            })
-          : undefined,
-        "safeGet",
-      );
+      if (raw !== undefined) {
+        const parsed = safeParseWithHandler<T>(
+          node,
+          raw,
+          schema,
+          options?.onSafeGetSafeParseError
+            ? (ctx) =>
+              options.onSafeGetSafeParseError?.({
+                node: ctx.node,
+                storedValue: ctx.storedValue,
+                error: ctx.error,
+              })
+            : undefined,
+          "safeGet",
+        );
+        return parsed;
+      }
 
-      return parsed;
+      if (!ifNotExists) return undefined;
+      const created = ifNotExists(node);
+      if (created === undefined) return undefined;
+
+      // We trust the provided default and attach it directly.
+      attachData<N, Key, T>(node, key, created);
+      return created;
     },
 
     is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T> {
@@ -770,6 +827,8 @@ export function safeNodeDataFactory<
  *   merge=true), delegating errors to callbacks in options.
  * - safeGet(): validates stored array, delegating errors to callbacks.
  * - get(): returns raw stored array or [] if missing (no validation).
+ * - Both get/safeGet accept `ifNotExists`, which creates & attaches a default
+ *   array when missing (no extra validation).
  */
 export function safeNodeArrayDataFactory<
   Key extends string,
@@ -834,28 +893,46 @@ export function safeNodeArrayDataFactory<
       return attachData<N, Key, T[]>(node, key, next);
     },
 
-    get<N extends Node>(node: N): T[] {
+    get<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T[],
+    ): T[] {
       const raw = getData<unknown, N, Key>(node, key);
-      return (raw as T[] | undefined) ?? [];
+      if (raw !== undefined) return raw as T[];
+
+      if (!ifNotExists) return [];
+      const created = ifNotExists(node);
+      if (!created) return [];
+      attachData<N, Key, T[]>(node, key, created);
+      return created;
     },
 
-    safeGet<N extends Node>(node: N): T[] {
+    safeGet<N extends Node>(
+      node: N,
+      ifNotExists?: (node: N) => T[],
+    ): T[] {
       const raw = getData<unknown, N, Key>(node, key);
-      if (raw === undefined) return [];
+      if (raw !== undefined) {
+        const res = arraySchema.safeParse(raw);
+        if (res.success) return res.data;
 
-      const res = arraySchema.safeParse(raw);
-      if (res.success) return res.data;
+        if (!options?.onSafeGetSafeParseError) return [];
+        const replacement = options.onSafeGetSafeParseError({
+          node,
+          storedValue: raw,
+          error: res.error,
+        });
 
-      if (!options?.onSafeGetSafeParseError) return [];
-      const replacement = options.onSafeGetSafeParseError({
-        node,
-        storedValue: raw,
-        error: res.error,
-      });
+        if (!replacement) return [];
+        const again = arraySchema.safeParse(replacement);
+        return again.success ? again.data : [];
+      }
 
-      if (!replacement) return [];
-      const again = arraySchema.safeParse(replacement);
-      return again.success ? again.data : [];
+      if (!ifNotExists) return [];
+      const created = ifNotExists(node);
+      if (!created) return [];
+      attachData<N, Key, T[]>(node, key, created);
+      return created;
     },
 
     is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T[]> {

@@ -1,16 +1,20 @@
 import { visit } from "unist-util-visit";
 import { markdownASTs, Yielded } from "../remark/mdastctl/io.ts";
 import {
-  CodeWithFrontmatterData,
+  codeFrontmatterNDF,
   CodeWithFrontmatterNode,
-  isCodeWithFrontmatterNode,
 } from "../remark/plugin/node/code-frontmatter.ts";
 
 import { z } from "@zod/zod";
 import { Code, Node } from "types/mdast";
+import { flexibleNodeIssues } from "../remark/mdast/issue.ts";
+import {
+  DataSupplierNode,
+  safeNodeDataFactory,
+} from "../remark/mdast/safe-data.ts";
 import {
   codePartialsCollection,
-  isCodePartialNode,
+  codePartialSNDF,
 } from "../remark/plugin/node/code-partial.ts";
 import { languageRegistry } from "../universal/code.ts";
 import { depsResolver } from "../universal/depends.ts";
@@ -56,16 +60,18 @@ export const codeSpawnablePiFlagsSchema = z.object({
   silent: z.boolean().optional(),
   gitignore: z.union([z.string(), z.boolean()]).optional(),
   graph: flexibleTextSchema.optional(),
+  branch: flexibleTextSchema.optional(),
 
   // shortcuts
   /* capture */ C: z.string().optional(),
+  /* branch/graph */ B: flexibleTextSchema.optional(),
   /* dep */ D: flexibleTextSchema.optional(),
-  /* graph */ G: flexibleTextSchema.optional(),
+  /* graph/branch */ G: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
 }).transform((raw) => {
-  const depRaw = raw.D ?? raw.dep;
-  const graphRaw = raw.G ?? raw.graph;
-  const capture = raw.C ?? raw.capture;
+  const depRaw = raw.D ?? raw.dep; // TODO: merge these, not pick one or other
+  const graphRaw = raw.G ?? raw.graph; // TODO: merge these and branch, not pick one or other
+  const capture = raw.C ?? raw.capture; // TODO: merge these, not pick one or other
   return {
     description: raw.descr,
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
@@ -84,6 +90,38 @@ export const codeSpawnablePiFlagsSchema = z.object({
 
 export type CodeSpawnablePiFlags = z.infer<typeof codeSpawnablePiFlagsSchema>;
 
+export const codeSpawnableSchema = z.object({
+  identity: z.string(),
+  piq: z.custom<PosixPIQuery<CodeSpawnablePiFlags>>(), // untyped, unparsed
+  cspif: codeSpawnablePiFlagsSchema, // typed, parsed, validated
+});
+
+export type CodeSpawnable = Readonly<z.infer<typeof codeSpawnableSchema>>;
+
+export const CODESPAWNABLE_KEY = "codeSpawnable" as const;
+export type CodeSpawnableKey = typeof CODESPAWNABLE_KEY;
+const codeSpawnableIssues = flexibleNodeIssues("issues");
+const codeSpawnableSNDF = safeNodeDataFactory<CodeSpawnableKey, CodeSpawnable>(
+  CODESPAWNABLE_KEY,
+  codeSpawnableSchema,
+  {
+    onAttachSafeParseError: ({ node, error }) => {
+      codeSpawnableIssues.add(node, {
+        severity: "error",
+        message: String(error),
+        error,
+      });
+      return null;
+    },
+  },
+);
+
+export type CodeSpawnableNode<N extends Node = Code> =
+  & CodeWithFrontmatterNode<N>
+  & DataSupplierNode<N, CodeSpawnableKey, CodeSpawnable>;
+
+export type SpawnableTask = Task<{ code: CodeSpawnableNode }>;
+
 export const spawnableLangIds = ["shell"] as const;
 export type SpawnableLangIds = typeof spawnableLangIds[number];
 export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
@@ -91,23 +129,6 @@ export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
   if (!langSpec) throw new Error("this should never happen");
   return langSpec;
 });
-
-/** The structured enrichment attached to a code node by this plugin. */
-export type CodeSpawnable = {
-  readonly identity: string;
-  readonly piq: PosixPIQuery<CodeSpawnablePiFlags>;
-  readonly cspif: CodeSpawnablePiFlags;
-};
-
-export const CODESPAWNABLE_KEY = "codeSpawnable" as const;
-export type CodeSpawnableData = CodeWithFrontmatterData & {
-  readonly codeSpawnable: CodeSpawnable;
-  [key: string]: unknown;
-};
-
-export type CodeSpawnableNode = Code & { data: CodeSpawnableData };
-
-export type SpawnableTask = Task<{ code: CodeSpawnableNode }>;
 
 /**
  * Type guard: returns true if a node is a `code` node that already
@@ -292,7 +313,7 @@ export const gitignorableOnCapture = async (
 };
 
 export function execTasksState(
-  tasks: Iterable<{ code: CodeWithFrontmatterNode }>,
+  tasks: Iterable<CodeSpawnableNode>,
   partialsCollec: ReturnType<typeof codePartialsCollection>,
   opts?: {
     unsafeInterp?: ReturnType<typeof unsafeInterpolator>;
@@ -523,13 +544,10 @@ export async function markdownTasks(
   }[] = [];
   for await (const md of mdASTs) {
     visit(md.mdastRoot, "code", (code) => {
-      if (
-        isSpawnable(code) && isCodeWithFrontmatterNode(code) &&
-        !isCodePartialNode(code)
-      ) {
-        // spawnable code nodes must have at least an identifier
+      if (!isSpawnable(code) || codePartialSNDF.is(code)) return;
+      if (codeFrontmatterNDF.is(code)) {
         if (code.data.codeFM.pi.posCount) {
-          if (!(code.data as Any)[CODESPAWNABLE_KEY]) {
+          codeSpawnableSNDF.get(code, () => {
             const ppiq = queryPosixPI<CodeSpawnablePiFlags>(
               code.data.codeFM.pi,
               undefined,
@@ -542,15 +560,18 @@ export async function markdownTasks(
                 piq: ppiq,
                 cspif: cspif.data,
               };
-              (code.data as Any)[CODESPAWNABLE_KEY] = cs;
+              return cs;
             } else {
-              console.error(
-                `Error reading code spawnable flags (line ${code.position?.start.line}): ${cspif.error} in \n ${
-                  JSON.stringify(code.data.codeFM.pi)
-                }`,
-              );
+              codeSpawnableIssues.add(code, {
+                severity: "error",
+                message:
+                  `Error reading code spawnable flags (line ${code.position?.start.line}):\n${
+                    z.prettifyError(cspif.error)
+                  }`,
+                error: cspif.error,
+              });
             }
-          }
+          });
 
           // verifies that it's properly guarded
           if (

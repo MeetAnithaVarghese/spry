@@ -18,7 +18,7 @@ import {
   getLanguageByIdOrAlias,
   type LanguageSpec,
 } from "../../../universal/code.ts";
-import { isCodeWithFrontmatterNode } from "./code-frontmatter.ts";
+import { codeFrontmatterNDF } from "./code-frontmatter.ts";
 
 /** The structured enrichment attached to a code node by this plugin. */
 export type CodeAnnotations<Anns extends Record<string, unknown>> = {
@@ -120,7 +120,7 @@ export function defaultIngest(
   schema?: z.ZodType;
 } {
   // Case: rely on code-frontmatter
-  if (!isCodeWithFrontmatterNode(code)) return false;
+  if (!codeFrontmatterNDF.is(code)) return false;
   const { codeFM } = code.data;
 
   const flags = codeFM?.pi?.flags ?? {};

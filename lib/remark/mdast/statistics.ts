@@ -1,13 +1,13 @@
 import type { Code, Root } from "types/mdast";
 import type { Node, Parent } from "types/unist";
 import { isRootWithDocumentFrontmatter } from "../plugin/doc/doc-frontmatter.ts";
+import { codeFrontmatterNDF } from "../plugin/node/code-frontmatter.ts";
+import { codePartialSNDF } from "../plugin/node/code-partial.ts";
 import {
   isCodeConsumedAsHeadingFrontmatterNode,
   isHeadingWithFrontmatter,
 } from "../plugin/node/heading-frontmatter.ts";
 import { hasNodeIdentities } from "../plugin/node/node-identities.ts";
-import { isCodeWithFrontmatterNode } from "../plugin/node/code-frontmatter.ts";
-import { isCodePartialNode } from "../plugin/node/code-partial.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -226,11 +226,11 @@ export function collectMdastStats(root: Root): MdastStats {
           codeCellConsumedAsHeadingWithFrontmatter++;
         }
 
-        if (isCodeWithFrontmatterNode(code)) {
+        if (codeFrontmatterNDF.is(code)) {
           codeCellsWithFrontmatter++;
         }
 
-        if (isCodePartialNode(code)) {
+        if (codePartialSNDF.is(code)) {
           codeCellsWithPartials++;
         }
       }

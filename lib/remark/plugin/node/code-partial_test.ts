@@ -10,11 +10,11 @@ import remarkGfm from "remark-gfm";
 
 import codeFrontmatter from "./code-frontmatter.ts";
 import codePartials, {
-  CODE_PARTIAL_STORE_KEY,
   codePartial,
+  CODEPARTIAL_KEY,
   type CodePartialNode,
   codePartialsCollection,
-  isCodePartialNode,
+  codePartialSNDF,
 } from "./code-partial.ts";
 
 import type { Root } from "types/mdast";
@@ -41,7 +41,7 @@ function nodeFromPartial(p: ReturnType<typeof codePartial>): CodePartialNode {
     meta: null,
     value: p.source,
     data: {
-      [CODE_PARTIAL_STORE_KEY]: p,
+      [CODEPARTIAL_KEY]: p,
     } as Any,
   } as CodePartialNode;
 }
@@ -81,9 +81,9 @@ Deno.test("codePartials plugin with synthetic PARTIAL cells", async (t) => {
     assertEquals(nodes.length, 1);
 
     const node = nodes[0] as CodePartialNode;
-    assert(isCodePartialNode(node));
+    assert(codePartialSNDF.is(node));
 
-    const cp = node.data[CODE_PARTIAL_STORE_KEY];
+    const cp = node.data[CODEPARTIAL_KEY];
     assertEquals(cp.identity, "plain");
     assertEquals(cp.injection, undefined);
     assertEquals(cp.source, "console.log('hello');");
@@ -102,9 +102,9 @@ Deno.test("codePartials plugin with synthetic PARTIAL cells", async (t) => {
     processor.runSync(tree);
 
     const node = codeNodes(tree)[0] as CodePartialNode;
-    assert(isCodePartialNode(node));
+    assert(codePartialSNDF.is(node));
 
-    const cp = node.data[CODE_PARTIAL_STORE_KEY];
+    const cp = node.data[CODEPARTIAL_KEY];
     assertEquals(cp.identity, "header");
     assert(cp.injection);
     assertEquals(cp.injection?.globs, ["**/*.sql"]);
@@ -131,13 +131,13 @@ Deno.test("codePartials plugin with synthetic PARTIAL cells", async (t) => {
     const treeAppend = p.parse(mdAppend) as Root;
     p.runSync(treeAppend);
     const nodeAppend = codeNodes(treeAppend)[0] as CodePartialNode;
-    const cpAppend = nodeAppend.data[CODE_PARTIAL_STORE_KEY];
+    const cpAppend = nodeAppend.data[CODEPARTIAL_KEY];
     assertEquals(cpAppend.injection?.mode, "append");
 
     const treeBoth = p.parse(mdBoth) as Root;
     p.runSync(treeBoth);
     const nodeBoth = codeNodes(treeBoth)[0] as CodePartialNode;
-    const cpBoth = nodeBoth.data[CODE_PARTIAL_STORE_KEY];
+    const cpBoth = nodeBoth.data[CODEPARTIAL_KEY];
     assertEquals(cpBoth.injection?.mode, "both");
   });
 
@@ -156,7 +156,7 @@ Deno.test("codePartials plugin with synthetic PARTIAL cells", async (t) => {
       processor.runSync(tree);
 
       const node = codeNodes(tree)[0] as CodePartialNode;
-      const cp = node.data[CODE_PARTIAL_STORE_KEY];
+      const cp = node.data[CODEPARTIAL_KEY];
 
       // Valid locals
       const ok = await cp.content({ name: "Alice" });
@@ -198,7 +198,7 @@ Deno.test("codePartials plugin with synthetic PARTIAL cells", async (t) => {
     processor.runSync(tree);
 
     assertEquals(collected.length, 2);
-    const ids = collected.map((n) => n.data[CODE_PARTIAL_STORE_KEY].identity);
+    const ids = collected.map((n) => n.data[CODEPARTIAL_KEY].identity);
     assertEquals(ids.sort(), ["first", "second"]);
   });
 });
@@ -283,7 +283,7 @@ Deno.test("codePartialsCollection() core behaviors", async (t) => {
     const gotNode = col.get("plain");
     assert(gotNode);
 
-    const gotPartial = gotNode.data[CODE_PARTIAL_STORE_KEY];
+    const gotPartial = gotNode.data[CODEPARTIAL_KEY];
     const r = await render(gotPartial, {});
     assertEquals(r.content, "content");
   });
@@ -299,7 +299,7 @@ Deno.test("codePartialsCollection() core behaviors", async (t) => {
     col.register(n2, () => "overwrite");
     {
       const got = col.get("dupe")!;
-      const r = await render(got.data[CODE_PARTIAL_STORE_KEY], {});
+      const r = await render(got.data[CODEPARTIAL_KEY], {});
       assertEquals(r.content, "b");
     }
 
@@ -308,7 +308,7 @@ Deno.test("codePartialsCollection() core behaviors", async (t) => {
     col.register(nodeFromPartial(codePartial("dupe", {}, "b")), () => "ignore");
     {
       const got = col.get("dupe")!;
-      const r = await render(got.data[CODE_PARTIAL_STORE_KEY], {});
+      const r = await render(got.data[CODEPARTIAL_KEY], {});
       assertEquals(r.content, "a");
     }
 

@@ -1,3 +1,4 @@
+import z from "@zod/zod";
 import { nodeArrayDataFactory } from "./safe-data.ts";
 
 export type Issue<Severity extends string, Baggage = unknown> = {
@@ -10,7 +11,10 @@ export function flexibleNodeIssues<Key extends string, Baggage = unknown>(
 ) {
   return nodeArrayDataFactory<
     Key,
-    Issue<"info" | "warning" | "error" | "fatal", Baggage>
+    Issue<
+      "info" | "warning" | "error" | "fatal",
+      { error: Error | z.ZodError } & Baggage
+    >
   >(key);
 }
 

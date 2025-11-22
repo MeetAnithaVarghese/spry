@@ -3,17 +3,18 @@
 // Deno 2.5 unit tests for safe-data.ts.
 // Uses Deno.test + subtests (t.step) and JSR std/assert.
 
-import * as z from "@zod/zod";
 import {
   assert,
   assertEquals,
   assertStrictEquals,
   assertThrows,
-} from "jsr:@std/assert@1";
+} from "@std/assert";
+import * as z from "@zod/zod";
 
 import type { Root } from "types/mdast";
 import type { Node } from "types/unist";
 
+import { nodeErrors } from "./issue.ts";
 import {
   type ArrayDataFactory,
   attachData,
@@ -31,7 +32,6 @@ import {
   safeNodeArrayDataFactory,
   safeNodeDataFactory,
 } from "./safe-data.ts";
-import { nodeErrors } from "./issue.ts";
 
 /* -------------------------------------------------------------------------- */
 /* Minimal structural helpers for Root / Node in tests                        */
@@ -302,6 +302,12 @@ Deno.test("createDataFactory (unsafe)", async (t) => {
 
     const n1 = makeNode("paragraph");
     const n2 = analysis.attach(n1, { name: "foo", score: 5 });
+
+    if (analysis.is(n2)) {
+      // type narrowing proof
+      assert(n2.data.analysis.name);
+      assert(n2.data.analysis.score);
+    }
 
     assert(analysis.is(n2));
     const value1 = analysis.get(n2);

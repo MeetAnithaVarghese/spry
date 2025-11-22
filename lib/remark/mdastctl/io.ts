@@ -23,7 +23,7 @@ import documentSchemaPlugin, {
   colonParagraphSectionRule,
 } from "../plugin/doc/doc-schema.ts";
 import codeFrontmatterPlugin, {
-  isCodeWithFrontmatterNode,
+  codeFrontmatterNDF,
 } from "../plugin/node/code-frontmatter.ts";
 import codePartialsPlugin, {
   codePartialsCollection,
@@ -44,7 +44,7 @@ import {
   sources,
   uniqueSources,
 } from "../../universal/resource.ts";
-import { isCodePartialNode } from "../plugin/node/code-partial.ts";
+import { codePartialSNDF } from "../plugin/node/code-partial.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -89,13 +89,13 @@ export function mardownParserPipeline(init: {
       identityFromNode: (node) => {
         if (node.type === "code") {
           const code = node as Code;
-          if (isCodePartialNode(code)) {
+          if (codePartialSNDF.is(code)) {
             return {
               supplier: "code-partial",
               identity: code.data.codePartial.identity,
             };
           } else if (
-            isCodeWithFrontmatterNode(code) &&
+            codeFrontmatterNDF.is(code) &&
             !isCodeConsumedAsHeadingFrontmatterNode(code)
           ) {
             if (code.data.codeFM.pi.posCount > 0) {

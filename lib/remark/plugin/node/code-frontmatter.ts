@@ -59,8 +59,7 @@
  * - Does not mutate the code content; only attaches metadata on `node.data`.
  */
 
-import z from "@zod/zod";
-import type { Code, Root, RootContent } from "types/mdast";
+import type { Code, Node, Root } from "types/mdast";
 import { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import {
@@ -69,10 +68,9 @@ import {
 } from "../../../universal/code.ts";
 import {
   instructionsFromText,
-  PosixPIQuery,
   PosixStylePI,
-  queryPosixPI,
 } from "../../../universal/posix-pi.ts";
+import { DataSupplierNode, nodeDataFactory } from "../../mdast/safe-data.ts";
 
 /** The structured enrichment attached to a code node by this plugin. */
 export interface CodeFrontmatter {
@@ -87,33 +85,20 @@ export interface CodeFrontmatter {
   /** Parsed JSON5 object from trailing `{ ... }` (if any). */
   readonly attrs?: Record<string, unknown>;
   /** Parsed Processing Instructions (flags/tokens). */
-  readonly queryPI: <FlagsShape extends Record<string, unknown>>(
-    zodSchema?: z.ZodType<FlagsShape>,
-  ) => PosixPIQuery<FlagsShape>;
 }
 
 export const CODEFM_KEY = "codeFM" as const;
-export type CodeWithFrontmatterData = {
-  readonly codeFM: CodeFrontmatter;
-  [key: string]: unknown;
-};
+export type CodeFrontmatterKey = typeof CODEFM_KEY;
+export const codeFrontmatterNDF = nodeDataFactory<
+  CodeFrontmatterKey,
+  CodeFrontmatter
+>(CODEFM_KEY);
 
-export type CodeWithFrontmatterNode = Code & {
-  data: CodeWithFrontmatterData;
-};
-
-/**
- * Type guard: returns true if a `RootContent` node is a `code` node
- * that already carries CodeWithFrontmatterNode at the default store key.
- */
-export function isCodeWithFrontmatterNode(
-  node: RootContent,
-): node is CodeWithFrontmatterNode {
-  if (node.type === "code" && node.data && CODEFM_KEY in node.data) {
-    return true;
-  }
-  return false;
-}
+export type CodeWithFrontmatterNode<N extends Node = Code> = DataSupplierNode<
+  N,
+  CodeFrontmatterKey,
+  CodeFrontmatter
+>;
 
 /** Configuration options for the CodeFrontmatter plugin. */
 export interface CodeFrontmatterOptions {
@@ -217,8 +202,6 @@ export function parseFrontmatterFromCode(
 
   const { pi, attrs } = instructionsFromText(`${lang} ${meta}`.trim(), options);
 
-  let queryPI: PosixPIQuery | undefined = undefined;
-
   // Attach language for convenience; keep `meta` in case callers want it.
   return {
     lang: lang || undefined,
@@ -226,13 +209,6 @@ export function parseFrontmatterFromCode(
     meta: meta || undefined,
     pi,
     attrs,
-    queryPI: <FlagsShape extends Record<string, unknown>>(
-      zodSchema?: z.ZodType<FlagsShape>,
-    ) => {
-      if (queryPI) return queryPI as PosixPIQuery<FlagsShape>;
-      queryPI = queryPosixPI<FlagsShape>(pi, undefined, { zodSchema });
-      return queryPI as PosixPIQuery<FlagsShape>;
-    },
   };
 }
 
