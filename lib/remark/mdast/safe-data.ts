@@ -291,10 +291,19 @@ export interface DataFactory<
   is<N extends Node>(node: N): node is DataSupplierNode<N, Key, T>;
 
   collect(root: Root): readonly T[];
+
+  /**
+   * Like collect(), but returns the owning nodes instead of the values.
+   */
+  collectNodes<N extends Node>(
+    root: Root,
+  ): readonly DataSupplierNode<N, Key, T>[];
+
   forEach(
     root: Root,
     fn: (value: T, owner: DataSupplierNode<Node, Key, T>) => void,
   ): void;
+
   hasAny(root: Root): boolean;
 }
 
@@ -361,6 +370,16 @@ export function nodeDataFactory<
       return collectData<T, Key>(root, key);
     },
 
+    collectNodes<N extends Node>(
+      root: Root,
+    ): readonly DataSupplierNode<N, Key, T>[] {
+      const out: DataSupplierNode<Node, Key, T>[] = [];
+      forEachData<T, Key>(root, key, (_value, owner) => {
+        out.push(owner as DataSupplierNode<Node, Key, T>);
+      });
+      return out as DataSupplierNode<N, Key, T>[];
+    },
+
     forEach(
       root: Root,
       fn: (value: T, owner: DataSupplierNode<Node, Key, T>) => void,
@@ -422,6 +441,14 @@ export interface ArrayDataFactory<
 
   // Flatten all arrays from all nodes into a single array
   collect(root: Root): readonly T[];
+
+  /**
+   * Like collect(), but returns the owning nodes (one per node) instead
+   * of individual items. Nodes with empty or non-array buckets are skipped.
+   */
+  collectNodes<N extends Node>(
+    root: Root,
+  ): readonly DataSupplierNode<N, Key, T[]>[];
 
   // Visit each individual item together with its owning node
   forEach(
@@ -487,6 +514,25 @@ export function nodeArrayDataFactory<
         if (Array.isArray(bucket)) out.push(...bucket);
       }
       return out;
+    },
+
+    collectNodes<N extends Node>(
+      root: Root,
+    ): readonly DataSupplierNode<N, Key, T[]>[] {
+      const out: DataSupplierNode<Node, Key, T[]>[] = [];
+      const seen = new Set<DataSupplierNode<Node, Key, T[]>>();
+
+      forEachData<T[], Key>(root, key, (bucket, owner) => {
+        if (!Array.isArray(bucket) || bucket.length === 0) return;
+
+        const typedOwner = owner as DataSupplierNode<Node, Key, T[]>;
+        if (seen.has(typedOwner)) return;
+
+        seen.add(typedOwner);
+        out.push(typedOwner);
+      });
+
+      return out as DataSupplierNode<N, Key, T[]>[];
     },
 
     forEach(
@@ -806,6 +852,16 @@ export function safeNodeDataFactory<
       return collectData<T, Key>(root, key);
     },
 
+    collectNodes<N extends Node>(
+      root: Root,
+    ): readonly DataSupplierNode<N, Key, T>[] {
+      const out: DataSupplierNode<Node, Key, T>[] = [];
+      forEachData<T, Key>(root, key, (_value, owner) => {
+        out.push(owner as DataSupplierNode<Node, Key, T>);
+      });
+      return out as DataSupplierNode<N, Key, T>[];
+    },
+
     forEach(
       root: Root,
       fn: (value: T, owner: DataSupplierNode<Node, Key, T>) => void,
@@ -948,6 +1004,25 @@ export function safeNodeArrayDataFactory<
       return out;
     },
 
+    collectNodes<N extends Node>(
+      root: Root,
+    ): readonly DataSupplierNode<N, Key, T[]>[] {
+      const out: DataSupplierNode<Node, Key, T[]>[] = [];
+      const seen = new Set<DataSupplierNode<Node, Key, T[]>>();
+
+      forEachData<T[], Key>(root, key, (bucket, owner) => {
+        if (!Array.isArray(bucket) || bucket.length === 0) return;
+
+        const typedOwner = owner as DataSupplierNode<Node, Key, T[]>;
+        if (seen.has(typedOwner)) return;
+
+        seen.add(typedOwner);
+        out.push(typedOwner);
+      });
+
+      return out as DataSupplierNode<N, Key, T[]>[];
+    },
+
     forEach(
       root: Root,
       fn: (item: T, owner: DataSupplierNode<Node, Key, T[]>) => void,
@@ -971,3 +1046,44 @@ export function safeNodeArrayDataFactory<
     },
   };
 }
+
+export const flexibleTextSchema = z.union([z.string(), z.array(z.string())]);
+export type FlexibleText = z.infer<typeof flexibleTextSchema>;
+
+export const mergeFlexibleText = (
+  shortcut?: FlexibleText,
+  long?: FlexibleText,
+): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  if (shortcut !== undefined) {
+    if (Array.isArray(shortcut)) {
+      for (const s of shortcut) {
+        if (!seen.has(s)) {
+          seen.add(s);
+          out.push(s);
+        }
+      }
+    } else if (!seen.has(shortcut)) {
+      seen.add(shortcut);
+      out.push(shortcut);
+    }
+  }
+
+  if (long !== undefined) {
+    if (Array.isArray(long)) {
+      for (const s of long) {
+        if (!seen.has(s)) {
+          seen.add(s);
+          out.push(s);
+        }
+      }
+    } else if (!seen.has(long)) {
+      seen.add(long);
+      out.push(long);
+    }
+  }
+
+  return out;
+};

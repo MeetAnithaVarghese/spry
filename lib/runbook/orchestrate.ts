@@ -10,6 +10,8 @@ import { Code, Node } from "types/mdast";
 import { flexibleNodeIssues } from "../remark/mdast/issue.ts";
 import {
   DataSupplierNode,
+  flexibleTextSchema,
+  mergeFlexibleText,
   safeNodeDataFactory,
 } from "../remark/mdast/safe-data.ts";
 import {
@@ -37,25 +39,18 @@ import { safeJsonStringify } from "../universal/tmpl-literal-aide.ts";
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
-const flexibleTextSchema = z.union([z.string(), z.array(z.string())]);
-export type FlexibleText = z.infer<typeof flexibleTextSchema>;
+export type CodeSpawnableCaptureSpec = {
+  readonly nature: "relFsPath";
+  readonly fsPath: string;
+} | {
+  readonly nature: "memory";
+  readonly key: string;
+};
 
-/**
- * codeSpawnablePiFlags = {
- *   capture?: string;
- *   interpolate?: string;
- *   C?: string;  // shorthand
- *   I?: string;  // shorthand
- * }
- *
- * The transform ensures:
- *   - if C is present → capture = C
- *   - if I is present → interpolate = I
- */
 export const codeSpawnablePiFlagsSchema = z.object({
   descr: z.string().optional(),
   dep: flexibleTextSchema.optional(), // collected as multiple --dep
-  capture: z.string().optional(),
+  capture: flexibleTextSchema.optional(),
   interpolate: z.boolean().optional(),
   silent: z.boolean().optional(),
   gitignore: z.union([z.string(), z.boolean()]).optional(),
@@ -69,16 +64,17 @@ export const codeSpawnablePiFlagsSchema = z.object({
   /* graph/branch */ G: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
 }).transform((raw) => {
-  const depRaw = raw.D ?? raw.dep; // TODO: merge these, not pick one or other
-  const graphRaw = raw.G ?? raw.graph; // TODO: merge these and branch, not pick one or other
-  const capture = raw.C ?? raw.capture; // TODO: merge these, not pick one or other
+  const depRaw = mergeFlexibleText(raw.D, raw.dep);
+  const graphRaw = mergeFlexibleText(raw.G, raw.graph);
+  const capture = mergeFlexibleText(raw.C, raw.capture);
   return {
     description: raw.descr,
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
-    capture,
-    captureDest: capture
-      ? capture.startsWith("./") ? "file" as const : "memory" as const
-      : undefined,
+    capture: capture.map((c) =>
+      (c.startsWith("./")
+        ? { nature: "relFsPath", fsPath: c }
+        : { nature: "memory", key: c }) satisfies CodeSpawnableCaptureSpec
+    ),
     interpolate: raw.I ?? raw.interpolate,
     gitignore: raw.gitignore,
     graphs: graphRaw
@@ -283,27 +279,27 @@ export type TaskExecCapture = {
 };
 
 export const typicalOnCapture = async (
-  ci: string,
+  cs: CodeSpawnableCaptureSpec,
   tec: TaskExecCapture,
   capturedTaskExecs: Record<string, TaskExecCapture>,
 ) => {
-  if (ci.startsWith("./")) {
-    await Deno.writeTextFile(ci, ensureTrailingNewline(tec.text()));
+  if (cs.nature === "relFsPath") {
+    await Deno.writeTextFile(cs.fsPath, ensureTrailingNewline(tec.text()));
   } else {
-    capturedTaskExecs[ci] = tec;
+    capturedTaskExecs[cs.key] = tec;
   }
 };
 
 export const gitignorableOnCapture = async (
-  ci: string,
+  cs: CodeSpawnableCaptureSpec,
   tec: TaskExecCapture,
   capturedTaskExecs: Record<string, TaskExecCapture>,
 ) => {
-  if (ci.startsWith("./")) {
-    await Deno.writeTextFile(ci, ensureTrailingNewline(tec.text()));
+  if (cs.nature === "relFsPath") {
+    await Deno.writeTextFile(cs.fsPath, ensureTrailingNewline(tec.text()));
     const { gitignore: ignore } = tec.cell.data.codeSpawnable.cspif;
     if (ignore) {
-      const gi = ci.slice("./".length);
+      const gi = cs.fsPath.slice("./".length);
       if (typeof ignore === "string") {
         await gitignore(gi, ignore);
       } else {
@@ -311,7 +307,7 @@ export const gitignorableOnCapture = async (
       }
     }
   } else {
-    capturedTaskExecs[ci] = tec;
+    capturedTaskExecs[cs.key] = tec;
   }
 };
 
@@ -321,7 +317,7 @@ export function execTasksState(
   opts?: {
     unsafeInterp?: ReturnType<typeof unsafeInterpolator>;
     onCapture?: (
-      ci: string,
+      cs: CodeSpawnableCaptureSpec,
       tec: TaskExecCapture,
       capturedTaskExecs: Record<string, TaskExecCapture>,
     ) => void | Promise<void>;
@@ -346,7 +342,7 @@ export function execTasksState(
   const td = new TextDecoder();
 
   const isCapturable = (cell: CodeSpawnableNode) =>
-    cell.data.codeSpawnable.cspif.capture;
+    cell.data.codeSpawnable.cspif.capture.length > 0;
 
   const prepTaskExecCapture = (
     tec: Pick<
@@ -370,17 +366,8 @@ export function execTasksState(
   };
 
   const captureTaskExec = async (cap: TaskExecCapture) => {
-    const { cell: { data: { codeFM: { pi } } } } = cap;
-    const captureFlags = [
-      pi.flags.capture,
-      pi.flags.C,
-    ].filter((v) => v !== undefined);
-
-    const captureInstructions = captureFlags.flatMap((v) =>
-      typeof v === "boolean" ? [pi.pos[0]] : Array.isArray(v) ? v : [v]
-    ).filter((v) => v !== undefined).filter((v) => typeof v === "string");
-
-    for (const ci of captureInstructions) {
+    const { cspif } = cap.cell.data.codeSpawnable;
+    for (const ci of cspif.capture) {
       await onCapture(ci, cap, capturedTaskExecs);
     }
   };

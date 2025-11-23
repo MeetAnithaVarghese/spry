@@ -18,13 +18,12 @@
  *
  * Each `code` node is first parsed using `parseCodeFrontmatterFromCode`, which
  * extracts processing instructions (PIs) and attributes from the fence
- * language/meta. By default, a code block is treated as an “import spec”
- * block if its PI flags include `--inject`.
+ * language/meta.
  *
  * Example spec block:
  *
  * ```md
- * ```import --inject --base ./workspace
+ * ```import --base ./workspace
  * # lines starting with # are comments
  * sql  **\/*.sql
  * utf8 assets/**\/*.png
@@ -207,7 +206,7 @@
  */
 import { type WalkEntry, walkSync } from "@std/fs";
 import { globToRegExp, isAbsolute, relative } from "@std/path";
-import type { Code, Root } from "types/mdast";
+import type { Code, Data, Node, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import {
@@ -217,10 +216,32 @@ import {
   relativeUrlAsFsPath,
 } from "../../../universal/content-acquisition.ts";
 // Adjust this import to wherever you export it:
+import z from "@zod/zod";
+import { queryPosixPI } from "../../../universal/posix-pi.ts";
+import { flexibleNodeIssues } from "../../mdast/issue.ts";
+import {
+  DataSupplierNode,
+  flexibleTextSchema,
+  mergeFlexibleText,
+  nodeDataFactory,
+} from "../../mdast/safe-data.ts";
 import { parseFrontmatterFromCode } from "./code-frontmatter.ts";
 
+export const injectablesPiFlagsSchema = z.object({
+  base: flexibleTextSchema.optional(),
+
+  // shortcuts
+  /* base */ B: flexibleTextSchema.optional(),
+}).transform((raw) => {
+  return {
+    base: mergeFlexibleText(raw.base, raw.B),
+  };
+});
+
+export type InjectablesPiFlags = z.infer<typeof injectablesPiFlagsSchema>;
+
 /** Shape of the injectedNode metadata we attach to mdast.Code.data. */
-export type InjectedNodeSource =
+export type InjectedContent =
   & { isRefToBinary: boolean; isContentAcquired: boolean }
   & (
     | {
@@ -236,20 +257,17 @@ export type InjectedNodeSource =
     }
   );
 
-export interface InjectedNode {
-  isInjected: true;
-  source?: InjectedNodeSource;
-}
+// TODO: change injectedNode to injectedContent
+export const INJECTED_KEY = "injectedContent" as const;
+export type InjectedKey = typeof INJECTED_KEY;
+export const injectedIssues = flexibleNodeIssues("issues");
+export const injectedNDF = nodeDataFactory<
+  InjectedKey,
+  InjectedContent
+>(INJECTED_KEY);
 
-/** Convenience type guard for codeFrontmatter and friends. */
-export function isInjectedCode(
-  node: Code,
-): node is Code & { data: { injectedNode: InjectedNode } } {
-  return Boolean(
-    node.data && (node.data as { injectedNode?: InjectedNode }).injectedNode
-      ?.isInjected,
-  );
-}
+export type InjectedContentNode<N extends Node = Node & { data: Data }> =
+  DataSupplierNode<N, InjectedKey, InjectedContent>;
 
 /** Internal directive type: local file(s) or remote URL. */
 type Directive =
@@ -286,7 +304,7 @@ export interface InjectedNodesOptions {
    *       injected nodes into its place.
    *
    * If omitted, the default behavior is:
-   *   - If the parsed PI has `--inject`, return `"retain-after-injections"`.
+   *   - If the lang is `import`, return `"retain-after-injections"`.
    *   - Otherwise, return `false`.
    */
   readonly isSpecBlock?: (
@@ -379,8 +397,10 @@ function parseDirectivesFromSpec(
  *
  * You can override this via plugin options.
  */
-function defaultIsSpecBlock(node: Code) {
-  return node.lang === "import" ? "retain-after-injections" : false;
+function defaultIsSpecBlock(node: Node) {
+  if (node.type !== "code") return false;
+  const code = node as Code;
+  return code.lang === "import" ? "retain-after-injections" : false;
 }
 
 /**
@@ -410,30 +430,33 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
       mode: "retain-after-injections" | "remove-before-injections";
     }[] = [];
 
-    visit(tree, "code", (node: Code, index, parent) => {
+    visit(tree, "code", (code: Code, index, parent) => {
       if (parent == null || index == null) return;
 
-      const parsed = parseFrontmatterFromCode(node);
-      const mode = isSpecBlock(node, parsed);
+      const parsed = parseFrontmatterFromCode(code);
+      const mode = isSpecBlock(code, parsed);
 
-      if (!mode) return; // not a spec block
+      if (!parsed || !mode) return; // not a spec block
 
-      // Determine base dir(s) from PI flags
-      const flags = parsed?.pi?.flags ?? {};
-      const suppliedBase = (flags["base"] ?? flags["baseDir"]) as
-        | string
-        | string[]
-        | boolean
-        | undefined;
-
-      let base: string | string[];
-      if (!suppliedBase || typeof suppliedBase === "boolean") {
-        base = Deno.cwd();
-      } else {
-        base = suppliedBase;
+      const ppiq = queryPosixPI<InjectablesPiFlags>(parsed.pi, undefined, {
+        zodSchema: injectablesPiFlagsSchema,
+      });
+      const cspif = ppiq.safeFlags();
+      if (!cspif.success) {
+        injectedIssues.add(code, {
+          severity: "error",
+          message:
+            `Error reading code spawnable flags (line ${code.position?.start.line}):\n${
+              z.prettifyError(cspif.error)
+            }`,
+          error: cspif.error,
+        });
+        return;
       }
 
-      const directives = parseDirectivesFromSpec(node.value ?? "", base);
+      const { base } = cspif.data;
+
+      const directives = parseDirectivesFromSpec(code.value ?? "", base);
       if (!directives.length) return;
 
       const injectedNodesForThisSpec: Code[] = [];
@@ -442,7 +465,7 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
         const { language } = d;
         const isBinaryHint = language === "utf8";
 
-        let pi: string;
+        let pi: string[];
         let importedFrom: string;
         let value = "";
 
@@ -456,7 +479,7 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
             importedFrom,
             isBinaryHint ? "--is-binary" : "",
             ...d.restParts,
-          ].join(" ").trim();
+          ];
 
           if (!isBinaryHint) {
             // Non-binary local file: sync read into node.value
@@ -473,14 +496,14 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
             importedFrom,
             isBinaryHint ? "--is-binary" : "",
             ...d.restParts,
-          ].join(" ").trim();
+          ];
 
           // Remote: leave value empty; actual bytes are via rs in data.injectedNode.source
           value = "";
         }
 
         // Build injectedNode.source metadata
-        let source: InjectedNodeSource | undefined;
+        let source: InjectedContent | undefined;
 
         if (isBinaryHint && d.kind === "local") {
           source = {
@@ -501,6 +524,8 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
           };
         } else {
           // Plain text local file (it's already in node.value)
+          // so remove `--import <source>`
+          pi = pi.filter((_, i) => i !== 1 && i !== 2);
           source = {
             isRefToBinary: false,
             isContentAcquired: true,
@@ -512,32 +537,25 @@ export const injectedNodes: Plugin<[InjectedNodesOptions?], Root> = (
         const injected: Code = {
           type: "code",
           lang: language,
-          meta: pi,
+          meta: pi.join(" ").trim(),
           value,
-          data: {
-            ...(node.data ?? {}),
-            injectedNode: {
-              isInjected: true,
-              source,
-            } satisfies InjectedNode,
-          },
           // Optional position mapping approximate to spec line:
-          position: node.position
+          position: code.position
             ? {
               start: {
-                line: node.position.start.line + (d.line ?? 0),
+                line: code.position.start.line + (d.line ?? 0),
                 column: 1,
                 offset: undefined,
               },
               end: {
-                line: node.position.start.line + (d.line ?? 0),
+                line: code.position.start.line + (d.line ?? 0),
                 column: 1,
                 offset: undefined,
               },
             }
             : undefined,
         };
-
+        injectedNDF.attach(injected, source);
         injectedNodesForThisSpec.push(injected);
       }
 

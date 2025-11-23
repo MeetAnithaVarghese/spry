@@ -45,6 +45,7 @@ import {
   uniqueSources,
 } from "../../universal/resource.ts";
 import { codePartialSNDF } from "../plugin/node/code-partial.ts";
+import { injectedNodes } from "../plugin/node/injected-nodes.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -68,6 +69,7 @@ export function mardownParserPipeline(init: {
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatterPlugin) // parses extract YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
+    .use(injectedNodes) // generate code cells from local or remote files (text is injected, binaries are reference-only)
     .use(headingFrontmatterPlugin) // find closest YAML blocks near headings and attached to heading.data[headingFM]
     .use(codeFrontmatterPlugin, { // finds code cells and extract posix PI and attributes to treat as "code frontmatter"
       coerceNumbers: true, // "9" -> 9

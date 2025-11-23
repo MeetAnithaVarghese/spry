@@ -42,8 +42,8 @@ import {
   ExecutionPlanVisualStyle,
 } from "../universal/task-visuals.ts";
 import {
+  CodeSpawnableCaptureSpec,
   codeSpawnableIssues,
-  CodeSpawnablePiFlags,
   execTasksState,
   executeTasks,
   gitignorableOnCapture,
@@ -66,7 +66,7 @@ export type LsTaskRow = {
   flags: {
     isInterpolated: boolean;
     isSilent: boolean;
-    isCaptured: CodeSpawnablePiFlags["captureDest"];
+    isCaptured: CodeSpawnableCaptureSpec | false;
     isGitIgnored: boolean;
     hasIssues: boolean;
   };
@@ -81,7 +81,7 @@ function lsFlagsField<Row extends LsTaskRow>():
     defaultColor: gray,
     // deno-fmt-ignore
     format: (v) =>
-        `${v.hasIssues ? brightRed("E") : " "} ${brightYellow(v.isInterpolated ? "I" : " ")} ${blue(v.isCaptured ? (v.isCaptured == "file" ? "CF" : "CM") : "  ")} ${v.isGitIgnored ? "G" : " "} ${v.isGitIgnored ? "S" : " "}`,
+        `${v.hasIssues ? brightRed("E") : " "} ${brightYellow(v.isInterpolated ? "I" : " ")} ${blue(v.isCaptured ? (v.isCaptured.nature == "relFsPath" ? "CF" : "CM") : "  ")} ${v.isGitIgnored ? "G" : " "} ${v.isGitIgnored ? "S" : " "}`,
   };
 }
 
@@ -417,7 +417,7 @@ export class CLI {
               engine: sh.strategy(task.code.value),
               flags: {
                 isInterpolated: cspif.interpolate ? true : false,
-                isCaptured: cspif.captureDest,
+                isCaptured: cspif.capture.length > 0 ? cspif.capture[0] : false,
                 isGitIgnored: cspif.gitignore ? true : false,
                 isSilent: cspif.silent ?? false,
                 hasIssues: codeSpawnableIssues.get(task.code).length > 0

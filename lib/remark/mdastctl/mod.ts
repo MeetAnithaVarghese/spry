@@ -9,9 +9,17 @@ import { Command } from "@cliffy/command";
 import { CompletionsCommand } from "@cliffy/command/completions";
 import { HelpCommand } from "@cliffy/command/help";
 
-import { bold, cyan, gray, magenta, red, yellow } from "@std/fmt/colors";
+import {
+  bold,
+  brightYellow,
+  cyan,
+  gray,
+  magenta,
+  red,
+  yellow,
+} from "@std/fmt/colors";
 
-import type { Heading, Node } from "types/mdast";
+import type { Code, Heading, Node } from "types/mdast";
 
 import { ListerBuilder } from "../../universal/lister-tabular-tui.ts";
 import { TreeLister } from "../../universal/lister-tree-tui.ts";
@@ -27,6 +35,7 @@ import {
 
 import { doctor } from "../../universal/doctor.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
+import { injectedNDF } from "../plugin/node/injected-nodes.ts";
 
 // ---------------------------------------------------------------------------
 // CLI wiring
@@ -119,6 +128,7 @@ export class CLI {
       .command("tree", this.treeCommand())
       .command("class", this.classCommand())
       .command("schema", this.schemaCommand())
+      .command("injected", this.injectedCommand())
       .command("md", this.mdCommand());
   }
 
@@ -223,17 +233,145 @@ export class CLI {
             });
           }
 
-          const ids: Array<keyof TabularRow & string> = [
-            "id",
+          if (options.data) {
+            builder.select(
+              "id",
+              "file",
+              "type",
+              "depth",
+              "headingPath",
+              "name",
+              "classInfo",
+              "dataKeys",
+            );
+          } else {
+            builder.select(
+              "id",
+              "file",
+              "type",
+              "depth",
+              "headingPath",
+              "name",
+              "classInfo",
+            );
+          }
+
+          const lister = builder.build();
+          await lister.ls(true);
+        },
+      );
+  }
+
+  injectedCommand(cmdName = "injected") {
+    return this.baseCommand({ examplesCmd: cmdName })
+      .description(`list injected/imported mdast nodes`)
+      .arguments("[paths...:string]")
+      .option("--data", "Include node.data keys as a DATA column.")
+      .option("--no-color", "Show output without using ANSI colors")
+      .action(
+        async (options, ...paths: string[]) => {
+          type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+          const allRows: {
+            code: Mutable<
+              ReturnType<typeof injectedNDF.collectNodes<Code>>
+            >[number];
+            file: string;
+            lang?: string | null | undefined;
+            meta?: string | null | undefined;
+            imported: string;
+            dataKeys: string;
+            isRefToBinary: string;
+            isContentAcquired: string;
+          }[] = [];
+          for await (
+            const viewable of this.viewableMarkdownASTs(
+              this.conf?.ensureGlobalFiles,
+              paths,
+              this.conf?.defaultFiles ?? [],
+            )
+          ) {
+            const rows = injectedNDF.collectNodes<Code>(viewable.root);
+            allRows.push(
+              ...rows.map((code) => {
+                return {
+                  code,
+                  // deno-lint-ignore no-explicit-any
+                  file: viewable.fileRef(code as any),
+                  lang: code.lang,
+                  meta: code.meta,
+                  imported: String(code.data.injectedContent.importedFrom),
+                  dataKeys: Object.keys(code.data).join(", "),
+                  isRefToBinary: code.data.injectedContent.isRefToBinary
+                    ? "Yes"
+                    : "",
+                  isContentAcquired: code.data.injectedContent.isContentAcquired
+                    ? "Yes"
+                    : "",
+                };
+              }),
+            );
+          }
+
+          if (allRows.length === 0) {
+            console.log(gray("No injected nodes."));
+            return;
+          }
+
+          const useColor = options.color;
+
+          const builder = new ListerBuilder<typeof allRows[number]>()
+            .from(allRows)
+            .declareColumns(
+              "file",
+              "lang",
+              "meta",
+              "imported",
+              "dataKeys",
+              "isRefToBinary",
+              "isContentAcquired",
+            )
+            .requireAtLeastOneColumn(true)
+            .color(useColor)
+            .header(true)
+            .compact(false);
+
+          builder.field("file", "file", {
+            header: "FILE",
+            defaultColor: gray,
+          });
+          builder.field("lang", "lang", {
+            header: "LANG",
+            defaultColor: cyan,
+          });
+          builder.field("meta", "meta", {
+            header: "PI",
+            defaultColor: yellow,
+          });
+          builder.field("imported", "imported", {
+            header: "IMPORTED",
+            defaultColor: brightYellow,
+          });
+          builder.field("isRefToBinary", "isRefToBinary", {
+            header: "BIN?",
+            defaultColor: brightYellow,
+          });
+          builder.field("isContentAcquired", "isContentAcquired", {
+            header: "📃?",
+            defaultColor: brightYellow,
+          });
+          builder.field("dataKeys", "dataKeys", {
+            header: "DATA",
+            defaultColor: magenta,
+          });
+          builder.select(
+            "lang",
+            "meta",
+            "imported",
             "file",
-            "type",
-            "depth",
-            "headingPath",
-            "name",
-            "classInfo",
-          ];
-          if (options.data) ids.push("dataKeys");
-          builder.select(...ids);
+            "isRefToBinary",
+            "isContentAcquired",
+            "dataKeys",
+          );
 
           const lister = builder.build();
           await lister.ls(true);
@@ -361,7 +499,8 @@ export class CLI {
             "classInfo",
           ];
           if (options.data) ids.push("dataKeys");
-          builder.select(...ids);
+          // deno-lint-ignore no-explicit-any
+          builder.select(...ids as any);
 
           const lister = builder.build();
           await lister.ls(true);

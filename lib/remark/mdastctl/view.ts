@@ -113,6 +113,7 @@ export interface TabularRow {
   readonly id: number;
   readonly file: string;
   readonly type: RootContent["type"];
+  readonly node: Node;
   readonly depth: number;
   readonly headingPath: string;
   readonly name: string;
@@ -538,6 +539,7 @@ function buildPhysicalTabularRows(
       id: id++,
       file: fileRef(node),
       type: node.type,
+      node,
       depth,
       headingPath,
       name,
@@ -603,6 +605,7 @@ function buildIdentifierTabularRows(
           id: id++,
           file: fileRef(node),
           type: node.type,
+          node,
           depth,
           headingPath,
           name,
