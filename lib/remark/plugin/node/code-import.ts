@@ -159,7 +159,12 @@ export function codeImportSpecs(
 
   let specsSrc = code.value;
   if (importSF.success && importSF.data.interpolate) {
-    specsSrc = safeInterpolate(specsSrc, { code, importFM, cwd: Deno.cwd() });
+    specsSrc = safeInterpolate(specsSrc, {
+      code,
+      importFM,
+      cwd: Deno.cwd(),
+      env: Deno.env.toObject(),
+    });
   }
 
   const lines = specsSrc.split(/\r\n|\r|\n/);
