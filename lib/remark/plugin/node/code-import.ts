@@ -27,6 +27,7 @@ import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 // Adjust this import to wherever you export it:
 import z from "@zod/zod";
+import { relativeUrlAsFsPath } from "../../../universal/content-acquisition.ts";
 import {
   instructionsFromText,
   InstructionsResult,
@@ -40,6 +41,7 @@ import {
   strategyDecisions,
   tryParseHttpUrl,
 } from "../../../universal/resource.ts";
+import { safeInterpolate } from "../../../universal/safe-interpolate.ts";
 import { flexibleNodeIssues } from "../../mdast/issue.ts";
 import {
   DataSupplierNode,
@@ -51,16 +53,18 @@ import {
   CodeFrontmatter,
   parseFrontmatterFromCode,
 } from "./code-frontmatter.ts";
-import { relativeUrlAsFsPath } from "../../../universal/content-acquisition.ts";
 
 export const codeImportPiFlagsSchema = z.object({
   base: flexibleTextSchema.optional(),
+  interpolate: z.boolean().optional(),
 
   // shortcuts
   /* base */ B: flexibleTextSchema.optional(),
+  /* interpolate */ I: z.boolean().optional(),
 }).transform((raw) => {
   return {
     base: mergeFlexibleText(raw.base, raw.B),
+    interpolate: raw.I ?? raw.interpolate,
   };
 });
 
@@ -117,11 +121,6 @@ export const codeGenNDF = nodeDataFactory<CodeGeneratedKey, ImportedContent>(
 export type ImportedContentNode<N extends Node = Code & { data: Data }> =
   DataSupplierNode<N, CodeGeneratedKey, ImportedContent>;
 
-export const splitLinesTrimmed = (input: string): string[] => {
-  const lines = input.split(/\r\n|\r|\n/);
-  return lines.at(-1) === "" ? lines.slice(0, -1) : lines;
-};
-
 /**
  * Parse PI-style flags declared in the code fence’s metadata/frontmatter.
  *
@@ -145,6 +144,7 @@ export function codeImportSpecs(
       zodSchema: codeImportPiFlagsSchema,
     },
   );
+  if (!importQPI.hasFlag("base", "B")) importFM.pi.flags["base"] = ".";
   const importSF = importQPI.safeFlags();
   if (!importSF.success) {
     codeImportIssues.add(code, {
@@ -156,7 +156,19 @@ export function codeImportSpecs(
       error: importSF.error,
     });
   }
-  return { importFM, importQPI, importSF };
+
+  let specsSrc = code.value;
+  if (importSF.success && importSF.data.interpolate) {
+    specsSrc = safeInterpolate(specsSrc, { code, importFM, cwd: Deno.cwd() });
+  }
+
+  const lines = specsSrc.split(/\r\n|\r|\n/);
+  return {
+    importFM,
+    importQPI,
+    importSF,
+    specLines: lines.at(-1) === "" ? lines.slice(0, -1) : lines,
+  };
 }
 
 /**
@@ -180,19 +192,19 @@ export function* resourceProvenanceFromCode(
 ) {
   if (!cis || !cis.importSF.success) return;
 
-  const { importSF } = cis;
+  const { importSF, specLines } = cis;
   const codeStartLine = code.position?.start.line ?? 0;
   const { base: codeImportBase } = importSF.data;
 
   let lineNum = 0;
-  for (const ri of splitLinesTrimmed(code.value)) {
+  for (const line of specLines) {
     lineNum++;
-    const ir = instructionsFromText(ri);
+    const ir = instructionsFromText(line);
     const ppiq = queryPosixPI(ir.pi);
     if (ir.pi.args.length < 2) {
       codeImportIssues.add(code, {
         severity: "error",
-        message: `Import spec \`${ri}\` on line ${
+        message: `Import spec \`${line}\` on line ${
           codeStartLine + lineNum
         }) is not valid (must have "<label> <pathOrGlobOrUrl> ..."), skipping.`,
       });
@@ -207,7 +219,7 @@ export function* resourceProvenanceFromCode(
       | "candidatePath"
       | "lineNumInRawInstructions"
     > = {
-      rawInstructions: ri,
+      rawInstructions: line,
       ir,
       ppiq,
       candidatePath,
@@ -283,12 +295,13 @@ export function* prepareCodeNodes(
     const isBinaryHint = language === "utf8" ||
       (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false);
 
+    const rest = sd.provenance.ir.pi.args.slice(2);
     let meta: string[];
     let value = "";
     let isContentAcquired = false;
 
     if (strategy.target === "local-fs") {
-      meta = [relative(base, path), "--import", path];
+      meta = [relative(base, path), "--import", path, ...rest];
 
       // Non-binary local file: sync read into node.value
       if (!isBinaryHint && readLocalFsText) {
@@ -297,7 +310,7 @@ export function* prepareCodeNodes(
       }
     } else {
       const url = strategy.url?.toString() ?? path;
-      meta = [relativeUrlAsFsPath(base, url), "--import", url];
+      meta = [relativeUrlAsFsPath(base, url), "--import", url, ...rest];
     }
 
     const position = code.position

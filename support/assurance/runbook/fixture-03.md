@@ -2,8 +2,8 @@ This _generates_ `mdast` `code` nodes either as immediately imported files (when
 the source is not marked as `utf8`) or as a ref when it's `utf8`. Unless you
 include `import --base` the default base directory is `.`.
 
-```import
-bash **/*.ts --graph INJECTED_BAD_TS
+```import --interpolate
+bash **/*.ts --graph INJECTED_BAD_TS --cwd ${cwd}
 text **/* --graph INJECTED_FS_TEXT
 utf8 **/* --graph INJECTED_FS_BIN
 json https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json --label --graph INJECTED_REMOTE
