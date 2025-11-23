@@ -7,7 +7,6 @@
  * - Unified tabular rows for physical "ls" style views
  */
 
-import { basename } from "@std/path";
 import type { Heading, Node, Root, RootContent } from "types/mdast";
 import {
   collectSectionsFromRoot,
@@ -69,14 +68,7 @@ export async function* viewableMarkdownASTs(
       provenance: md.file.path,
       root: md.mdastRoot,
       source: md.mdSrcText,
-      fileRef: md.resource.strategy.target === "remote-url"
-        ? (() => basename(md.file.path))
-        : ((node) => {
-          const file = basename(md.file.path);
-          const line = node?.position?.start?.line;
-          if (typeof line !== "number") return file;
-          return `${file}:${line}`;
-        }),
+      fileRef: md.fileRef,
       rootId: `${md.file.path}#root`,
       label: md.resource.provenance.label ?? md.file.path,
       nodeSrcText: md.nodeSrcText,

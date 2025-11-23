@@ -10,7 +10,7 @@ import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
-import type { Code, Root } from "types/mdast";
+import type { Code, Root, RootContent } from "types/mdast";
 import { unified } from "unified";
 
 import docFrontmatterPlugin from "../plugin/doc/doc-frontmatter.ts";
@@ -28,7 +28,6 @@ import codePartialsPlugin, {
 import headingFrontmatterPlugin, {
   isCodeConsumedAsHeadingFrontmatterNode,
 } from "../plugin/node/heading-frontmatter.ts";
-import { injectedNodes } from "../plugin/node/injected-nodes.ts";
 import { classifiersFromFrontmatter } from "../plugin/node/node-classify-fm.ts";
 import nodeClassifierPlugin from "../plugin/node/node-classify.ts";
 import nodeIdentitiesPlugin from "../plugin/node/node-identities.ts";
@@ -45,7 +44,10 @@ import {
   vfileResourcesFactory,
 } from "../mdast/vfile-resource.ts";
 
+import { basename } from "@std/path";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
+import { resolveImportSpecs } from "../plugin/node/code-import.ts";
+import { insertCodeImportNodes } from "../plugin/node/code-insert.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -69,7 +71,8 @@ export function mardownParserPipeline(init: {
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatterPlugin) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
-    .use(injectedNodes) // generate code cells from local/remote files
+    .use(resolveImportSpecs) // find code cells which want to be imported from local/remote files
+    .use(insertCodeImportNodes) // generate code cells found by resolveImportSpecs
     .use(headingFrontmatterPlugin) // attach nearest YAML blocks to headings
     .use(codeFrontmatterPlugin, { // treat code cell PIs + attrs as "code frontmatter"
       coerceNumbers: true,
@@ -238,6 +241,14 @@ export async function* markdownASTs<
       mdastRoot,
       nodeSrcText: nst,
       mdSrcText: text,
+      fileRef: resource.strategy.target === "remote-url"
+        ? (() => basename(file.path))
+        : ((node?: RootContent) => {
+          const f = basename(file.path);
+          const l = node?.position?.start?.line;
+          if (typeof l !== "number") return f;
+          return `${f}:${l}`;
+        }),
     };
   }
 }

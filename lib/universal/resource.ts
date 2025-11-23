@@ -8,7 +8,7 @@
  * This file intentionally stays "core": no markdown, no domain-specific plugins.
  */
 
-import { expandGlob } from "@std/fs";
+import { expandGlob, expandGlobSync } from "@std/fs";
 import { contentType } from "@std/media-types";
 
 /* -------------------------------------------------------------------------- */
@@ -28,6 +28,7 @@ export type ResourceProvenance = {
 export type ResourceStrategy = {
   readonly target: "remote-url" | "local-fs";
   readonly encoding: "utf8-text" | "utf8-binary";
+  readonly url?: URL;
 };
 
 export type Resource<
@@ -53,7 +54,9 @@ export type Resource<
 /*                            Mime / encoding helpers                         */
 /* -------------------------------------------------------------------------- */
 
-const detectMimeFromPath = (path: ResourcePath): MimeType | undefined => {
+export const detectMimeFromPath = (
+  path: ResourcePath,
+): MimeType | undefined => {
   const dot = path.lastIndexOf(".");
   if (dot < 0) return undefined;
   const ext = path.slice(dot); // includes '.'
@@ -163,10 +166,10 @@ export type StrategiesInit<
   readonly isGlob?: (prov: P) => boolean | "auto";
 };
 
-const hasGlobChar = (s: string): boolean =>
+export const hasGlobChar = (s: string): boolean =>
   s.includes("*") || s.includes("?") || s.includes("[");
 
-const tryParseHttpUrl = (path: string): URL | undefined => {
+export const tryParseHttpUrl = (path: string): URL | undefined => {
   try {
     const url = new URL(path);
     return url.protocol === "http:" || url.protocol === "https:"
@@ -177,7 +180,7 @@ const tryParseHttpUrl = (path: string): URL | undefined => {
   }
 };
 
-async function* createResourcesForProvenance<
+export async function* createResourcesForProvenance<
   P extends ResourceProvenance,
   S extends ResourceStrategy = ResourceStrategy,
 >(
@@ -193,7 +196,7 @@ async function* createResourcesForProvenance<
   const url = tryParseHttpUrl(prov.path);
   const target: ResourceStrategy["target"] = url ? "remote-url" : "local-fs";
   const encoding = detectEncoding(prov.mimeType);
-  const baseStrategy: ResourceStrategy = { target, encoding };
+  const baseStrategy: ResourceStrategy = { target, encoding, url };
   const strategy = baseStrategy as S;
 
   const getFetcher = () =>
@@ -271,6 +274,52 @@ async function* createResourcesForProvenance<
   };
 
   yield resource;
+}
+
+/**
+ * Phase 2: assign strategies and attach basic loaders.
+ *
+ * - Classifies each provenance as `remote-url` or `local-fs`.
+ * - Detects MIME and encoding (`utf8-text` vs `utf8-binary`).
+ * - Handles glob expansion (if configured).
+ */
+export function* strategyDecisions<
+  P extends ResourceProvenance = ResourceProvenance,
+  S extends ResourceStrategy = ResourceStrategy,
+>(
+  provenances: Iterable<P>,
+  init?: StrategiesInit<P>,
+) {
+  const isGlob = init?.isGlob;
+
+  for (const prov of provenances) {
+    const path = prov.path;
+    const url = tryParseHttpUrl(path);
+    const target: ResourceStrategy["target"] = url ? "remote-url" : "local-fs";
+    const encoding = detectEncoding(prov.mimeType);
+    const baseStrategy: ResourceStrategy = { target, encoding, url };
+    const strategy = baseStrategy as S;
+
+    // Glob handling only for non-URLs.
+    if (!url) {
+      const decision = !isGlob || isGlob(prov);
+      const treatAsGlob = decision === true ||
+        (decision === "auto" && hasGlobChar(path));
+
+      if (treatAsGlob) {
+        for (const entry of expandGlobSync(path)) {
+          const childProv: P = {
+            ...prov,
+            path: entry.path as ResourcePath,
+          };
+          yield { provenance: childProv, strategy };
+        }
+        continue;
+      }
+    }
+
+    yield { provenance: prov, strategy };
+  }
 }
 
 /**

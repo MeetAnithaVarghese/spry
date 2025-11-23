@@ -13,7 +13,7 @@ export function flexibleNodeIssues<Key extends string, Baggage = unknown>(
     Key,
     Issue<
       "info" | "warning" | "error" | "fatal",
-      { error: Error | z.ZodError } & Baggage
+      { error?: Error | z.ZodError } & Baggage
     >
   >(key);
 }

@@ -252,13 +252,7 @@ export class CLI {
       & Parameters<typeof markdownTasks>[1],
   ) {
     const mt = await markdownTasks(
-      markdownASTs(positional.length ? positional : defaults, {
-        onError: (src, error) => {
-          console.error({ src, error });
-          return false;
-        },
-        ...options, // for codePartialsCollec
-      }),
+      markdownASTs(positional.length ? positional : defaults, options),
       options, // for "includeTask"
     );
     this.emitTaskErrors(mt);
@@ -413,7 +407,7 @@ export class CLI {
               name: task.taskId(),
               deps: task.taskDeps().join(", "),
               descr: cspif.description ?? "",
-              origin: task.md.fileRef(task.code, Deno.cwd()),
+              origin: task.md.fileRef(task.code),
               engine: sh.strategy(task.code.value),
               flags: {
                 isInterpolated: cspif.interpolate ? true : false,
