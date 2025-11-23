@@ -49,8 +49,15 @@ export interface ViewableMarkdownAST {
   readonly fileRef: (node?: RootContent) => string;
   readonly rootId: string;
   readonly label: string;
-  readonly origin: Yielded<Awaited<ReturnType<typeof markdownASTs>>>["origin"];
-  readonly mdText: Yielded<Awaited<ReturnType<typeof markdownASTs>>>["mdText"];
+  readonly origin: Yielded<
+    Awaited<ReturnType<typeof markdownASTs>>
+  >["resource"];
+  readonly mdSrcText: Yielded<
+    Awaited<ReturnType<typeof markdownASTs>>
+  >["mdSrcText"];
+  readonly nodeSrcText: Yielded<
+    Awaited<ReturnType<typeof markdownASTs>>
+  >["nodeSrcText"];
 }
 
 export async function* viewableMarkdownASTs(
@@ -59,23 +66,22 @@ export async function* viewableMarkdownASTs(
 ) {
   for await (const md of markdownASTs(src, options)) {
     yield {
-      provenance: typeof md.origin.provenance === "string"
-        ? md.origin.provenance
-        : md.origin.provenance.path,
+      provenance: md.file.path,
       root: md.mdastRoot,
-      source: md.text,
-      fileRef: md.origin.nature === "remote-url"
-        ? (() => basename(md.origin.label))
+      source: md.mdSrcText,
+      fileRef: md.resource.strategy.target === "remote-url"
+        ? (() => basename(md.file.path))
         : ((node) => {
-          const file = basename(md.origin.label);
+          const file = basename(md.file.path);
           const line = node?.position?.start?.line;
           if (typeof line !== "number") return file;
           return `${file}:${line}`;
         }),
-      rootId: `${md.origin.label}#root`,
-      label: md.origin.label,
-      origin: md.origin,
-      mdText: md.mdText,
+      rootId: `${md.file.path}#root`,
+      label: md.resource.provenance.label ?? md.file.path,
+      nodeSrcText: md.nodeSrcText,
+      mdSrcText: md.mdSrcText,
+      origin: md.resource,
     } satisfies ViewableMarkdownAST;
   }
 }

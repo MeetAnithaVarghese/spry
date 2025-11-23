@@ -110,12 +110,7 @@ export class CLI {
       ...(positional.length ? positional : defaults),
     ];
     if (merged.length > 0) {
-      yield* viewableMarkdownASTs(merged, {
-        onError: (src, error) => {
-          console.error({ src, error });
-          return false;
-        },
-      });
+      yield* viewableMarkdownASTs(merged);
     }
   }
 
@@ -879,7 +874,7 @@ export class CLI {
         const sectionMode = !!options.section;
 
         for await (
-          const { root, mdText, source } of this.viewableMarkdownASTs(
+          const { root, nodeSrcText, source } of this.viewableMarkdownASTs(
             this.conf?.ensureGlobalFiles,
             paths,
             this.conf?.defaultFiles ?? [],
@@ -890,7 +885,7 @@ export class CLI {
           if (!sectionMode) {
             // Simple mode: just slice each selected node from source
             for (const node of nodes) {
-              const snippet = mdText.sliceForNode(node);
+              const snippet = nodeSrcText.sliceForNode(node);
               if (snippet) allChunks.push(snippet);
             }
             continue;
@@ -908,7 +903,7 @@ export class CLI {
             }
           }
 
-          const sectionRanges = mdText.sectionRangesForHeadings(headings);
+          const sectionRanges = nodeSrcText.sectionRangesForHeadings(headings);
           if (sectionRanges.length > 0) {
             // We have at least one bona fide section in this file: emit only sections.
             for (const r of sectionRanges) {
@@ -917,7 +912,7 @@ export class CLI {
           } else {
             // No usable sections: fall back to per-node snippets for all selected nodes.
             for (const node of nodes) {
-              const snippet = mdText.sliceForNode(node);
+              const snippet = nodeSrcText.sliceForNode(node);
               if (snippet) allChunks.push(snippet);
             }
           }

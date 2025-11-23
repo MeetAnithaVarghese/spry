@@ -1,22 +1,18 @@
 /**
- * Markdown AST I/O and source-related helpers:
+ * Markdown AST I/O and orchestration helpers:
  *
- * - Acquiring markdown from files / URLs / stdin
- * - Configuring the remark processor + plugins
- * - Computing byte ranges for nodes and heading-based sections
- * - Slicing original source text for nodes / sections
+ * - Acquiring markdown via Resource + VFile (vfileResourcesFactory)
+ * - Configuring the remark/unified pipeline + plugins
+ * - Producing MDAST roots + mdText helpers for each markdown resource
  */
 
 import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
-import type { Code, Heading, Node, Root, RootContent } from "types/mdast";
+import type { Code, Root } from "types/mdast";
 import { unified } from "unified";
 
-import { remark } from "remark";
-
-import { VFile } from "vfile";
 import docFrontmatterPlugin from "../plugin/doc/doc-frontmatter.ts";
 import documentSchemaPlugin, {
   boldParagraphSectionRule,
@@ -27,25 +23,29 @@ import codeFrontmatterPlugin, {
 } from "../plugin/node/code-frontmatter.ts";
 import codePartialsPlugin, {
   codePartialsCollection,
+  codePartialSNDF,
 } from "../plugin/node/code-partial.ts";
 import headingFrontmatterPlugin, {
   isCodeConsumedAsHeadingFrontmatterNode,
 } from "../plugin/node/heading-frontmatter.ts";
+import { injectedNodes } from "../plugin/node/injected-nodes.ts";
 import { classifiersFromFrontmatter } from "../plugin/node/node-classify-fm.ts";
 import nodeClassifierPlugin from "../plugin/node/node-classify.ts";
 import nodeIdentitiesPlugin from "../plugin/node/node-identities.ts";
 
-import { basename, relative } from "@std/path";
+import {
+  provenanceFromPaths,
+  type ResourceProvenance,
+  type ResourceStrategy,
+} from "../../universal/resource.ts";
 
 import {
-  Source,
-  SourceLabel,
-  SourceProvenance,
-  sources,
-  uniqueSources,
-} from "../../universal/resource.ts";
-import { codePartialSNDF } from "../plugin/node/code-partial.ts";
-import { injectedNodes } from "../plugin/node/injected-nodes.ts";
+  isVFileResource,
+  type MarkdownProvenance,
+  vfileResourcesFactory,
+} from "../mdast/vfile-resource.ts";
+
+import { nodeSrcText } from "../mdast/node-src-text.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -55,7 +55,7 @@ export type Yielded<T> = T extends Generator<infer Y> ? Y
   : never;
 
 // ---------------------------------------------------------------------------
-// Remark orchestration
+// Remark / unified orchestration
 // ---------------------------------------------------------------------------
 
 export function mardownParserPipeline(init: {
@@ -67,27 +67,26 @@ export function mardownParserPipeline(init: {
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"]) // extracts to YAML node but does not parse
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
-    .use(docFrontmatterPlugin) // parses extract YAML and stores at md AST root
+    .use(docFrontmatterPlugin) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
-    .use(injectedNodes) // generate code cells from local or remote files (text is injected, binaries are reference-only)
-    .use(headingFrontmatterPlugin) // find closest YAML blocks near headings and attached to heading.data[headingFM]
-    .use(codeFrontmatterPlugin, { // finds code cells and extract posix PI and attributes to treat as "code frontmatter"
-      coerceNumbers: true, // "9" -> 9
-      onAttrsParseError: "ignore", // ignore invalid JSON5 instead of throwing
+    .use(injectedNodes) // generate code cells from local/remote files
+    .use(headingFrontmatterPlugin) // attach nearest YAML blocks to headings
+    .use(codeFrontmatterPlugin, { // treat code cell PIs + attrs as "code frontmatter"
+      coerceNumbers: true,
+      onAttrsParseError: "ignore",
     })
     .use(codePartialsPlugin, {
-      // finds code cells marked as `PARTIAL` and store them (should come after codeFrontmatterPlugin)
+      // collects PARTIAL code cells
       collect: (cp) => {
         codePartialsCollec?.register(cp);
       },
     })
     .use(nodeClassifierPlugin, {
-      // classifies nodes using instructions from markdown document and headings frontmatter
-      // be sure that all frontmatter plugins are run before this
+      // classify nodes using document + heading frontmatter
       classifiers: classifiersFromFrontmatter(),
     })
     .use(nodeIdentitiesPlugin, {
-      // establish identities last, after everything else is done for stability
+      // establish identities last, after all other enrichment
       identityFromNode: (node) => {
         if (node.type === "code") {
           const code = node as Code;
@@ -131,331 +130,114 @@ export function mardownParserPipeline(init: {
     });
 }
 
-/**
- * Typed metadata attached to each VFile created from a Source.
- *
- * Stored as `file.data.resource`.
- */
-export interface ResourceMeta<
-  PathKey extends string = "path",
-  SP extends SourceProvenance<PathKey> = SourceProvenance<PathKey>,
+// ---------------------------------------------------------------------------
+// markdownASTs — bridge from Resources → VFile + MDAST + mdText
+// ---------------------------------------------------------------------------
+
+export interface MarkdownASTsOptions<
+  P extends ResourceProvenance = MarkdownProvenance,
+  S extends ResourceStrategy = ResourceStrategy,
 > {
-  readonly origin: Source<PathKey, SP>;
-  readonly label: SourceLabel;
-  readonly nature: Source<PathKey, SP>["nature"];
-  readonly provenance: SP;
+  /**
+   * Optional preconfigured unified pipeline.
+   * Defaults to `mardownParserPipeline()` with a shared code partials collection.
+   */
+  readonly pipeline?: ReturnType<typeof mardownParserPipeline>;
+
+  /**
+   * Optional shared code partials collection. If provided and no pipeline is
+   * given, it will be wired into the default pipeline.
+   */
+  readonly codePartialsCollec?: ReturnType<typeof codePartialsCollection>;
+
+  /**
+   * Optional preconfigured VFile-capable ResourcesFactory.
+   * If omitted, `vfileResourcesFactory()` is used with its defaults.
+   */
+  readonly factory?: ReturnType<typeof vfileResourcesFactory<P, S>>;
 }
 
 /**
- * A VFile whose `data.resource` field carries typed resource metadata.
+ * Async generator that:
+ *
+ * 1. Uses a VFile-aware ResourcesFactory to load markdown text into VFiles.
+ * 2. Parses each VFile into an MDAST Root using the provided pipeline.
+ * 3. Attaches `mdText` helpers via nodeSrcText() (offsets, slicing, sections).
+ *
+ * Yields objects shaped as:
+ *
+ * {
+ *   resource: VFileCapableResource<P, S>;
+ *   file: VFile;
+ *   mdastRoot: Root;
+ *   mdText: {
+ *     nodeOffsets(node: Node): [number, number] | undefined;
+ *     sliceForNode(node: Node): string;
+ *     sectionRangesForHeadings(headings: Heading[]): { start: number; end: number }[];
+ *   };
+ * }
  */
-export type ResourceVFile<
-  PathKey extends string = "path",
-  SP extends SourceProvenance<PathKey> = SourceProvenance<PathKey>,
-> = VFile & {
-  data: VFile["data"] & {
-    resource: ResourceMeta<PathKey, SP>;
-  };
-};
-
-/**
- * Async generator that materializes `VFile` instances for each Source.
- *
- * Each yielded file has:
- *
- * - `file.value` → text contents
- * - `file.path`  → derived from `origin.label` (override via `pathFromSource`)
- * - `file.data.resource` → strongly-typed `ResourceMeta`
- *
- * Error behavior mirrors `textSources()`:
- *
- * - If loading succeeds → yields `{ origin, file }`.
- * - If loading fails:
- *   - If `options.onError` is provided → caller may return a replacement file
- *     or `false` to skip.
- *   - If `options.onError` is absent or returns `false` → skips that source.
- */
-export async function* vfiles<
-  PathKey extends string = "path",
-  SP extends SourceProvenance<PathKey> = SourceProvenance<PathKey>,
+export async function* markdownASTs<
+  P extends ResourceProvenance = MarkdownProvenance,
+  S extends ResourceStrategy = ResourceStrategy,
 >(
-  srcs:
-    | Iterable<Source<PathKey, SP>>
-    | AsyncIterable<Source<PathKey, SP>>,
-  options?: {
-    /**
-     * Optional working directory for created vfiles.
-     */
-    readonly cwd?: string | URL;
-
-    /**
-     * Optional override for the vfile path derived from a Source.
-     * Defaults to `origin.label`.
-     */
-    readonly pathFromSource?: (
-      origin: Source<PathKey, SP>,
-    ) => string | undefined;
-
-    /**
-     * Error handler. Can:
-     * - return a replacement `{ origin, file }` to keep the record
-     * - return `false` to skip this source entirely
-     */
-    readonly onError?: (
-      origin: Source<PathKey, SP>,
-      error: Error,
-    ) =>
-      | {
-        origin: Source<PathKey, SP>;
-        file: ResourceVFile<PathKey, SP>;
-        text: string;
-        fileRef: (node: Node, relTo?: string) => string;
-      }
-      | false
-      | Promise<
-        | {
-          origin: Source<PathKey, SP>;
-          file: ResourceVFile<PathKey, SP>;
-          text: string;
-          fileRef: (node: Node, relTo?: string) => string;
-        }
-        | false
-      >;
-  },
+  provenances: readonly string[] | Iterable<P> | AsyncIterable<P>,
+  options: MarkdownASTsOptions<P, S> = {},
 ) {
-  const { cwd, pathFromSource } = options ?? {};
+  const codePartialsCollec = options.codePartialsCollec ??
+    codePartialsCollection();
 
-  for await (const origin of srcs) {
-    const loaded = await origin.safeText();
+  const pipeline = options.pipeline ??
+    mardownParserPipeline({ codePartialsCollec });
 
-    if (typeof loaded === "string") {
-      const path = pathFromSource?.(origin) ?? origin.label;
+  const rf = options.factory ??
+    vfileResourcesFactory<P, S>({});
 
-      const file = new VFile({
-        value: loaded,
-        path,
-        cwd: String(cwd),
-      }) as ResourceVFile<PathKey, SP>;
+  // ---------------------------------------------------------------------------
+  // Normalize input → provenance iterable
+  // ---------------------------------------------------------------------------
 
-      file.data.resource = {
-        origin,
-        label: origin.label,
-        nature: origin.nature,
-        provenance: origin.provenance,
-      };
+  let provenanceIter: Iterable<P> | AsyncIterable<P>;
 
-      const fileRef = (node: Node, relTo?: string) => {
-        const file = relTo
-          ? relative(relTo, origin.label)
-          : basename(origin.label);
-        if (origin.nature === "remote-url") return file;
-        const line = node?.position?.start?.line;
-        if (typeof line !== "number") return file;
-        return `${file}:${line}`;
-      };
-
-      yield { origin, file, text: loaded, fileRef };
-      continue;
-    }
-
-    // Handle error case
-    const error = loaded instanceof Error ? loaded : new Error(String(loaded));
-    const replaced = await options?.onError?.(origin, error);
-
-    if (replaced) {
-      // Trust caller's typing of ResourceVFile
-      yield replaced;
-    }
-    // if we get to here we've ignored the file
-  }
-}
-
-export async function* markdownASTs(
-  src: Iterable<SourceProvenance> | AsyncIterable<SourceProvenance>,
-  options?: Parameters<typeof vfiles>[1] & {
-    readonly mdParsePipeline?: ReturnType<typeof mardownParserPipeline>;
-    readonly codePartialsCollec?: ReturnType<typeof codePartialsCollection>;
-  },
-) {
-  // we maintain a single partials collection across all markdown files
-  const mdpp = options?.mdParsePipeline ??
-    mardownParserPipeline({ codePartialsCollec: options?.codePartialsCollec });
-  for await (
-    const vf of vfiles(uniqueSources(sources(src)), options)
+  if (
+    Array.isArray(provenances) &&
+    provenances.every((x) => typeof x === "string")
   ) {
-    const mdastRoot = mdpp.parse(vf.file);
-    await mdpp.run(mdastRoot);
+    // Only treat as paths when it's really string[]
+    provenanceIter = provenanceFromPaths(provenances as string[]) as
+      | Iterable<P>
+      | AsyncIterable<P>;
+  } else {
+    // Anything else (including P[]) is treated as Iterable<P> / AsyncIterable<P>
+    provenanceIter = provenances as Iterable<P> | AsyncIterable<P>;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build resources → filter to VFile resources → parse into mdast
+  // ---------------------------------------------------------------------------
+
+  const strategies = rf.strategies(provenanceIter);
+  const rawResources = rf.resources(strategies);
+  const resources = rf.uniqueResources(rawResources);
+
+  for await (const r of resources) {
+    if (!isVFileResource<P, S>(r)) continue;
+
+    const resource = r;
+    const file = resource.file;
+    const text = String(file.value ?? "");
+
+    const mdastRoot = pipeline.parse(file) as Root;
+    await pipeline.run(mdastRoot);
+
+    const nst = nodeSrcText(mdastRoot, text);
+
     yield {
-      ...vf,
+      resource,
+      file,
       mdastRoot,
-      mdText: {
-        nodeOffsets: (node: Node) => nodeOffsetsInSource(vf.text, node),
-        sliceForNode: (node: Node) => sliceSourceForNode(vf.text, node),
-        sectionRangesForHeadings: (headings: Heading[]) =>
-          computeSectionRangesForHeadings(mdastRoot, vf.text, headings),
-      },
+      nodeSrcText: nst,
+      mdSrcText: text,
     };
   }
-}
-
-// ---------------------------------------------------------------------------
-// Source acquisition
-// ---------------------------------------------------------------------------
-
-export function nodeOffsetsInSource(
-  source: string,
-  node: Node,
-): [number, number] | undefined {
-  const pos = node.position as Any;
-  if (!pos || !pos.start || !pos.end) return undefined;
-
-  const start = pos.start as Any;
-  const end = pos.end as Any;
-
-  if (
-    typeof start.offset === "number" &&
-    typeof end.offset === "number"
-  ) {
-    return [start.offset, end.offset];
-  }
-
-  const lines = source.split(/\r?\n/);
-
-  const startLineIdx = (start.line as number ?? 1) - 1;
-  const endLineIdx = (end.line as number ?? 1) - 1;
-  const startCol = (start.column as number ?? 1) - 1;
-  const endCol = (end.column as number ?? 1) - 1;
-
-  if (
-    startLineIdx < 0 || startLineIdx >= lines.length ||
-    endLineIdx < 0 || endLineIdx >= lines.length
-  ) {
-    return undefined;
-  }
-
-  const indexFromLineCol = (lineIdx: number, col: number): number => {
-    let idx = 0;
-    for (let i = 0; i < lineIdx; i++) {
-      // +1 for newline
-      idx += lines[i].length + 1;
-    }
-    return idx + col;
-  };
-
-  const startOffset = indexFromLineCol(startLineIdx, startCol);
-  const endOffset = indexFromLineCol(endLineIdx, endCol);
-  return [startOffset, endOffset];
-}
-
-/**
- * Slice the original source text that corresponds to the given node.
- *
- * If offsets are unavailable, falls back to re-stringifying the node via remark.
- */
-export function sliceSourceForNode(
-  source: string,
-  node: Node,
-): string {
-  const offsets = nodeOffsetsInSource(source, node);
-  if (offsets) {
-    const [start, end] = offsets;
-    return source.slice(start, end);
-  }
-
-  // Fallback: as a last resort, re-stringify this node
-  const root: Root = { type: "root", children: [node as RootContent] };
-  return remark().stringify(root);
-}
-
-// ---------------------------------------------------------------------------
-// Section ranges
-// ---------------------------------------------------------------------------
-
-export interface SectionRange {
-  start: number;
-  end: number;
-}
-
-/**
- * Given the root, source, and a list of selected heading nodes that are
- * direct children of the root, compute non-overlapping section ranges:
- * each from a heading's start to the next heading of same or higher depth
- * (or end-of-file).
- */
-export function computeSectionRangesForHeadings(
-  root: Root,
-  source: string,
-  headings: Heading[],
-): SectionRange[] {
-  const children = root.children ?? [];
-  if (children.length === 0 || headings.length === 0) return [];
-
-  // Map heading node -> its index in root.children (only for direct children)
-  const indexByNode = new Map<Heading, number>();
-  children.forEach((child, idx) => {
-    if (child.type === "heading") {
-      indexByNode.set(child as Heading, idx);
-    }
-  });
-
-  const indices: number[] = [];
-  for (const h of headings) {
-    const idx = indexByNode.get(h);
-    if (idx !== undefined) indices.push(idx);
-  }
-  if (indices.length === 0) return [];
-
-  indices.sort((a, b) => a - b);
-
-  const ranges: SectionRange[] = [];
-
-  for (const idx of indices) {
-    const heading = children[idx] as Heading;
-    const depth = heading.depth ?? 1;
-
-    const offsets = nodeOffsetsInSource(source, heading as RootContent);
-    if (!offsets) continue;
-    const [startOffset] = offsets;
-
-    // Find next heading of same or higher depth
-    let endOffset = source.length;
-    for (let j = idx + 1; j < children.length; j++) {
-      const candidate = children[j];
-      if (candidate.type === "heading") {
-        const ch = candidate as Heading;
-        const cDepth = ch.depth ?? 1;
-        if (cDepth <= depth) {
-          const nextOffsets = nodeOffsetsInSource(
-            source,
-            candidate as RootContent,
-          );
-          if (nextOffsets) {
-            endOffset = nextOffsets[0];
-          }
-          break;
-        }
-      }
-    }
-
-    ranges.push({ start: startOffset, end: endOffset });
-  }
-
-  // Merge overlapping/adjacent ranges
-  ranges.sort((a, b) => a.start - b.start);
-  const merged: SectionRange[] = [];
-  for (const r of ranges) {
-    if (merged.length === 0) {
-      merged.push({ ...r });
-      continue;
-    }
-    const last = merged[merged.length - 1]!;
-    if (r.start <= last.end) {
-      // overlap or adjacency: extend the existing range
-      if (r.end > last.end) last.end = r.end;
-    } else {
-      merged.push({ ...r });
-    }
-  }
-
-  return merged;
 }
