@@ -18,6 +18,7 @@ import {
   getLanguageByIdOrAlias,
   type LanguageSpec,
 } from "../../../universal/code.ts";
+import { DataSupplierNode, nodeDataFactory } from "../../mdast/safe-data.ts";
 import { codeFrontmatterNDF } from "./code-frontmatter.ts";
 
 /** The structured enrichment attached to a code node by this plugin. */
@@ -28,16 +29,14 @@ export type CodeAnnotations<Anns extends Record<string, unknown>> = {
 };
 
 export const CODEANNS_KEY = "codeAnns" as const;
-export type CodeWithAnnotationsData<Anns extends Record<string, unknown>> = {
-  readonly codeAnns: CodeAnnotations<Anns>;
-  [key: string]: unknown;
-};
+export type CodeAnnsKey = typeof CODEANNS_KEY;
+export const codeAnnsNDF = nodeDataFactory<
+  CodeAnnsKey,
+  CodeAnnotations<Record<string, unknown>>
+>(CODEANNS_KEY);
 
 export type CodeWithAnnotationsNode<Anns extends Record<string, unknown>> =
-  & Code
-  & {
-    data: CodeWithAnnotationsData<Anns>;
-  };
+  DataSupplierNode<Code, CodeAnnsKey, CodeAnnotations<Anns>>;
 
 /**
  * Type guard: returns true if a `RootContent` node is a `code` node
