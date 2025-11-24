@@ -8,9 +8,9 @@ import { classifiersFromFrontmatter } from "./node-classify-fm.ts";
 import {
   catalogToRootData,
   type ClassifierCatalog,
-  hasNodeClass,
   nodeClassifier,
   type NodeClassifierRule,
+  nodeClassNDF,
 } from "./node-classify.ts";
 
 /**
@@ -172,25 +172,25 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
       assertEquals(sqlCode.lang, "sql");
 
       // h1 classification
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
       const h1Role = h1.data!.class["role"] ?? [];
       const h1RolePaths = h1Role.map((c) => c.path).sort();
       assertEquals(h1RolePaths, ["title"]);
 
       // h2 classification
-      assert(hasNodeClass(h2A));
+      assert(nodeClassNDF.is(h2A));
       const h2Role = h2A.data!.class["role"] ?? [];
       const h2RolePaths = h2Role.map((c) => c.path).sort();
       assertEquals(h2RolePaths, ["section"]);
 
       // paragraph classification (at least intro paragraph)
-      assert(hasNodeClass(pIntro));
+      assert(nodeClassNDF.is(pIntro));
       const introKind = pIntro.data!.class["kind"] ?? [];
       const introKindPaths = introKind.map((c) => c.path).sort();
       assertEquals(introKindPaths, ["body"]);
 
       // SQL code: ensure merging of multiple classifications on same key
-      assert(hasNodeClass(sqlCode));
+      assert(nodeClassNDF.is(sqlCode));
       const tagClasses = sqlCode.data!.class["tag"] ?? [];
       const tagPaths = tagClasses.map((c) => c.path).sort();
       assertEquals(tagPaths, ["example", "snippet", "sql"].sort());
@@ -251,7 +251,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
       assert(h1.type === "heading");
 
       // Node still gets classification
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
       const roleClasses = h1.data.class["role"] ?? [];
       const rolePaths = roleClasses.map((c) => c.path).sort();
       assertEquals(rolePaths, ["title"]);
@@ -315,7 +315,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
 
       assert(paragraphs.length > 0);
       for (const p of paragraphs) {
-        assertFalse(hasNodeClass(p));
+        assertFalse(nodeClassNDF.is(p));
       }
 
       // Catalog callback should have been invoked with an empty catalog.
@@ -345,8 +345,8 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
       assert(h1.type === "heading");
       assert(someParagraph && someParagraph.type === "paragraph");
 
-      assert(hasNodeClass(h1)); // classified
-      assertFalse(hasNodeClass(someParagraph)); // not classified
+      assert(nodeClassNDF.is(h1)); // classified
+      assertFalse(nodeClassNDF.is(someParagraph)); // not classified
     },
   );
 
@@ -376,7 +376,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
       ) as RootContent | undefined;
 
       assert(h1);
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
       const roles = h1.data.class["role"] ?? [];
       const rolePaths = roles.map((c) => c.path).sort();
       assertEquals(rolePaths, ["title"]);
@@ -425,7 +425,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
       ) as RootContent | undefined;
 
       assert(h1);
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
 
       const roleClasses = h1.data.class["role"] ?? [];
       const kindClasses = h1.data.class["kind"] ?? [];
@@ -470,25 +470,25 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
 
       assert(h1 && h2 && h3 && h4);
 
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
       assertEquals(
         (h1.data.class["role"] ?? []).map((c) => c.path),
         ["project"],
       );
 
-      assert(hasNodeClass(h2));
+      assert(nodeClassNDF.is(h2));
       assertEquals(
         (h2.data.class["role"] ?? []).map((c) => c.path),
         ["test-strategy"],
       );
 
-      assert(hasNodeClass(h3));
+      assert(nodeClassNDF.is(h3));
       assertEquals(
         (h3.data.class["role"] ?? []).map((c) => c.path),
         ["test-plan"],
       );
 
-      assert(hasNodeClass(h4));
+      assert(nodeClassNDF.is(h4));
       assertEquals(
         (h4.data.class["role"] ?? []).map((c) => c.path),
         ["test-case"],
@@ -533,7 +533,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
         (n) => n.type === "heading",
       ) as Heading | undefined;
       assert(h1);
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
 
       const roleClasses = h1.data.class["role"] ?? [];
       assertEquals(roleClasses.length, 1);
@@ -556,7 +556,7 @@ Deno.test("nodeClassifier remark plugin", async (t) => {
         (n) => n.type === "heading",
       ) as Heading | undefined;
       assert(h1);
-      assert(hasNodeClass(h1));
+      assert(nodeClassNDF.is(h1));
 
       const roleClasses = h1.data.class["role"] ?? [];
       assertEquals(roleClasses.length, 1);

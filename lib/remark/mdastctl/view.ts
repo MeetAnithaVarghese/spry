@@ -13,8 +13,8 @@ import {
   hasBelongsToSection,
 } from "../plugin/doc/doc-schema.ts";
 import {
-  hasNodeClass,
   type NodeClassMap,
+  nodeClassNDF,
 } from "../plugin/node/node-classify.ts";
 import { hasNodeIdentities } from "../plugin/node/node-identities.ts";
 import { markdownASTs, Yielded } from "./io.ts";
@@ -288,7 +288,7 @@ export function summarizeNode(node: RootContent): string {
 export function formatNodeClasses(
   node: RootContent,
 ): string | undefined {
-  if (!hasNodeClass(node)) return undefined;
+  if (!nodeClassNDF.is(node)) return undefined;
 
   // We don’t care about the specific baggage shape here, just that it’s an object.
   const classMap = node.data.class as NodeClassMap<Record<string, unknown>>;
@@ -780,7 +780,7 @@ function buildClassIndex(
   const index = new Map<string, Map<string, ClassNodeInfo[]>>();
 
   const visit = (node: RootContent) => {
-    if (!hasNodeClass(node)) return;
+    if (!nodeClassNDF.is(node)) return;
 
     const classMap = node.data.class as NodeClassMap<Record<string, unknown>>;
 

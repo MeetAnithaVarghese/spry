@@ -34,6 +34,7 @@ import type { Node, Root, RootContent } from "types/mdast";
 import type { Plugin } from "unified";
 
 import { selectAll } from "unist-util-select";
+import { DataSupplierNode, nodeDataFactory } from "../../mdast/safe-data.ts";
 
 /** mdast node we classify (content nodes only for now). */
 export type RootNode = RootContent;
@@ -54,18 +55,21 @@ export type NodeClassMap<Baggage extends Record<string, unknown>> = Record<
   Classification<Baggage>[]
 >;
 
-export interface ClassifiedNodeData<Baggage extends Record<string, unknown>> {
-  readonly class?: NodeClassMap<Baggage>;
-}
+export const NODECLASS_KEY = "class" as const;
+export type NodeClassKey = typeof NODECLASS_KEY;
+export const nodeClassNDF = nodeDataFactory<
+  NodeClassKey,
+  NodeClassMap<Record<string, unknown>>
+>(NODECLASS_KEY);
 
-export type ClassedNode<
-  T extends { data?: RootContent["data"] },
+export type WithClassNode<
+  N extends Node,
   Baggage extends Record<string, unknown>,
-> = T & {
-  data: RootContent["data"] & {
-    class: NodeClassMap<Baggage>;
-  };
-};
+> = DataSupplierNode<
+  N,
+  NodeClassKey,
+  NodeClassMap<Baggage>
+>;
 
 export type ClassifierCatalog = Record<
   ClassificationNamespace,
@@ -137,29 +141,6 @@ export function catalogToRootData(
     }
     (anyRoot.data as Record<string, unknown>)[fieldName] = catalog;
   };
-}
-
-/**
- * Type guard: does this node have a strongly-typed `data.class` map?
- */
-export function hasNodeClass<
-  T extends { data?: RootContent["data"] },
-  Baggage extends Record<string, unknown>,
->(
-  node: T,
-): node is ClassedNode<T, Baggage> {
-  if (!node || typeof node !== "object") return false;
-
-  const anyNode = node as {
-    data?: (RootContent["data"] & { class?: unknown }) | undefined;
-  };
-  if (!anyNode.data || typeof anyNode.data !== "object") return false;
-
-  const data = anyNode.data as RootContent["data"] & { class?: unknown };
-  if (!("class" in data)) return false;
-
-  const cls = data.class;
-  return !!cls && typeof cls === "object";
 }
 
 /**
