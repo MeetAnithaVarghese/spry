@@ -1,9 +1,6 @@
 #!/usr/bin/env -S deno run -A --node-modules-dir=auto
 // Use `deno run -A --watch` in the shebang if you're contributing / developing Spry itself.
 
-import { CLI } from "../../../lib/remark/mdastctl/mod.ts";
+import { CLI } from "../../../lib/remark/ontology/cli.ts";
 
-await new CLI({
-  cmdName: import.meta.filename?.split("/").pop(),
-  defaultFiles: ["Qualityfolio.md"],
-}).run();
+await new CLI({ defaultFiles: ["Qualityfolio.md"] }).run();
