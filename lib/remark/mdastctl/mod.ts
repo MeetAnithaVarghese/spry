@@ -27,6 +27,11 @@ import {
 
 import { doctor } from "../../universal/doctor.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
+import {
+  combinedPathTree,
+  logicalPathTree,
+  physicalPathTree,
+} from "../mdast/ontology.ts";
 import { ImportedContentNode } from "../plugin/node/code-import.ts";
 import { codeImportInsertsNDF } from "../plugin/node/code-insert.ts";
 import { Yielded } from "./io.ts";
@@ -118,6 +123,7 @@ export class CLI {
       .command("class", this.classCommand())
       .command("schema", this.schemaCommand())
       .command("imports", this.importsCommand())
+      .command("ontology", this.ontologyCommand())
       .command("md", this.mdCommand());
   }
 
@@ -336,6 +342,248 @@ export class CLI {
           await lister.ls(true);
         },
       );
+  }
+
+  // -------------------------------------------------------------------------
+  // ontology command (uses ontology.ts path trees)
+  // -------------------------------------------------------------------------
+
+  ontologyCommand(cmdName = "ontology") {
+    type AnyPathNode = {
+      path: string;
+      basename?: string;
+      name?: string;
+      children?: AnyPathNode[];
+      // payload is ignored for CLI purposes
+      // deno-lint-ignore no-explicit-any
+      payload?: any;
+    };
+
+    const flattenPathForest = (
+      roots: AnyPathNode[],
+      file: string,
+      fileRootId: string,
+      viewTag: "physical" | "logical" | "combined",
+    ): TreeRow[] => {
+      const rows: TreeRow[] = [];
+      let counter = 0;
+
+      const walk = (
+        node: AnyPathNode,
+        parentId: string,
+        depth: number,
+      ) => {
+        const id = `${fileRootId}#${viewTag}:${counter++}`;
+
+        const segments = node.path.split("/").filter(Boolean);
+        const leaf = node.basename ??
+          node.name ??
+          (segments.length ? segments[segments.length - 1] : "/");
+        const label = leaf || "/";
+
+        rows.push({
+          id,
+          file,
+          kind: "heading",
+          type: "heading",
+          label,
+          parentId,
+          classInfo: undefined,
+          dataKeys: undefined,
+          identityInfo: undefined,
+          view: undefined,
+          schemaLevel: depth,
+        });
+
+        for (const child of node.children ?? []) {
+          walk(child, id, depth + 1);
+        }
+      };
+
+      for (const root of roots) {
+        walk(root, fileRootId, 0);
+      }
+
+      return rows;
+    };
+
+    const decorateRows = (
+      rows: TreeRow[],
+      mode: "physical" | "logical" | "combined",
+    ): TreeRow[] => {
+      return rows.map((row) => {
+        // file root rows are already pre-colored before this helper
+        if (!row.parentId) return row;
+
+        const depth = row.schemaLevel ?? 0;
+        let base = row.label;
+
+        if (mode === "physical") {
+          const icon = "📁 ";
+          if (depth === 0) {
+            base = cyan(icon + base);
+          } else if (depth === 1) {
+            base = yellow(icon + base);
+          } else {
+            base = magenta(icon + base);
+          }
+          return { ...row, label: base };
+        }
+
+        if (mode === "logical") {
+          const icon = depth === 0 ? "🔑 " : depth === 1 ? "📂 " : "📄 ";
+          if (depth === 0) {
+            base = cyan(icon + base);
+          } else if (depth === 1) {
+            base = magenta(icon + base);
+          } else {
+            base = gray(icon + base);
+          }
+          return { ...row, label: base };
+        }
+
+        // combined
+        const icon = "📂 ";
+        if (depth === 0) {
+          base = cyan(icon + base);
+        } else if (depth === 1) {
+          base = yellow(icon + base);
+        } else {
+          base = magenta(icon + base);
+        }
+        return { ...row, label: base };
+      });
+    };
+
+    return this.baseCommand({ examplesCmd: cmdName })
+      .description(
+        "show document ontology using physical (sections), logical (classifications), or combined path trees",
+      )
+      .arguments("[paths...:string]")
+      .option(
+        "--physical",
+        "Show only the physical (section/schema-based) ontology view.",
+      )
+      .option(
+        "--logical",
+        "Show only the logical (classification-based) ontology view.",
+      )
+      .option(
+        "--combined",
+        "Show combined physical + logical ontology view (default).",
+      )
+      .option("--no-color", "Show output without using ANSI colors")
+      .action(async (options, ...paths: string[]) => {
+        const allRows: TreeRow[] = [];
+
+        const wantPhysical = !!options.physical;
+        const wantLogical = !!options.logical;
+        const wantCombinedFlag = !!options.combined;
+
+        const mode: "physical" | "logical" | "combined" = (() => {
+          if (wantPhysical && !wantLogical && !wantCombinedFlag) {
+            return "physical";
+          }
+          if (wantLogical && !wantPhysical && !wantCombinedFlag) {
+            return "logical";
+          }
+          return "combined";
+        })();
+
+        for await (
+          const viewable of this.viewableMarkdownASTs(
+            this.conf?.ensureGlobalFiles,
+            paths,
+            this.conf?.defaultFiles ?? [],
+          )
+        ) {
+          const file = viewable.fileRef();
+          const fileRootId = `${viewable.rootId}#ontology`;
+          const fileRootRow: TreeRow = {
+            id: fileRootId,
+            file,
+            kind: "heading",
+            type: "root",
+            label: bold(`📁 ${viewable.label}`),
+            parentId: undefined,
+            classInfo: undefined,
+            dataKeys: undefined,
+            identityInfo: undefined,
+            view: undefined,
+          };
+
+          const pushForest = (
+            forestRoots: AnyPathNode[] | undefined,
+            tag: "physical" | "logical" | "combined",
+          ) => {
+            if (!forestRoots || forestRoots.length === 0) return;
+
+            const rows = flattenPathForest(forestRoots, file, fileRootId, tag);
+            const decorated = decorateRows(rows, tag);
+            allRows.push(fileRootRow, ...decorated);
+          };
+
+          if (mode === "physical") {
+            const forest = await physicalPathTree(viewable.root);
+            const roots = (forest?.roots ?? []) as AnyPathNode[];
+            if (!roots.length) continue;
+            pushForest(roots, "physical");
+            continue;
+          }
+
+          if (mode === "logical") {
+            const forest = await logicalPathTree(viewable.root);
+            const roots = (forest?.roots ?? []) as AnyPathNode[];
+            if (!roots.length) continue;
+            pushForest(roots, "logical");
+            continue;
+          }
+
+          // combined
+          const forest = await combinedPathTree(viewable.root);
+          const roots = (forest?.roots ?? []) as AnyPathNode[];
+          if (!roots.length) continue;
+          pushForest(roots, "combined");
+        }
+
+        if (allRows.length === 0) {
+          console.log(gray("No ontology paths to show."));
+          return;
+        }
+
+        const useColor = options.color;
+
+        const base = new ListerBuilder<TreeRow>()
+          .from(allRows)
+          .declareColumns("label", "type", "file")
+          .requireAtLeastOneColumn(true)
+          .color(useColor)
+          .header(true)
+          .compact(false);
+
+        base.field("label", "label", {
+          header: "NAME",
+          defaultColor: (s) => s,
+        });
+        base.field("type", "type", {
+          header: "TYPE",
+          defaultColor: gray,
+        });
+        base.field("file", "file", {
+          header: "FILE",
+          defaultColor: gray,
+        });
+
+        base.select("label", "type", "file");
+
+        const treeLister = TreeLister.wrap(base)
+          .from(allRows)
+          .byParentChild({ idKey: "id", parentIdKey: "parentId" })
+          .treeOn("label")
+          .dirFirst(true);
+
+        await treeLister.ls(true);
+      });
   }
 
   // -------------------------------------------------------------------------
