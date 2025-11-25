@@ -16,10 +16,8 @@ import { ListerBuilder } from "../../universal/lister-tabular-tui.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 import * as mdastCtl from "../mdastctl/mod.ts";
 
-import * as mdastView from "../mdastctl/view.ts";
-import type { Heading, RootContent } from "types/mdast";
+import type { Heading, Root, RootContent } from "types/mdast";
 import { TreeLister } from "../../universal/lister-tree-tui.ts";
-import { ViewableMarkdownAST } from "../mdastctl/view.ts";
 
 import {
   buildDocumentTree,
@@ -29,6 +27,10 @@ import {
   type DocumentTree,
   type SectionTreeNode,
 } from "./path-tree.ts";
+
+import { markdownASTs, Yielded } from "../mdastctl/io.ts";
+import { renderPathTreeHtml } from "./path-tree-html.ts";
+import { buildCombinedTrees } from "./path-tree.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -43,7 +45,7 @@ async function* viewableMarkdownASTs(
     ...(positional.length ? positional : defaults),
   ];
   if (merged.length > 0) {
-    yield* mdastView.viewableMarkdownASTs(merged);
+    yield* markdownASTs(merged);
   }
 }
 
@@ -108,11 +110,11 @@ function ontSummarizeNode(node: RootContent): string {
 }
 
 function buildOntologyTreeRowsForFile(
-  pmt: ViewableMarkdownAST,
+  pmt: Yielded<ReturnType<typeof markdownASTs>>,
   docTree: DocumentTree,
   includeDataKeys: boolean,
 ) {
-  const { fileRef, label, rootId } = pmt;
+  const { fileRef, file } = pmt;
 
   function row<T extends object>(o: T): T {
     return o;
@@ -120,7 +122,7 @@ function buildOntologyTreeRowsForFile(
 
   const rows: Array<ReturnType<typeof row>> = [];
 
-  const fileRowId = `${rootId}#ont:combined`;
+  const fileRowId = `${file.basename}#ont:combined`;
 
   rows.push(
     row({
@@ -129,7 +131,7 @@ function buildOntologyTreeRowsForFile(
       parentId: undefined as string | undefined,
       kind: "heading" as const,
       type: "root" as const,
-      label: bold(label),
+      label: bold(file.basename ?? "?"),
       view: "ontology" as const,
       classInfo: undefined as string | undefined,
       dataKeys: undefined as string | undefined,
@@ -282,7 +284,8 @@ export class CLI {
       .command("help", new HelpCommand())
       .command("completions", new CompletionsCommand())
       .command("mdast", this.mdastCLI.mdastCommand())
-      .command("ls", this.lsCommand());
+      .command("ls", this.lsCommand())
+      .command("doc", this.docCommand());
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
@@ -334,7 +337,7 @@ export class CLI {
             this.conf?.defaultFiles ?? [],
           )
         ) {
-          const docTree = buildDocumentTree(viewable.root, {
+          const docTree = buildDocumentTree(viewable.mdastRoot, {
             includeClassificationFolders: options?.withClass ? false : true,
           });
 
@@ -410,6 +413,54 @@ export class CLI {
           .dirFirst(true);
 
         await treeLister.ls(true);
+      });
+  }
+
+  docCommand(cmdName = "doc") {
+    return this.baseCommand({ examplesCmd: cmdName })
+      .description(
+        "generate a static HTML page for the document ontology and write it to stdout",
+      )
+      .arguments("[paths...:string]")
+      .option(
+        "--save-as <file:string>",
+        "also save the generated HTML to this file",
+      )
+      .action(async (options, ...paths: string[]) => {
+        const roots: Root[] = [];
+        const labels: string[] = [];
+
+        for await (
+          const viewable of viewableMarkdownASTs(
+            [],
+            paths,
+            this.conf?.defaultFiles ?? [],
+          )
+        ) {
+          roots.push(viewable.mdastRoot);
+          labels.push(viewable.fileRef());
+        }
+
+        if (!roots.length) {
+          console.error(gray("No Markdown files to process."));
+          return;
+        }
+
+        const docs = buildCombinedTrees(roots);
+        const html = renderPathTreeHtml(docs, {
+          documentLabels: labels,
+          appVersion: computeSemVerSync(import.meta.url),
+        });
+
+        // Always send HTML to STDOUT
+        console.log(html);
+
+        // Optionally save to disk as well
+        if (options.saveAs) {
+          await Deno.writeTextFile(options.saveAs, html);
+          // stderr so HTML on stdout stays clean
+          console.error(`Saved ontology HTML to ${options.saveAs}`);
+        }
       });
   }
 }
