@@ -1,10 +1,10 @@
 import { assert, assertEquals } from "@std/assert";
 import { fromFileUrl } from "@std/path";
-import { Heading, Text } from "types/mdast";
 import { Node } from "types/unist";
 import { queryPosixPI } from "../../universal/posix-pi.ts";
 import { markdownASTs } from "../mdastctl/io.ts";
 import { codeFrontmatterNDF } from "../plugin/node/code-frontmatter.ts";
+import { headingText, nodePlainText, visitGraph } from "./graph-visit.ts";
 import {
   astGraphEdges,
   buildHierarchyTrees,
@@ -43,45 +43,6 @@ type Relationship = (typeof relationships)[number];
 
 type TestEdge = GraphEdge<Relationship>;
 type TestCtx = RuleContext;
-
-// Helper: extract heading text for assertions
-function headingText(node: Node): string {
-  const heading = node as Heading;
-  if (heading.type !== "heading") return "";
-  const parts: string[] = [];
-  for (const child of heading.children ?? []) {
-    const textNode = child as Text;
-    if (textNode.type === "text" && typeof textNode.value === "string") {
-      parts.push(textNode.value);
-      break;
-    }
-  }
-  return parts.join("");
-}
-
-// Helper: flatten visible text from a node (ignores formatting)
-function nodePlainText(node: Node): string {
-  if (node.type === "root") return "root";
-
-  const parts: string[] = [];
-
-  function walk(n: Node) {
-    if (
-      (n as { value?: unknown }).value &&
-      (n as { type?: string }).type === "text"
-    ) {
-      // deno-lint-ignore no-explicit-any
-      parts.push(String((n as any).value));
-    }
-    const anyN = n as { children?: Node[] };
-    if (Array.isArray(anyN.children)) {
-      for (const c of anyN.children) walk(c);
-    }
-  }
-
-  walk(node);
-  return parts.join("");
-}
 
 // isSectionContainer that only treats real headings as containers
 const _headingOnlySectionContainer: IsSectionContainer = (node) => {
@@ -122,7 +83,7 @@ const headingLikeSectionContainer: IsSectionContainer = (node) => {
   return false;
 };
 
-Deno.test("Ontology Graphs and Edges test", async () => {
+Deno.test("Ontology Graphs and Edges test", async (t) => {
   const builder = createGraphRulesBuilder<Relationship, TestCtx, TestEdge>();
   const rules = builder
     .use(
@@ -192,7 +153,8 @@ Deno.test("Ontology Graphs and Edges test", async () => {
     graphs.push({ root: viewable.mdastRoot, edges });
   }
 
-  const { edges } = graphs[0];
+  const graph = graphs[0];
+  const { edges } = graph;
   assert(edges);
 
   assert(edges.length);
@@ -267,4 +229,24 @@ Deno.test("Ontology Graphs and Edges test", async () => {
   assert(relTexts["role:plan"]);
   assert(relTexts["role:case"]);
   assert(relTexts["role:evidence"]);
+
+  t.step("Vist all relationships and edges", () => {
+    visitGraph(graph, (_rel, _edge) => {
+      // console.log(rel, ":", headingText(edge.from), "→", headingText(edge.to));
+      // count or collect nodes
+    });
+  });
+
+  t.step("Vist specific relationship and sort headings by label", () => {
+    visitGraph(
+      graph,
+      (_rel, _edge) => {
+        // TODO: add count or something
+      },
+      {
+        test: "role:strategy",
+        edgeOrder: "from",
+      },
+    );
+  });
 });
