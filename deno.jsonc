@@ -5,7 +5,7 @@
     "doctor": "support/bin/doctor.ts",
     "update-deno-deps": "udd $(find . -type f -not -path \"./support/*\" -regex \".*\/deps\\(-test\\)?\\.ts\")",
     "sync-import-map": "deno eval --ext ts 'import JSON5 from \"npm:json5@^2\"; const raw = await Deno.readTextFile(\"deno.jsonc\"); const cfg = JSON5.parse(raw); const imports = cfg.imports ?? {}; await Deno.writeTextFile(\"import_map.json\", JSON.stringify({ imports }, null, 2)); console.log(\"import_map.json synced\");' && deno fmt import_map.json",
-    "git-hook-pre-commit": "deno fmt --check --ignore=\"support\" && deno lint  --ignore=\"support\" && deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
+    "git-hook-pre-commit": "deno fmt --check --ignore=\"support\" && deno lint  --ignore=\"support\" --ignore=\"lib/remark/ontology/web-ui/index.js\" && deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
     "git-hook-pre-push": "deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
     "ts-check": "deno check --no-lock $(find . -name '*.ts' -not -path \"./support/*\")",
     "prepare-publish": "git semtag final"

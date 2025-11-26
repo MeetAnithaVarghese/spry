@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spry Graph Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./index.css" />
+
+    <!-- Optional: syntax highlighting CSS (Prism, highlight.js, etc.) -->
+    <!-- <link rel="stylesheet" href="https://unpkg.com/prismjs/themes/prism.css" /> -->
+  </head>
+
+  <body>
+    <header>
+      <h1 id="web-ui-title">Spry Graph Viewer</h1>
+      <div id="header-controls">
+        <label for="document-select">Document:</label>
+        <select id="document-select">
+          <!-- index.js populates with documents from the model -->
+        </select>
+      </div>
+    </header>
+
+    <main id="layout-grid">
+      <!-- LEFT: Documents + Relationships -->
+      <aside id="sidebar-panel">
+        <section id="documents-panel">
+          <h2>Documents</h2>
+          <ul id="document-list">
+            <!-- index.js renders clickable list; mirrors document-select if desired -->
+          </ul>
+        </section>
+
+        <section id="relationships-panel">
+          <h2>Relationships</h2>
+          <div id="relationship-mode-hint">
+            <!-- index.js can set: "Tree" or "Table" based on relationship type -->
+          </div>
+          <ul id="relationship-list">
+            <!--
+            index.js renders:
+            <li class="relationship-item" data-rel="containedInSection" data-hierarchical="true">
+              <button>containedInSection <span class="rel-count">(1206)</span></button>
+            </li>
+            etc.
+          -->
+          </ul>
+        </section>
+      </aside>
+
+      <!-- CENTER: Relationship view (tree OR table) -->
+      <section id="relationship-view-panel">
+        <header id="relationship-view-header">
+          <h2 id="relationship-title">Relationship view</h2>
+          <div id="relationship-meta">
+            <!-- index.js can show relationship description, hierarchical/flat, counts, etc. -->
+          </div>
+        </header>
+
+        <!-- Hierarchical view: only visible for hierarchical relationships -->
+        <section
+          id="hierarchy-view"
+          aria-label="Hierarchical relationship view"
+        >
+          <div id="hierarchy-root">
+            <!--
+            index.js renders a tree like:
+
+            <ul class="tree-root">
+              <li class="tree-node" data-node-id="...">
+                <div class="tree-node-header">
+                  <button class="tree-node-toggle" aria-expanded="true">▾</button>
+                  <span class="tree-node-label">heading:#1 Title</span>
+                  <span class="tree-node-badges">
+                    <- badges for rels like role:project, isTask, etc. ->
+                    </span>
+                </div>
+                <ul class="tree-children"> ... </ul>
+                </li>
+                </ul>
+                -->
+          </div>
+        </section>
+
+        <!-- Edge table view: only visible for non-hierarchical relationships -->
+        <section id="edge-table-view" aria-label="Edge list view">
+          <table id="edge-table">
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>From label</th>
+                <th>To label</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!--
+              index.js populates rows:
+
+              <tr data-edge-index="0">
+                <td><button class="node-link" data-node-id="from-id">n123</button></td>
+                <td><button class="node-link" data-node-id="to-id">n456</button></td>
+                <td>heading:#2 Plugin Orchestration Strategy</td>
+                <td>heading:#1 Spry remark ecosystem Test Fixture 01</td>
+              </tr>
+            -->
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- RIGHT: Node details + mdast + code -->
+      <aside id="details-panel">
+        <section id="node-details">
+          <h2>Node details</h2>
+          <dl>
+            <dt>Node type</dt>
+            <dd id="node-type"></dd>
+
+            <dt>Label</dt>
+            <dd id="node-label"></dd>
+
+            <dt>Relationships</dt>
+            <dd id="node-relationships"></dd>
+
+            <dt>Path</dt>
+            <dd id="node-path"></dd>
+          </dl>
+        </section>
+
+        <section id="node-mdast">
+          <h2>mdast node (JSON)</h2>
+          <pre id="node-mdast-json" class="code-block"><code></code></pre>
+        </section>
+
+        <section id="node-source">
+          <h2>Source code / text</h2>
+          <!--
+          index.js sets class="language-xxx" so a highlighter can style it.
+          e.g. language-markdown, language-json, language-yaml, language-ts, etc.
+        -->
+          <pre
+            id="node-source-code"
+            class="code-block"
+          >
+<code id="node-source-code-inner" class="language-markdown"></code>
+        </pre>
+        </section>
+      </aside>
+    </main>
+
+    <footer>
+      &copy; <span id="footer-year"></span> Spry Programmable Markdown
+      <span id="footer-version"></span>
+    </footer>
+
+    <!-- PRODUCTION MODEL: server injects JSON into this placeholder -->
+    <script type="application/json" id="web-ui.model.json"></script>
+
+    <!-- FIXTURE MODEL: for design-time / editing with a static web server -->
+    <script
+      type="application/json"
+      id="web-ui-fixture.model.json"
+      src="./fixture.model.json"
+    ></script>
+
+    <!-- Optional: syntax highlighting JS library -->
+    <!-- <script src="https://unpkg.com/prismjs/prism.js"></script> -->
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
