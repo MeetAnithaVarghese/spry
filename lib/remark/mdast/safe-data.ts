@@ -1087,3 +1087,184 @@ export const mergeFlexibleText = (
 
   return out;
 };
+
+// ---------------------------------------------------------------------------
+// Data definition helpers (scalar/object data)
+// ---------------------------------------------------------------------------
+
+export interface NodeDataDef<
+  Key extends string,
+  T,
+  N extends Node = Node,
+> {
+  readonly key: Key;
+  readonly factory: DataFactory<Key, T>;
+
+  // Phantom types for extraction
+  readonly _data?: T;
+  readonly _node?: N;
+}
+
+/**
+ * Create a definition for scalar/object data.
+ *
+ * Usage:
+ *   const codeFrontmatterDef =
+ *     defineNodeData("codeFM" as const)<CodeFrontmatter, Code>({ merge: true });
+ *
+ *   // Or if you don't care about a specific Node subtype:
+ *   const fooDef = defineNodeData("foo" as const)<Foo>();
+ */
+export function defineNodeData<Key extends string>(key: Key) {
+  return <
+    T,
+    N extends Node = Node,
+  >(
+    options?: DataFactoryOptions<T>,
+  ): NodeDataDef<Key, T, N> => ({
+    key,
+    factory: nodeDataFactory<Key, T>(key, options),
+  });
+}
+
+/**
+ * Zod-backed version.
+ *
+ * Usage:
+ *   const safeCodeFrontmatterDef =
+ *     defineSafeNodeData("codeFM" as const)<CodeFrontmatter, Code>(
+ *       codeFrontmatterSchema,
+ *       { merge: true },
+ *     );
+ */
+export function defineSafeNodeData<Key extends string>(key: Key) {
+  return <
+    T,
+    N extends Node = Node,
+  >(
+    schema: z.ZodType<T>,
+    options?: SafeDataFactoryOptions<T>,
+  ): NodeDataDef<Key, T, N> => ({
+    key,
+    factory: safeNodeDataFactory<Key, T>(key, schema, options),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Type extractors for scalar/object data
+// ---------------------------------------------------------------------------
+
+export type NodeDataKey<
+  Def extends NodeDataDef<string, unknown, Node>,
+> = Def["key"];
+
+export type NodeDataType<
+  Def extends NodeDataDef<string, unknown, Node>,
+> = Def extends NodeDataDef<string, infer T, Node> ? T : never;
+
+export type NodeDataNode<
+  Def extends NodeDataDef<string, unknown, Node>,
+> = Def extends NodeDataDef<string, unknown, infer N> ? N : never;
+
+/**
+ * Rebuild DataSupplierNode from a NodeDataDef.
+ *
+ * By default uses the Node type encoded in the definition,
+ * but you can override N to be more generic if you want.
+ */
+export type NodeWithData<
+  Def extends NodeDataDef<string, unknown, Node>,
+  N extends Node = NodeDataNode<Def>,
+> = DataSupplierNode<
+  N,
+  NodeDataKey<Def>,
+  NodeDataType<Def>
+>;
+
+// ---------------------------------------------------------------------------
+// Data definition helpers (array-valued data)
+// ---------------------------------------------------------------------------
+
+export interface NodeArrayDataDef<
+  Key extends string,
+  T,
+  N extends Node = Node,
+> {
+  readonly key: Key;
+  readonly factory: ArrayDataFactory<Key, T>;
+
+  // Phantom types
+  readonly _item?: T;
+  readonly _node?: N;
+}
+
+/**
+ * Create an array-valued definition.
+ *
+ * Usage:
+ *   const tagsDef =
+ *     defineNodeArrayData("tags" as const)<string, Paragraph>({ merge: true });
+ */
+export function defineNodeArrayData<Key extends string>(key: Key) {
+  return <
+    T,
+    N extends Node = Node,
+  >(
+    options?: ArrayDataFactoryOptions,
+  ): NodeArrayDataDef<Key, T, N> => ({
+    key,
+    factory: nodeArrayDataFactory<Key, T>(key, options),
+  });
+}
+
+/**
+ * Zod-backed array-valued definition.
+ *
+ * Usage:
+ *   const safeTagsDef =
+ *     defineSafeNodeArrayData("tags" as const)<string, Paragraph>(
+ *       z.string(),
+ *       { merge: true },
+ *     );
+ */
+export function defineSafeNodeArrayData<Key extends string>(key: Key) {
+  return <
+    T,
+    N extends Node = Node,
+  >(
+    itemSchema: z.ZodType<T>,
+    options?: SafeArrayDataFactoryOptions<T>,
+  ): NodeArrayDataDef<Key, T, N> => ({
+    key,
+    factory: safeNodeArrayDataFactory<Key, T>(key, itemSchema, options),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Type extractors for array-valued data
+// ---------------------------------------------------------------------------
+
+export type NodeArrayKey<
+  Def extends NodeArrayDataDef<string, unknown, Node>,
+> = Def["key"];
+
+export type NodeArrayItem<
+  Def extends NodeArrayDataDef<string, unknown, Node>,
+> = Def extends NodeArrayDataDef<string, infer T, Node> ? T : never;
+
+export type NodeArrayNode<
+  Def extends NodeArrayDataDef<string, unknown, Node>,
+> = Def extends NodeArrayDataDef<string, unknown, infer N> ? N : never;
+
+/**
+ * Rebuild DataSupplierNode from a NodeArrayDataDef.
+ * Data is `Item[]`.
+ */
+export type NodeWithArrayData<
+  Def extends NodeArrayDataDef<string, unknown, Node>,
+  N extends Node = NodeArrayNode<Def>,
+> = DataSupplierNode<
+  N,
+  NodeArrayKey<Def>,
+  NodeArrayItem<Def>[]
+>;
