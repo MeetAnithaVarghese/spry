@@ -9,9 +9,9 @@ import type { Plugin } from "unified";
 import type { VFile } from "vfile";
 
 import {
+  docFrontmatterNDF,
   documentFrontmatter,
-  isRootWithDocumentFrontmatter,
-  isYamlWithParsedFrontmatter,
+  yamlParsedFmNDF,
 } from "./doc-frontmatter.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -82,7 +82,7 @@ count: 3
 
       // Node-level parsedFM
       assert(
-        isYamlWithParsedFrontmatter(yamlNode),
+        yamlParsedFmNDF.is(yamlNode),
         "yaml node should have parsedFM attached",
       );
 
@@ -95,7 +95,7 @@ count: 3
 
       // Root-level documentFrontmatter
       assert(
-        isRootWithDocumentFrontmatter(tree),
+        docFrontmatterNDF.is(tree),
         "root should have documentFrontmatter",
       );
 
@@ -141,7 +141,7 @@ count: 3
       const yamlNode = findYamlNode(tree);
 
       assert(
-        isYamlWithParsedFrontmatter(yamlNode),
+        yamlParsedFmNDF.is(yamlNode),
         "yaml node should have parsedFM even when YAML is invalid",
       );
 
@@ -149,7 +149,7 @@ count: 3
       assertEquals(parsed.fm, {}, "fm should be empty object on parse failure");
 
       assert(
-        isRootWithDocumentFrontmatter(tree),
+        docFrontmatterNDF.is(tree),
         "root should still get documentFrontmatter",
       );
 
@@ -198,10 +198,7 @@ extra: "ignore me"
       const yamlNode = findYamlNode(tree);
 
       assert(
-        isYamlWithParsedFrontmatter<{
-          title: string;
-          count: number;
-        }>(yamlNode),
+        yamlParsedFmNDF.is(yamlNode),
         "yaml node should have typed parsedFM after schema",
       );
 
@@ -222,7 +219,7 @@ extra: "ignore me"
 
       // Root-level mirror of fm
       assert(
-        isRootWithDocumentFrontmatter(tree),
+        docFrontmatterNDF.is(tree),
         "root should have documentFrontmatter even with schema",
       );
       assertEquals(tree.data.documentFrontmatter.parsed.fm, {
@@ -269,7 +266,7 @@ title: Strip Me
 
       // We should still have document-level frontmatter
       assert(
-        isRootWithDocumentFrontmatter(tree),
+        docFrontmatterNDF.is(tree),
         "root should still have documentFrontmatter even when YAML is removed",
       );
       assertEquals(tree.data.documentFrontmatter.parsed.fm, {

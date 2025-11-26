@@ -9,7 +9,7 @@ import type { Heading, Root, RootContent } from "types/mdast";
 import { assert } from "@std/assert";
 import { visit } from "unist-util-visit";
 
-import { isRootWithDocumentFrontmatter } from "../doc/doc-frontmatter.ts";
+import { docFrontmatterNDF } from "../doc/doc-frontmatter.ts";
 import { isHeadingWithFrontmatter } from "./heading-frontmatter.ts";
 import { ClassificationEntry, NodeClassifierRule } from "./node-classify.ts";
 
@@ -149,7 +149,7 @@ export function classifiersFromFrontmatter<
   } = options ?? {};
 
   return (root: Root): Iterable<NodeClassifierRule> => {
-    if (!isRootWithDocumentFrontmatter(root)) return [];
+    if (!docFrontmatterNDF.is(root)) return [];
 
     const fm = root.data.documentFrontmatter.parsed.fm as Dict;
     const rules: NodeClassifierRule[] = [];

@@ -14,13 +14,40 @@
 
 import { parse as YAMLparse } from "@std/yaml";
 import { z } from "@zod/zod";
-import type { Root, RootContent } from "types/mdast";
+import type { Code, Node, Root, RootContent } from "types/mdast";
 import type { Plugin } from "unified";
 import type { VFile } from "vfile";
+import { DataSupplierNode, nodeDataFactory } from "../../mdast/safe-data.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
 type Dict = Record<string, unknown>;
+
+export const DOCFM_KEY = "documentFrontmatter" as const;
+export type DocFrontmatterKey = typeof DOCFM_KEY;
+export const docFrontmatterNDF = nodeDataFactory<
+  DocFrontmatterKey,
+  DocumentFrontmatter<Record<string, unknown>>
+>(
+  DOCFM_KEY,
+);
+
+export type RootWithDocumentFrontmatter<
+  N extends Node = Root,
+  FM extends Record<string, unknown> = Record<string, unknown>,
+> = DataSupplierNode<N, DocFrontmatterKey, DocumentFrontmatter<FM>>;
+
+export const YAMLPFM_KEY = "parsedFM" as const;
+export type YamlParsedFmKey = typeof YAMLPFM_KEY;
+export const yamlParsedFmNDF = nodeDataFactory<
+  YamlParsedFmKey,
+  ParsedFrontmatter<Dict>
+>(YAMLPFM_KEY);
+
+export type YamlWithParsedFrontmatterNode<
+  N extends Node = Code,
+  FM extends Record<string, unknown> = Record<string, unknown>,
+> = DataSupplierNode<N, DocFrontmatterKey, ParsedFrontmatter<FM>>;
 
 export interface ParsedFrontmatter<FM extends Dict = Dict> {
   fm: FM;
@@ -43,12 +70,6 @@ export interface DocumentFrontmatter<FM extends Dict = Dict> {
   parsed: ParsedFrontmatter<FM>;
 }
 
-export type RootWithDocumentFrontmatter<FM extends Dict = Dict> = Root & {
-  data: Root["data"] & {
-    documentFrontmatter: DocumentFrontmatter<FM>;
-  };
-};
-
 export interface DocumentFrontmatterOptions<FM extends Dict = Dict> {
   // Optional Zod schema to validate the parsed YAML
   readonly schema?: z.ZodType<FM, Any, Any>;
@@ -58,26 +79,6 @@ export interface DocumentFrontmatterOptions<FM extends Dict = Dict> {
 
 function isObject(value: unknown): value is Dict {
   return typeof value === "object" && value !== null;
-}
-
-export function isYamlWithParsedFrontmatter<
-  FM extends Dict = Dict,
->(node: RootContent): node is YamlWithParsedFrontmatter<FM> {
-  if (node.type !== "yaml") return false;
-  const data = (node as { data?: unknown }).data;
-  if (!isObject(data)) return false;
-  const pfm = (data as Dict).parsedFM;
-  return isObject(pfm) && "fm" in pfm;
-}
-
-export function isRootWithDocumentFrontmatter<
-  FM extends Dict = Dict,
->(tree: Root): tree is RootWithDocumentFrontmatter<FM> {
-  const data = (tree as { data?: unknown }).data;
-  if (!isObject(data)) return false;
-  const dfm = (data as Dict).documentFrontmatter;
-  if (!isObject(dfm)) return false;
-  return "node" in dfm && "parsed" in dfm;
 }
 
 /**
@@ -140,12 +141,10 @@ export const documentFrontmatter: Plugin<
     const nodeData = (yamlNode.data ??= {} as Dict);
     (nodeData as Any).parsedFM = parsedFM;
 
-    // Attach to document root for O(1) lookup
-    const rootData = (tree.data ??= {} as Dict);
-    (rootData as Any).documentFrontmatter = {
+    docFrontmatterNDF.attach(tree, {
       node: yamlNode as YamlWithParsedFrontmatter<FM>,
       parsed: parsedFM,
-    } satisfies DocumentFrontmatter<FM>;
+    });
 
     // Also expose plain fm via VFile for ecosystem compatibility
     if (file) {
