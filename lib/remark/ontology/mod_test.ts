@@ -230,14 +230,14 @@ Deno.test("Ontology Graphs and Edges test", async (t) => {
   assert(relTexts["role:case"]);
   assert(relTexts["role:evidence"]);
 
-  t.step("Vist all relationships and edges", () => {
+  await t.step("Vist all relationships and edges", () => {
     visitGraph(graph, (_rel, _edge) => {
       // console.log(rel, ":", headingText(edge.from), "→", headingText(edge.to));
       // count or collect nodes
     });
   });
 
-  t.step("Vist specific relationship and sort headings by label", () => {
+  await t.step("Vist specific relationship and sort headings by label", () => {
     visitGraph(
       graph,
       (_rel, _edge) => {
