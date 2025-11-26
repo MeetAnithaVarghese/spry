@@ -69,10 +69,7 @@ main#layout-grid {
   min-height: 0;
   display: grid;
   /* Left | Center (resizable) | Gutter | Right (fills remaining space) */
-  grid-template-columns: 260px var(--center-width, 1fr) 6px minmax(
-      260px,
-      1fr
-    );
+  grid-template-columns: 260px var(--center-width, 1fr) 6px minmax(260px, 1fr);
   column-gap: 0;
   background-color: #f9fafb;
 }
@@ -326,7 +323,7 @@ main#layout-grid {
   border: 1px solid transparent;
 }
 
-/* Category-based classes (UI is driven by relationship.category) */
+/* Category-based classes */
 .rel-badge-structural {
   background-color: #e5e7eb;
   color: #111827;
@@ -405,7 +402,7 @@ main#layout-grid {
   background-color: #e5e7eb;
 }
 
-/* Right details panel: flex column that fills grid cell */
+/* Right details panel */
 
 #details-panel {
   padding: 0.75rem;
@@ -440,7 +437,7 @@ main#layout-grid {
   font-weight: 600;
 }
 
-/* Panes wrapper fills almost entire right pane */
+/* Panes wrapper fills right pane */
 
 #node-panes-wrapper {
   flex: 1 1 auto;
@@ -461,7 +458,7 @@ main#layout-grid {
   display: none;
 }
 
-/* Node sections inside details */
+/* Node sections */
 
 .node-section {
   margin-bottom: 1rem;
@@ -567,7 +564,35 @@ main#layout-grid {
   color: #6b7280;
 }
 
-/* Scrollbars (optional subtle tweak) */
+.spry-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.spry-content-toggle {
+  font-size: 0.8rem;
+}
+
+/* Selected section highlight in Spry Content */
+
+#spry-selected-node,
+.spry-node-selected {
+  background: linear-gradient(
+    to right,
+    rgba(255, 243, 205, 0.95),
+    rgba(255, 243, 205, 0.1)
+  );
+  padding: 0.1rem 0.2rem;
+  border-radius: 0.2rem;
+}
+
+.spry-section-selected {
+  scroll-margin-top: 8px;
+}
+
+/* Scrollbars */
 
 #sidebar-panel,
 #relationship-view-panel,

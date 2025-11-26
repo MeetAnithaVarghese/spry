@@ -97,7 +97,7 @@
         </button>
       </div>
 
-      <!-- Panes wrapper (fills almost entire right panel height) -->
+      <!-- Panes wrapper -->
       <div id="node-panes-wrapper">
         <!-- Node Properties pane -->
         <div id="node-properties-pane" class="node-pane">
@@ -134,7 +134,7 @@
             <div class="node-section-body">
               <pre id="node-mdast-json" class="code-block">
 <code class="language-json"></code>
-              </pre>
+                </pre>
             </div>
           </section>
 
@@ -144,7 +144,7 @@
             <div class="node-section-body">
               <pre id="node-source-code" class="code-block">
 <code class="language-plaintext"></code>
-              </pre>
+                </pre>
             </div>
           </section>
         </div>
@@ -152,14 +152,23 @@
         <!-- Spry Content pane (Markdown rendered as HTML) -->
         <div id="spry-content-pane" class="node-pane" hidden>
           <section id="spry-content-section" class="node-section">
-            <h2 class="node-section-title">Spry Content</h2>
-            <div id="spry-content-html" class="markdown-body">
+            <div class="spry-content-header">
+              <h2 class="node-section-title">Spry Content</h2>
+              <label class="toggle-checkbox spry-content-toggle"
+                title="Render the entire document instead of just the selected section">
+                <input type="checkbox" id="spry-content-show-full" />
+                Show entire document
+              </label>
+            </div>
+
+            <div id="spry-content-html" class="markdown-body spry-content-root">
               <!-- Rendered HTML goes here -->
             </div>
           </section>
         </div>
       </div>
     </aside>
+
   </main>
 
   <footer>
@@ -172,7 +181,7 @@
   <!-- Model injection (filled by Deno server) -->
   <script type="application/json" id="web-ui.model.json"></script>
 
-  <!-- Remark pipeline for Spry Content rendering -->
+  <!-- Remark pipeline for Spry Content rendering (Markdown → HTML) -->
   <script type="module">
     import { remark } from "https://esm.sh/remark@15?bundle";
     import remarkHtml from "https://esm.sh/remark-html@16?bundle";
