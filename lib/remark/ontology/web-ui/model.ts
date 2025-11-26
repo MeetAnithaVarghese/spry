@@ -1,5 +1,4 @@
-#!/usr/bin/env -S deno run -A --node-modules-dir=auto
-// index.ts
+// model.ts
 //
 // Deno entrypoint for the Spry Graph Viewer.
 // - Reads Markdown fixture(s)
@@ -7,17 +6,14 @@
 // - Builds a GraphViewerModel (graph-centric JSON)
 // - Injects that JSON into index.html and serves it via Deno.serve
 
-import { fromFileUrl } from "@std/path";
 import { toMarkdown } from "mdast-util-to-markdown";
 import type { Heading, Paragraph, Root, RootContent } from "types/mdast";
 import type { Node } from "types/unist";
 
 import {
   astGraphEdges,
-  containedInHeadingRule,
   containedInSectionRule,
   createGraphRulesBuilder,
-  defineRelationships,
   frontmatterClassificationRule,
   GraphEdge,
   headingText,
@@ -95,31 +91,19 @@ type GraphViewerModel = {
   readonly hierarchies: Record<string, Record<string, HierarchyNode[]>>;
 
   readonly mdastStore: readonly unknown[];
+
+  readonly defaultDocumentId?: string | null;
+  readonly defaultRelationshipName?: string | null;
 };
 
 // -----------------------------------------------------------------------------
 // Relationships & rule context (same as Ontology Graphs and Edges test)
 // -----------------------------------------------------------------------------
 
-const relationships = defineRelationships(
-  "containedInHeading",
-  "containedInSection",
-  "isImportant",
-  "isTask",
-  "isSelected",
-  "codeDependsOn",
-  "frontmatter",
-  "role:project",
-  "role:strategy",
-  "role:plan",
-  "role:suite",
-  "role:case",
-  "role:evidence",
-);
-type Relationship = (typeof relationships)[number];
+type Relationship = string;
 
-type TestEdge = GraphEdge<Relationship>;
-type TestCtx = RuleContext;
+type WebUiGraphEdge = GraphEdge<Relationship>;
+type WebUiRuleCtx = RuleContext;
 
 // The main hierarchical relationship we care about for the tree view.
 const HIERARCHICAL_RELS = new Set<Relationship>([
@@ -157,45 +141,48 @@ const headingLikeSectionContainer: IsSectionContainer = (node: Node) => {
 // -----------------------------------------------------------------------------
 
 function buildRules() {
-  const builder = createGraphRulesBuilder<Relationship, TestCtx, TestEdge>();
+  const builder = createGraphRulesBuilder<
+    Relationship,
+    WebUiRuleCtx,
+    WebUiGraphEdge
+  >();
 
   return builder
     .use(
-      containedInHeadingRule<Relationship, TestCtx, TestEdge>(
-        "containedInHeading",
-      ),
-    )
-    .use(
-      containedInSectionRule<Relationship, TestCtx, TestEdge>(
+      containedInSectionRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
         "containedInSection",
         headingLikeSectionContainer,
       ),
     )
     .use(
-      sectionFrontmatterRule<Relationship, TestCtx, TestEdge>(
+      sectionFrontmatterRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
         "frontmatter",
-        ["containedInHeading"] as Relationship[],
+        ["containedInSection"] as Relationship[],
       ),
     )
     .use(
-      frontmatterClassificationRule<Relationship, TestCtx, TestEdge>(
+      frontmatterClassificationRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
         "doc-classify",
       ),
     )
     .use(
-      selectedNodesClassificationRule<Relationship, TestCtx, TestEdge>(
+      selectedNodesClassificationRule<
+        Relationship,
+        WebUiRuleCtx,
+        WebUiGraphEdge
+      >(
         "emphasis",
         "isImportant",
       ),
     )
     .use(
-      nodesClassificationRule<Relationship, TestCtx, TestEdge>(
+      nodesClassificationRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
         "isTask",
         (node) => (node as { type?: string }).type === "listItem",
       ),
     )
     .use(
-      nodeDependencyRule<Relationship, TestCtx, TestEdge>(
+      nodeDependencyRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
         "codeDependsOn",
         (node): boolean => node.type === "code",
         (node, name): boolean => {
@@ -297,11 +284,14 @@ function nodePlainText(node: Node): string {
 // Build GraphEdgesTree for one markdown Root using `containedInSection`
 // -----------------------------------------------------------------------------
 
-function buildGraphTreeForRoot(_root: Root, edges: TestEdge[]): GraphEdgesTree<
+function buildGraphTreeForRoot(
+  _root: Root,
+  edges: WebUiGraphEdge[],
+): GraphEdgesTree<
   Relationship,
-  TestEdge
+  WebUiGraphEdge
 > {
-  return graphEdgesTree<Relationship, TestEdge>(edges, {
+  return graphEdgesTree<Relationship, WebUiGraphEdge>(edges, {
     relationships: ["containedInSection"],
   });
 }
@@ -383,10 +373,10 @@ export async function buildGraphViewerModelFromFiles(
     };
 
     // Run rules on this document
-    const baseCtx: TestCtx = { root };
-    const docEdges: TestEdge[] = [];
+    const baseCtx: WebUiRuleCtx = { root };
+    const docEdges: WebUiGraphEdge[] = [];
     docEdges.push(
-      ...astGraphEdges<Relationship, TestEdge, TestCtx>(root, {
+      ...astGraphEdges<Relationship, WebUiGraphEdge, WebUiRuleCtx>(root, {
         prepareContext: () => baseCtx,
         rules: () => rules,
       }),
@@ -426,7 +416,7 @@ export async function buildGraphViewerModelFromFiles(
     const tree = buildGraphTreeForRoot(root, docEdges);
 
     const toHierarchyNode = (
-      n: GraphEdgeTreeNode<Relationship, TestEdge>,
+      n: GraphEdgeTreeNode<Relationship, WebUiGraphEdge>,
     ): HierarchyNode => ({
       nodeId: ensureNodeId(n.node),
       level: n.level,
@@ -463,6 +453,12 @@ export async function buildGraphViewerModelFromFiles(
   // Sort relationships alphabetically for a stable UI
   relationships.sort((a, b) => a.name.localeCompare(b.name));
 
+  const defaultDocumentId = documents.length > 0 ? documents[0].id : null;
+
+  const defaultRelationshipName =
+    relationships.find((r) => r.hierarchical)?.name ??
+      (relationships[0]?.name ?? null);
+
   const model: GraphViewerModel = {
     title: "Spry Graph Viewer",
     appVersion: "0.1.0",
@@ -472,61 +468,9 @@ export async function buildGraphViewerModelFromFiles(
     edges: edgesByRel,
     hierarchies,
     mdastStore,
+    defaultDocumentId,
+    defaultRelationshipName,
   };
 
   return model;
-}
-
-// -----------------------------------------------------------------------------
-// HTML injection + Deno server
-// -----------------------------------------------------------------------------
-
-async function buildInjectedHtml(): Promise<string> {
-  const htmlTemplate = await Deno.readTextFile(
-    fromFileUrl(new URL("./index.html", import.meta.url)),
-  );
-
-  const model = await buildGraphViewerModelFromFiles([
-    fromFileUrl(
-      new URL("../../fixture/test-fixture-01.md", import.meta.url),
-    ),
-  ]);
-
-  const json = JSON.stringify(model);
-
-  // Replace the placeholder script tag with inline JSON
-  const injectedHtml = htmlTemplate.replace(
-    /<script type="application\/json" id="web-ui\.model\.json"><\/script>/,
-    `<script type="application/json" id="web-ui.model.json">${json}</script>`,
-  );
-
-  return injectedHtml;
-}
-
-if (import.meta.main) {
-  const injectedHtml = await buildInjectedHtml();
-
-  Deno.serve(async (req) => {
-    const url = new URL(req.url);
-
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return new Response(injectedHtml, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
-
-    if (url.pathname === "/index.css" || url.pathname === "/index.js") {
-      const path = fromFileUrl(
-        new URL("." + url.pathname, import.meta.url),
-      );
-      const data = await Deno.readTextFile(path);
-      const contentType = url.pathname.endsWith(".css")
-        ? "text/css; charset=utf-8"
-        : "text/javascript; charset=utf-8";
-
-      return new Response(data, { headers: { "content-type": contentType } });
-    }
-
-    return new Response("Not found", { status: 404 });
-  });
 }
