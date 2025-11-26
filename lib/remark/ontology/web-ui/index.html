@@ -5,11 +5,16 @@
   <meta charset="utf-8" />
   <title>Spry Graph Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- App CSS -->
   <link rel="stylesheet" href="./index.css" />
 
-  <!-- highlight.js (popular syntax highlighter) - load BEFORE our module -->
+  <!-- highlight.js (syntax highlighter) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- GitHub-style Markdown typography for Spry Content -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown-light.css" />
 </head>
 
 <body>
@@ -42,8 +47,10 @@
     <!-- Center: relationship view (tree or table) -->
     <section id="relationship-view-panel">
       <div id="relationship-view-header">
-        <h2 id="relationship-title"></h2>
-        <div id="relationship-meta"></div>
+        <div>
+          <h2 id="relationship-title"></h2>
+          <div id="relationship-meta"></div>
+        </div>
 
         <!-- Controls that only apply in hierarchical mode -->
         <div id="relationship-controls">
@@ -78,50 +85,80 @@
     <!-- Draggable resizer between center and right -->
     <div id="center-right-resizer" aria-hidden="true"></div>
 
-    <!-- Right: node details -->
+    <!-- Right: node details + Spry Content tabs -->
     <aside id="details-panel">
-      <section id="node-details">
-        <h2>Spry Node Properties</h2>
-        <table id="node-properties-table">
-          <tbody>
-            <tr>
-              <th>Node id</th>
-              <td id="node-id"></td>
-            </tr>
-            <tr>
-              <th>Node type</th>
-              <td id="node-type"></td>
-            </tr>
-            <tr>
-              <th>Label</th>
-              <td id="node-label"></td>
-            </tr>
-            <tr>
-              <th>Relationships</th>
-              <td id="node-rels"></td>
-            </tr>
-            <tr>
-              <th>Path</th>
-              <td id="node-path"></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+      <!-- Tabs -->
+      <div id="node-tabs" class="node-tabs">
+        <button type="button" class="node-tab-button active" data-tab="properties">
+          Spry Node Properties
+        </button>
+        <button type="button" class="node-tab-button" data-tab="content">
+          Spry Content
+        </button>
+      </div>
 
-      <section id="node-mdast">
-        <h2>mdast node (JSON)</h2>
-        <pre id="node-mdast-json" class="code-block">
+      <!-- Panes wrapper (fills almost entire right panel height) -->
+      <div id="node-panes-wrapper">
+        <!-- Node Properties pane -->
+        <div id="node-properties-pane" class="node-pane">
+          <section id="node-details" class="node-section">
+            <h2 class="node-section-title">Node Properties</h2>
+            <table id="node-properties-table">
+              <tbody>
+                <tr>
+                  <th>Node id</th>
+                  <td id="node-id"></td>
+                </tr>
+                <tr>
+                  <th>Node type</th>
+                  <td id="node-type"></td>
+                </tr>
+                <tr>
+                  <th>Label</th>
+                  <td id="node-label"></td>
+                </tr>
+                <tr>
+                  <th>Relationships</th>
+                  <td id="node-rels"></td>
+                </tr>
+                <tr>
+                  <th>Path</th>
+                  <td id="node-path"></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="node-mdast" class="node-section">
+            <h2 class="node-section-title">mdast node (JSON)</h2>
+            <div class="node-section-body">
+              <pre id="node-mdast-json" class="code-block">
 <code class="language-json"></code>
-          </pre>
-      </section>
+              </pre>
+            </div>
+          </section>
 
-      <section id="node-source">
-        <h2>Source code / text</h2>
-        <div id="node-code-header" class="code-header"></div> <!-- NEW -->
-        <pre id="node-source-code" class="code-block">
+          <section id="node-source" class="node-section">
+            <h2 class="node-section-title">Source code / text</h2>
+            <div id="node-code-header" class="code-header"></div>
+            <div class="node-section-body">
+              <pre id="node-source-code" class="code-block">
 <code class="language-plaintext"></code>
-          </pre>
-      </section>
+              </pre>
+            </div>
+          </section>
+        </div>
+
+        <!-- Spry Content pane (Markdown rendered as HTML) -->
+        <div id="spry-content-pane" class="node-pane" hidden>
+          <section id="spry-content-section" class="node-section">
+            <h2 class="node-section-title">Spry Content</h2>
+            <div id="spry-content-html" class="markdown-body">
+              <!-- Rendered HTML goes here -->
+            </div>
+          </section>
+        </div>
+      </div>
     </aside>
   </main>
 
@@ -134,6 +171,21 @@
 
   <!-- Model injection (filled by Deno server) -->
   <script type="application/json" id="web-ui.model.json"></script>
+
+  <!-- Remark pipeline for Spry Content rendering -->
+  <script type="module">
+    import { remark } from "https://esm.sh/remark@15?bundle";
+    import remarkHtml from "https://esm.sh/remark-html@16?bundle";
+    import remarkGfm from "https://esm.sh/remark-gfm@4?bundle";
+
+    const processor = remark().use(remarkGfm).use(remarkHtml);
+
+    // Expose a simple global function used by index.js
+    window.SpryRenderMarkdown = async function (markdown) {
+      const file = await processor.process(markdown || "");
+      return String(file);
+    };
+  </script>
 
   <!-- App -->
   <script type="module" src="./index.js"></script>
