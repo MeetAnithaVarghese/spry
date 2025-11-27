@@ -13,6 +13,7 @@ import { HelpCommand } from "@cliffy/help";
 import { fromFileUrl, relative } from "@std/path";
 import { computeSemVerSync } from "../../../universal/version.ts";
 import { buildGraphViewerModelFromFiles } from "./model.ts";
+import { safeJsonStringify } from "../../../universal/tmpl-literal-aide.ts";
 
 /**
  * We use an "injection" model so that saving the file can allow the HTML to
@@ -26,7 +27,7 @@ async function ssrIndexHtml(mdSources: string[]) {
 
   const model = await buildGraphViewerModelFromFiles(mdSources);
 
-  const json = JSON.stringify(model);
+  const json = safeJsonStringify(model);
 
   // Replace the placeholder script tag with inline JSON
   const injectedHtml = htmlTemplate.replace(
