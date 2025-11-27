@@ -16,6 +16,7 @@ import {
   createGraphRulesBuilder,
   frontmatterClassificationRule,
   GraphEdge,
+  headingLikeTextDef,
   headingText,
   isBoldSingleLineParagraph,
   isColonSingleLineParagraph,
@@ -130,6 +131,7 @@ const headingLikeSectionContainer: IsSectionContainer = (node: Node) => {
 
   if (!candidate) return false;
 
+  headingLikeTextDef.factory.attach(node, true);
   return {
     nature: "section" as const,
     ...candidate,

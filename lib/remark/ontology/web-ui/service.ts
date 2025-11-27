@@ -261,54 +261,49 @@ export class CLI {
       .description(`Spry ontology controller`)
       .command("help", new HelpCommand())
       .command("completions", new CompletionsCommand())
-      .command("doc", this.docCommand());
+      .command("web-ui", this.docCommand());
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
-    const cmdName = "doc";
     const { defaultFiles } = this.conf ?? {};
     return new Command()
       .example(
         `default ${
           (defaultFiles?.length ?? 0) > 0 ? `(${defaultFiles?.join(", ")})` : ""
         }`,
-        `${cmdName} ${examplesCmd}`,
+        `${examplesCmd}`,
       )
       .example(
         "load md from local fs",
-        `${cmdName} ${examplesCmd} ./runbook.md`,
+        `${examplesCmd} ./runbook.md`,
       )
       .example(
         "load md from remote URL",
-        `${cmdName} ${examplesCmd} https://SpryMD.org/runbook.md`,
+        `${examplesCmd} https://SpryMD.org/runbook.md`,
       )
       .example(
         "load md from multiple",
-        `${cmdName} ${examplesCmd} ./runbook.d https://qualityfolio.dev/runbook.md another.md`,
+        `${examplesCmd} ./runbook.d https://qualityfolio.dev/runbook.md another.md`,
       );
   }
 
-  docCommand(cmdName = "doc") {
+  docCommand(cmdName = "web-ui") {
     return this.baseCommand({ examplesCmd: cmdName })
       .description(
-        "generate a static HTML page for the document ontology and write it to stdout, or serve with --serve",
+        "Serve the markdown mdasts and Spry Ontology Graphs (SOGs)",
       )
       .arguments("[paths...:string]")
       .option(
-        "--serve",
-        "serve the generated HTML on a local web server with live reload",
-      )
-      .option(
         "--port <port:number>",
-        "port for --serve (default 9876)",
+        "port for web server (default 9876)",
       )
       .option(
         "--listen <addr:string>",
-        "address/interface for --serve (default 127.0.0.1)",
+        "address/interface for web serve (default 127.0.0.1)",
       )
       .option(
         "--no-open",
-        "with --serve, do not automatically open a browser",
+        "when starting server, do not automatically open a browser",
       )
       .action(async (options, ...paths: string[]) => {
         await serve({
