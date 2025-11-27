@@ -182,12 +182,21 @@ main#layout-grid {
   background-color: #ffffff;
 }
 
+/* Tree + table views should each be able to occupy full remaining height */
+#hierarchy-view,
+#edge-table-view {
+  flex: 1 1 auto;
+  min-height: 0;          /* allow them to shrink inside flex container */
+  overflow: auto;         /* scroll inside these panes */
+}
+
 #relationship-view-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 
 #relationship-title {
