@@ -7,36 +7,19 @@
 // - Injects that JSON into index.html and serves it via Deno.serve
 
 import { toMarkdown } from "mdast-util-to-markdown";
-import type { Heading, Paragraph, Root, RootContent } from "types/mdast";
+import type { Heading, Root, RootContent } from "types/mdast";
 import type { Node } from "types/unist";
-
-import {
-  astGraphEdges,
-  containedInSectionRule,
-  createGraphRulesBuilder,
-  frontmatterClassificationRule,
-  GraphEdge,
-  headingLikeTextDef,
-  headingText,
-  isBoldSingleLineParagraph,
-  isColonSingleLineParagraph,
-  IsSectionContainer,
-  nodeDependencyRule,
-  nodesClassificationRule,
-  RuleContext,
-  sectionFrontmatterRule,
-  selectedNodesClassificationRule,
-} from "../graph.ts";
-
-import {
-  type GraphEdgesTree,
-  graphEdgesTree,
-  type GraphEdgeTreeNode,
-} from "../graph-tree.ts";
-
-import { queryPosixPI } from "../../../universal/posix-pi.ts";
-import { codeFrontmatterNDF } from "../../plugin/node/code-frontmatter.ts";
+import { type GraphEdgeTreeNode } from "../graph-tree.ts";
+import { astGraphEdges, headingText } from "../graph.ts";
 import { markdownASTs } from "../io.ts";
+import {
+  buildGraphTreeForRoot,
+  buildRules,
+  ModelGraphEdge,
+  ModelRelationship,
+  ModelRuleCtx,
+} from "../model.ts";
+import { SemanticDecorator } from "../../plugin/node/node-semantic-decorator.ts";
 
 // -----------------------------------------------------------------------------
 // Types: GraphViewerModel (what index.js expects)
@@ -98,111 +81,6 @@ type GraphViewerModel = {
 };
 
 // -----------------------------------------------------------------------------
-// Relationships & rule context (same as Ontology Graphs and Edges test)
-// -----------------------------------------------------------------------------
-
-type Relationship = string;
-
-type WebUiGraphEdge = GraphEdge<Relationship>;
-type WebUiRuleCtx = RuleContext;
-
-// The main hierarchical relationship we care about for the tree view.
-const HIERARCHICAL_RELS = new Set<Relationship>([
-  "containedInSection",
-]);
-
-// -----------------------------------------------------------------------------
-// Section container callback (headings + heading-like paragraphs)
-// -----------------------------------------------------------------------------
-
-const headingLikeSectionContainer: IsSectionContainer = (node: Node) => {
-  if (node.type === "heading") {
-    return {
-      nature: "heading" as const,
-      label: headingText(node),
-      mdLabel: toMarkdown(node as Heading),
-    };
-  }
-
-  if (node.type !== "paragraph") return false;
-
-  const candidate = isBoldSingleLineParagraph(node as Paragraph) ??
-    isColonSingleLineParagraph(node as Paragraph);
-
-  if (!candidate) return false;
-
-  headingLikeTextDef.factory.attach(node, true);
-  return {
-    nature: "section" as const,
-    ...candidate,
-  };
-};
-
-// -----------------------------------------------------------------------------
-// Build the rule pipeline (same as Ontology Graphs and Edges test)
-// -----------------------------------------------------------------------------
-
-function buildRules() {
-  const builder = createGraphRulesBuilder<
-    Relationship,
-    WebUiRuleCtx,
-    WebUiGraphEdge
-  >();
-
-  return builder
-    .use(
-      containedInSectionRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
-        "containedInSection",
-        headingLikeSectionContainer,
-      ),
-    )
-    .use(
-      sectionFrontmatterRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
-        "frontmatter",
-        ["containedInSection"] as Relationship[],
-      ),
-    )
-    .use(
-      frontmatterClassificationRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
-        "doc-classify",
-      ),
-    )
-    .use(
-      selectedNodesClassificationRule<
-        Relationship,
-        WebUiRuleCtx,
-        WebUiGraphEdge
-      >(
-        "emphasis",
-        "isImportant",
-      ),
-    )
-    .use(
-      nodesClassificationRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
-        "isTask",
-        (node) => (node as { type?: string }).type === "listItem",
-      ),
-    )
-    .use(
-      nodeDependencyRule<Relationship, WebUiRuleCtx, WebUiGraphEdge>(
-        "codeDependsOn",
-        (node): boolean => node.type === "code",
-        (node, name): boolean => {
-          if (!codeFrontmatterNDF.is(node)) return false;
-          return node.data.codeFM.pi.pos[0] === name;
-        },
-        (node) => {
-          if (!codeFrontmatterNDF.is(node)) return false;
-          const qf = queryPosixPI(node.data.codeFM.pi);
-          const deps = qf.getTextFlagValues("dep");
-          return deps.length > 0 ? deps : false;
-        },
-      ),
-    )
-    .build();
-}
-
-// -----------------------------------------------------------------------------
 // Node label helper (similar to graph-tree's defaultNodeLabel)
 // -----------------------------------------------------------------------------
 
@@ -245,6 +123,11 @@ function computeNodeLabel(node: Node): string {
     return type;
   }
 
+  if (type === "semantic-decorator") {
+    const d = node as SemanticDecorator;
+    return `semantic-decorator ${d.kind}${d.decorator}`;
+  }
+
   // Fallback: type + truncated visible text, never JSON
   const text = nodePlainText(node);
   if (text) {
@@ -283,24 +166,13 @@ function nodePlainText(node: Node): string {
 }
 
 // -----------------------------------------------------------------------------
-// Build GraphEdgesTree for one markdown Root using `containedInSection`
-// -----------------------------------------------------------------------------
-
-function buildGraphTreeForRoot(
-  _root: Root,
-  edges: WebUiGraphEdge[],
-): GraphEdgesTree<
-  Relationship,
-  WebUiGraphEdge
-> {
-  return graphEdgesTree<Relationship, WebUiGraphEdge>(edges, {
-    relationships: ["containedInSection"],
-  });
-}
-
-// -----------------------------------------------------------------------------
 // GraphViewerModel builder
 // -----------------------------------------------------------------------------
+
+// The main hierarchical relationship we care about for the tree view.
+const HIERARCHICAL_RELS = new Set<ModelRelationship>([
+  "containedInSection",
+]);
 
 export async function buildGraphViewerModelFromFiles(
   markdownPaths: string[],
@@ -375,10 +247,10 @@ export async function buildGraphViewerModelFromFiles(
     };
 
     // Run rules on this document
-    const baseCtx: WebUiRuleCtx = { root };
-    const docEdges: WebUiGraphEdge[] = [];
+    const baseCtx: ModelRuleCtx = { root };
+    const docEdges: ModelGraphEdge[] = [];
     docEdges.push(
-      ...astGraphEdges<Relationship, WebUiGraphEdge, WebUiRuleCtx>(root, {
+      ...astGraphEdges<ModelRelationship, ModelGraphEdge, ModelRuleCtx>(root, {
         prepareContext: () => baseCtx,
         rules: () => rules,
       }),
@@ -418,7 +290,7 @@ export async function buildGraphViewerModelFromFiles(
     const tree = buildGraphTreeForRoot(root, docEdges);
 
     const toHierarchyNode = (
-      n: GraphEdgeTreeNode<Relationship, WebUiGraphEdge>,
+      n: GraphEdgeTreeNode<ModelRelationship, ModelGraphEdge>,
     ): HierarchyNode => ({
       nodeId: ensureNodeId(n.node),
       level: n.level,
@@ -446,7 +318,7 @@ export async function buildGraphViewerModelFromFiles(
   for (const [name, count] of relEdgeCounts.entries()) {
     relationships.push({
       name,
-      hierarchical: HIERARCHICAL_RELS.has(name as Relationship),
+      hierarchical: HIERARCHICAL_RELS.has(name as ModelRelationship),
       edgeCount: count,
       description: undefined,
     });

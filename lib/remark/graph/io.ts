@@ -10,21 +10,10 @@ import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
-import type { Code, Root, RootContent } from "types/mdast";
+import type { Root, RootContent } from "types/mdast";
 import { unified } from "unified";
 
 import docFrontmatterPlugin from "../plugin/doc/doc-frontmatter.ts";
-import codeFrontmatterPlugin, {
-  codeFrontmatterNDF,
-} from "../plugin/node/code-frontmatter.ts";
-import codePartialsPlugin, {
-  codePartialsCollection,
-  codePartialSNDF,
-} from "../plugin/node/code-partial.ts";
-import {
-  isCodeConsumedAsHeadingFrontmatterNode,
-} from "../plugin/node/heading-frontmatter.ts";
-import nodeIdentitiesPlugin from "../plugin/node/node-identities.ts";
 
 import {
   provenanceFromPaths,
@@ -42,6 +31,7 @@ import { basename } from "@std/path";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
 import { resolveImportSpecs } from "../plugin/node/code-import.ts";
 import { insertCodeImportNodes } from "../plugin/node/code-insert.ts";
+import { nodeDecoratorPlugin } from "../plugin/node/node-semantic-decorator.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -54,11 +44,7 @@ export type Yielded<T> = T extends Generator<infer Y> ? Y
 // Remark / unified orchestration
 // ---------------------------------------------------------------------------
 
-export function mardownParserPipeline(init: {
-  readonly codePartialsCollec?: ReturnType<typeof codePartialsCollection>;
-} = {}) {
-  const { codePartialsCollec } = init;
-
+export function mardownParserPipeline() {
   return unified()
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"]) // extracts to YAML node but does not parse
@@ -67,48 +53,7 @@ export function mardownParserPipeline(init: {
     .use(remarkGfm) // support GitHub flavored markdown
     .use(resolveImportSpecs) // find code cells which want to be imported from local/remote files
     .use(insertCodeImportNodes) // generate code cells found by resolveImportSpecs
-    .use(codeFrontmatterPlugin, { // treat code cell PIs + attrs as "code frontmatter"
-      coerceNumbers: true,
-      onAttrsParseError: "ignore",
-    })
-    .use(codePartialsPlugin, {
-      // collects PARTIAL code cells
-      collect: (cp) => {
-        codePartialsCollec?.register(cp);
-      },
-    })
-    .use(nodeIdentitiesPlugin, {
-      // establish identities last, after all other enrichment
-      identityFromNode: (node) => {
-        if (node.type === "code") {
-          const code = node as Code;
-          if (codePartialSNDF.is(code)) {
-            return {
-              supplier: "code-partial",
-              identity: code.data.codePartial.identity,
-            };
-          } else if (
-            codeFrontmatterNDF.is(code) &&
-            !isCodeConsumedAsHeadingFrontmatterNode(code)
-          ) {
-            if (code.data.codeFM.pi.posCount > 0) {
-              return {
-                supplier: "code",
-                identity: code.data.codeFM.pi.pos[0],
-              };
-            }
-          }
-        }
-        return false;
-      },
-      identityFromHeadingFM: (fm, node) => {
-        if (!fm?.id || node.type !== "heading") return false as const;
-        return {
-          supplier: "headFM",
-          identity: String(fm.id),
-        };
-      },
-    });
+    .use(nodeDecoratorPlugin); // look for @id and transform to node.type == "semantic-decorator"
 }
 
 // ---------------------------------------------------------------------------
@@ -124,12 +69,6 @@ export interface MarkdownASTsOptions<
    * Defaults to `mardownParserPipeline()` with a shared code partials collection.
    */
   readonly pipeline?: ReturnType<typeof mardownParserPipeline>;
-
-  /**
-   * Optional shared code partials collection. If provided and no pipeline is
-   * given, it will be wired into the default pipeline.
-   */
-  readonly codePartialsCollec?: ReturnType<typeof codePartialsCollection>;
 
   /**
    * Optional preconfigured VFile-capable ResourcesFactory.
@@ -165,14 +104,8 @@ export async function* markdownASTs<
   provenances: readonly string[] | Iterable<P> | AsyncIterable<P>,
   options: MarkdownASTsOptions<P, S> = {},
 ) {
-  const codePartialsCollec = options.codePartialsCollec ??
-    codePartialsCollection();
-
-  const pipeline = options.pipeline ??
-    mardownParserPipeline({ codePartialsCollec });
-
-  const rf = options.factory ??
-    vfileResourcesFactory<P, S>({});
+  const pipeline = options.pipeline ?? mardownParserPipeline();
+  const rf = options.factory ?? vfileResourcesFactory<P, S>({});
 
   // ---------------------------------------------------------------------------
   // Normalize input → provenance iterable

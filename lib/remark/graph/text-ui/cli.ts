@@ -16,10 +16,10 @@ import { ListerBuilder } from "../../../universal/lister-tabular-tui.ts";
 import { TreeLister } from "../../../universal/lister-tree-tui.ts";
 import { computeSemVerSync } from "../../../universal/version.ts";
 
-import { buildGraphViewerModelFromFiles } from "../web-ui/model.ts";
-import * as webUI from "../web-ui/service.ts";
 import type { Node, Position } from "types/unist";
 import { headingLikeTextDef } from "../graph.ts";
+import * as webUI from "../web-ui/service.ts";
+import { buildGraphViewerModelFromFiles } from "../web-ui/view.ts";
 
 type GraphViewerModel = Awaited<
   ReturnType<typeof buildGraphViewerModelFromFiles>

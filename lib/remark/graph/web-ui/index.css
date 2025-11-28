@@ -370,12 +370,6 @@ main#layout-grid {
 
 /* Edge table view */
 
-#edge-table-view {
-  flex: 0 0 auto;
-  max-height: 40%;
-  overflow: auto;
-}
-
 #edge-table {
   width: 100%;
   border-collapse: collapse;

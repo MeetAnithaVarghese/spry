@@ -3,7 +3,7 @@ import { fromFileUrl } from "@std/path";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { Heading, Paragraph } from "types/mdast";
 import { queryPosixPI } from "../../universal/posix-pi.ts";
-import { codeFrontmatterNDF } from "../plugin/node/code-frontmatter.ts";
+import { codeFrontmatterNDF } from "../mdast/code-frontmatter.ts";
 import { graphEdgesTree, headingsTreeText } from "./graph-tree.ts";
 import {
   astGraphEdges,
