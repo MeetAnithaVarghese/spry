@@ -37,12 +37,12 @@ import {
 import {
   detectMimeFromPath,
   ResourceProvenance,
-  ResourceStrategy,
   strategyDecisions,
   tryParseHttpUrl,
 } from "../../../universal/resource.ts";
 import { safeInterpolate } from "../../../universal/safe-interpolate.ts";
 import { flexibleNodeIssues } from "../../mdast/issue.ts";
+import { addIssue } from "../../mdast/node-issues.ts";
 import {
   DataSupplierNode,
   flexibleTextSchema,
@@ -106,9 +106,9 @@ export type CodeImportSpecsNode<N extends Node = Code & { data: Data }> =
 
 /** Shape of the injectedNode metadata we attach to generated mdast.Code.data. */
 export type ImportedContent = {
-  readonly importedFrom: CodeImportSpecsNode<Code>;
+  readonly importedFrom: string;
+  readonly importedSpecs: CodeImportSpecs;
   readonly provenance: CodeImportSpecProvenance;
-  readonly strategy: ResourceStrategy;
   readonly isContentAcquired: boolean;
 };
 
@@ -310,7 +310,12 @@ export function* prepareCodeNodes(
 
       // Non-binary local file: sync read into node.value
       if (!isBinaryHint && readLocalFsText) {
-        value = Deno.readTextFileSync(path);
+        try {
+          value = Deno.readTextFileSync(path);
+        } catch (error) {
+          value = `Unable to read ${path}:\n${error}`;
+          addIssue(code, { message: value, severity: "error", error });
+        }
         isContentAcquired = true;
       }
     } else {
