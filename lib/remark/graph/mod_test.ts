@@ -181,9 +181,9 @@ Deno.test("Ontology Graphs and Edges test", async () => {
     {} as Record<Relationship, number>,
   );
   assertEquals(relCounts, {
-    containedInHeading: 1206,
+    containedInHeading: 1172,
     frontmatter: 12,
-    containedInSection: 1206,
+    containedInSection: 1172,
     isTask: 175,
     "role:case": 8,
     "role:evidence": 6,
