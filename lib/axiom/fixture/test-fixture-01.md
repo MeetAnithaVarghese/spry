@@ -471,7 +471,7 @@ This markdown was inserted from the PARTIAL named TC-PARTIAL-0001
 
 @id TC-INJECT-0001
 
-```csv --import mdast-io_test-fixture-01.csv
+```csv --import test-fixture-01.csv
 This is a code block whose content will be replaced with the imported CSV.
 ```
 
