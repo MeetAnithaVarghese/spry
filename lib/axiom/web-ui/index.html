@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Spry Graph Viewer</title>
+    <title>Spry Axiom Graphs Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- App CSS -->
@@ -26,7 +26,7 @@
 
   <body>
     <header>
-      <h1>Spry Graph Viewer</h1>
+      <h1>Spry Axiom Graphs Explorer</h1>
       <div id="header-controls">
         <label for="document-select">Document:</label>
         <select id="document-select"></select>
@@ -65,7 +65,7 @@
 
             <label class="toggle-checkbox">
               <input type="checkbox" id="relationship-pills-toggle" />
-              Relationship pills
+              Relationships
             </label>
           </div>
         </div>
@@ -101,7 +101,7 @@
             class="node-tab-button active"
             data-tab="properties"
           >
-            Spry Node Properties
+            Spry Properties
           </button>
           <button type="button" class="node-tab-button" data-tab="content">
             Spry Content
@@ -113,7 +113,7 @@
           <!-- Node Properties pane -->
           <div id="node-properties-pane" class="node-pane">
             <section id="node-details" class="node-section">
-              <h2 class="node-section-title">Node Properties</h2>
+              <h2 class="node-section-title">Axiom Node Properties</h2>
               <table id="node-properties-table">
                 <tbody>
                   <tr>
@@ -199,7 +199,7 @@
       </span>
     </footer>
 
-    <!-- Model injection (filled by Deno server) -->
+    <!-- Model injection (filled by Deno server, using "fill" model so that static HTML works) -->
     <script type="application/json" id="web-ui.model.json"></script>
 
     <!-- Remark pipeline for Spry Content rendering (Markdown → HTML) -->
