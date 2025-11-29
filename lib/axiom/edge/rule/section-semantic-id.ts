@@ -1,5 +1,5 @@
 import { isNodeDecorator } from "../../remark/node-decorator.ts";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 import { GraphEdgesRule, RuleContext, transformRule } from "./governance.ts";
 
 /**

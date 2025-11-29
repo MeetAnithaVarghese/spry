@@ -1,5 +1,5 @@
 import { docFrontmatterDataBag } from "../../remark/doc-frontmatter.ts";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 import {
   augmentRule,
   GraphEdgesRule,

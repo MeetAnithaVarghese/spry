@@ -1,5 +1,5 @@
 import { selectAll } from "unist-util-select";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 import { augmentRule, GraphEdgesRule, RuleContext } from "./governance.ts";
 
 /**

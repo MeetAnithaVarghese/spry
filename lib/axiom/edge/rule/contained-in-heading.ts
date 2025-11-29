@@ -1,5 +1,5 @@
 import { Node } from "types/mdast";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 import { augmentRule, GraphEdgesRule, RuleContext } from "./governance.ts";
 
 /**

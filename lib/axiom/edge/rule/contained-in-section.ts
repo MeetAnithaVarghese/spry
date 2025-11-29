@@ -1,7 +1,7 @@
 import { toMarkdown } from "mdast-util-to-markdown";
 import { Node, RootContent } from "types/mdast";
 import { dataBag } from "../../mdast/data-bag.ts";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 import { augmentRule, GraphEdgesRule, RuleContext } from "./governance.ts";
 
 /**

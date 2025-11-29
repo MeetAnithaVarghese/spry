@@ -1,5 +1,5 @@
 import { Root } from "types/mdast";
-import { GraphEdge } from "../governance.ts";
+import { GraphEdge } from "../orchestrate.ts";
 
 export type RuleContext = {
   readonly root: Root;
