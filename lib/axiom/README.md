@@ -22,13 +22,13 @@ queryable knowledge system instead of just text.
 **Text-UI** (`CLI`)
 
 ```bash cli
-./lib/axiom/text-ui/cli.ts ls lib/axiom/fixture/test-fixture-01.md
+./lib/axiom/text-ui/cli.ts ls lib/axiom/fixture/pmd/comprehensive.md
 ```
 
 **Web-UI**
 
 ```bash web-ui
-./lib/axiom/web-ui/service.ts web-ui lib/axiom/fixture/test-fixture-01.md
+./lib/axiom/web-ui/service.ts web-ui lib/axiom/fixture/pmd/comprehensive.md
 ```
 
 ## Why Axiom?

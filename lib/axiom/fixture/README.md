@@ -2,11 +2,14 @@
 
 ## Sources
 
-- [x] `test-fixture-01.md` is a complex markdown
-  - [x] `test-fixture-01.csv` is used by `csv --import test-fixture-01.csv`
+- [x] `sundry/*` contains sundry synthetic files for general purpose ingestion
+- [x] `pmd/*` contains _Programmable Markdown_ synthetic / test fixtures
+- [x] `pmd/comprehensive.md` is a complex markdown with many example node types
 
 ## Golden
 
-- [x] `mod_test-headings-tree-text.golden.txt` is used by ../mod_test.ts
-- [ ] `test-fixture-01.md-stats.golden.json` needs to go into mod_test.ts to
-      count what's in `test-fixture-01.md`
+- [x] `golden/*` contains "golden" files which are matched against expectations
+      in test cases; they are organized with the same directories and filenames
+      with test case names in the basename. For example
+      `mod_test.ts-relCounts.json` means the "relCounts" test case in
+      `mod_test.ts`.

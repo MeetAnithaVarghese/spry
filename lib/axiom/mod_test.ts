@@ -1,5 +1,4 @@
 import { assert, assertEquals } from "@std/assert";
-import { fromFileUrl } from "@std/path";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { Heading, Paragraph } from "types/mdast";
 import { queryPosixPI } from "../universal/posix-pi.ts";
@@ -25,10 +24,17 @@ import {
   sectionFrontmatterRule,
   selectedNodesClassificationRule,
 } from "./edge/rule/mod.ts";
+import { fixturesFactory } from "./fixture/mod.ts";
 import { Graph, graphToDot } from "./graph.ts";
 import { markdownASTs } from "./io/mod.ts";
 import { codeFrontmatter } from "./mdast/code-frontmatter.ts";
 import { headingText } from "./mdast/node-content.ts";
+
+const ff = fixturesFactory(import.meta.resolve, "./fixture");
+const fixtures = {
+  ...ff,
+  comprehensiveMdPath: ff.pmdPath("comprehensive.md"),
+};
 
 const relationships = defineRelationships(
   "containedInHeading",
@@ -86,7 +92,7 @@ const headingLikeSectionContainer: IsSectionContainer = (node) => {
   };
 };
 
-Deno.test("Ontology Graphs and Edges test", async () => {
+Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensiveMdPath)}`, async () => {
   const builder = createGraphRulesBuilder<Relationship, TestCtx, TestEdge>();
   const rules = builder
     .use(
@@ -139,11 +145,7 @@ Deno.test("Ontology Graphs and Edges test", async () => {
 
   const graphs: Graph<Relationship, TestEdge>[] = [];
   for await (
-    const viewable of markdownASTs([
-      fromFileUrl(
-        new URL("./fixture/test-fixture-01.md", import.meta.url).href,
-      ),
-    ])
+    const viewable of markdownASTs([fixtures.comprehensiveMdPath])
   ) {
     const edges: TestEdge[] = [];
     const baseCtx: TestCtx = { root: viewable.mdastRoot };
@@ -201,12 +203,87 @@ Deno.test("Ontology Graphs and Edges test", async () => {
   const geTree = graphEdgesTree<Relationship, TestEdge>(edges, {
     relationships: ["containedInSection"],
   });
-  assertEquals(
-    headingsTreeText(geTree, false),
-    await Deno.readTextFile(
-      fromFileUrl(
-        import.meta.resolve("./fixture/mod_test-headings-tree-text.golden.txt"),
-      ),
-    ),
-  );
+  assertEquals(headingsTreeText(geTree, false), headingsTreeGolden);
 });
+
+const headingsTreeGolden = `
+- containedInSection
+  heading:#1 Spry remark ecosystem Test Fixture 01
+  ├─ paragraph:Objectives
+  ├─ paragraph:Risks
+  ├─ heading:#2 Plugin Orchestration Strategy
+  │  ├─ paragraph:Doc frontmatter plugin
+  │  ├─ paragraph:Heading frontmatter plugin
+  │  ├─ paragraph:Node classification plugin
+  │  ├─ paragraph:Node identities plugin
+  │  ├─ paragraph:Code annotations plugin
+  │  ├─ paragraph:Code frontmatter plugin
+  │  ├─ paragraph:Code partial plugin
+  │  ├─ paragraph:Code injection plugin
+  │  └─ paragraph:Key Goals
+  ├─ heading:#2 Node Classification & Doc Frontmatter Strategy
+  │  ├─ paragraph:Doc Frontmatter Plugin Behavior
+  │  ├─ paragraph:Node Classification Plugin Behavior
+  │  └─ heading:#3 Node Classification Verification Plan
+  │     ├─ paragraph:Cycle Goals
+  │     └─ heading:#4 Node Classification Visibility Suite
+  │        ├─ paragraph:Scope
+  │        └─ heading:#5 Verify headings are classified according to doc frontmatter rules
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  │              └─ paragraph:Attachment
+  ├─ heading:#2 Node Identities & Heading Frontmatter Strategy
+  │  └─ heading:#3 Node Identity & Heading Frontmatter Plan
+  │     ├─ paragraph:Cycle Goals
+  │     └─ heading:#4 Node Identity Suite
+  │        └─ heading:#5 Verify @id markers bind to nearest semantic node
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  │              └─ paragraph:Attachment
+  ├─ heading:#2 Code Annotations & Code Frontmatter Strategy
+  │  └─ heading:#3 Code Metadata Verification Plan
+  │     └─ heading:#4 Code Metadata Suite
+  │        └─ heading:#5 Verify code annotations and code frontmatter are both attached
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Synthetic Example Code Cell
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  ├─ heading:#2 Code Partials & Code Injection Strategy
+  │  └─ heading:#3 Partial & Injection Plan
+  │     └─ heading:#4 Partial Library Suite
+  │        ├─ heading:#5 Define a reusable TypeScript partial
+  │        ├─ heading:#5 Define a reusable Markdown partial for use with directives
+  │        └─ heading:#5 Inject the partial into another cell by logical ID
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  ├─ heading:#2 Doc Schema Strategy
+  │  └─ heading:#3 Doc Schema Validation Plan
+  │     └─ heading:#4 Schema Compliance Suite
+  │        └─ heading:#5 Validate project-level schema
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  ├─ heading:#2 mdast-io Round-Trip Strategy
+  │  └─ heading:#3 mdast-io Round-Trip Plan
+  │     └─ heading:#4 Round-Trip Integrity Suite
+  │        └─ heading:#5 Verify mdast-io preserves plugin metadata across round-trip
+  │           ├─ paragraph:Description
+  │           ├─ paragraph:Preconditions
+  │           ├─ paragraph:Steps
+  │           ├─ paragraph:Expected Results
+  │           └─ heading:#6 Evidence
+  │              └─ paragraph:Attachment
+  └─ heading:#2 Summary`.trim();

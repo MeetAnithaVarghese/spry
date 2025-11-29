@@ -60,7 +60,7 @@ export async function serve(args: {
 
   if (mdSources.length == 0) {
     mdSources.push(fromFileUrl(
-      new URL("../../fixture/test-fixture-01.md", import.meta.url),
+      new URL("../fixture/pmd/comprehensive.md", import.meta.url),
     ));
   }
   const watchTargets = (!watchCandidates || watchCandidates.length == 0)
