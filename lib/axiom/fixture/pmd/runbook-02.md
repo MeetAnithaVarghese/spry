@@ -1,0 +1,35 @@
+```bash task-1 --descr "A demo task"
+echo "task-1 successful"
+```
+
+```bash task-2 --dep task-3 --descr "Another demo task"
+echo "task-2 successful"
+```
+
+```bash PARTIAL test-partial { newLocal: { type: "string", required: true } }
+echo "this is the newLocal in test-partial: ${newLocal}"
+```
+
+The `-I` (or `--interpolate` will allow the task to be interpolated by Spry)
+
+```bash task-3 -I --descr "Another demo task"
+#!/usr/bin/env -S bash
+echo "task-3 successful"
+${await partial("test-partial", { newLocal: "passed from task-3"})}
+```
+
+> The following is an example of how to see the output of an interpolation. Just
+> use `#!/usr/bin/env -S cat` to cat the output.
+
+```bash task-4 --interpolate --descr "Another demo task"
+#!/usr/bin/env -S cat
+echo "task: ${safeJsonStringify(partial)}"
+
+# partial 1 (error): ${await partial("non-existent")}
+
+# partial 2 (works): ${await partial("test-partial", { newLocal: "passed from debug.sql"})}
+
+# partial 3 (error): ${await partial("test-partial", { mistypedNewLocal: "passed from debug.sql"})}
+
+${await partial("test-partial", { newLocal: "passed from task-3 without await"})}
+```
