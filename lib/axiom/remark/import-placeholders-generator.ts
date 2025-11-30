@@ -140,3 +140,5 @@ export const insertImportPlaceholders: Plugin<
     return tree;
   };
 };
+
+export default insertImportPlaceholders;

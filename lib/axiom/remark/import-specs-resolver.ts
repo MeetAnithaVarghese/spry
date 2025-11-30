@@ -390,3 +390,5 @@ export const resolveImportSpecs: Plugin<[CodeImportOptions?], Root> = (
     });
   };
 };
+
+export default resolveImportSpecs;

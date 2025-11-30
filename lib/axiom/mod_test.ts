@@ -29,7 +29,7 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
   };
 
   let comprehensive: MarkdownEncountered;
-  const gpff = await flexibleProjectionFromFiles(
+  const fpff = await flexibleProjectionFromFiles(
     [fixtures.comprehensiveMdPath],
     (encountered) => {
       // expecting only a single document
@@ -47,9 +47,9 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
     }`,
     async () => {
       // when required, uncomment to store stable "golden" version as a JSON file
-      // await fixtures.goldenJSON(f.comprehensive.projection, gpff);
+      // await fixtures.goldenJSON(f.comprehensive.projection, fpff);
       assertEquals(
-        JSON.stringify(gpff), // comparing string to string since the file is large
+        JSON.stringify(fpff), // comparing string to string since the file is large
         await fixtures.goldenText(f.comprehensive.projection),
       );
     },
@@ -104,6 +104,8 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
       "role:case",
       "role:evidence",
       "isCode",
+      "isSpawnableCodeCandidate",
+      "isPartial",
       "isTask",
     ]);
 
@@ -122,6 +124,8 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
       "role:strategy": 8,
       "role:suite": 6,
       isCode: 16,
+      isPartial: 2,
+      isSpawnableCodeCandidate: 13,
       sectionSemanticId: 34,
       // deno-lint-ignore no-explicit-any
     } as any);

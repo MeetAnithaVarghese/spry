@@ -22,6 +22,7 @@ import {
   sectionSemanticIdRule,
   selectedNodesClassificationRule,
 } from "../rule/mod.ts";
+import { isSpawnableCodeCandidate } from "../../remark/spawnable-code-candidates.ts";
 
 export type TypicalRelationship = string;
 
@@ -104,6 +105,13 @@ export function typicalRules() {
         TypicalRuleCtx,
         TypicalGraphEdge
       >("isCode", (node) => node.type === "code"),
+    )
+    .use(
+      nodesClassificationRule<
+        TypicalRelationship,
+        TypicalRuleCtx,
+        TypicalGraphEdge
+      >("isSpawnableCodeCandidate", (node) => isSpawnableCodeCandidate(node)),
     )
     .use(
       nodesClassificationRule<

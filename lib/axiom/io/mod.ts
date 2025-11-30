@@ -13,7 +13,7 @@ import remarkParse from "remark-parse";
 import type { Root, RootContent } from "types/mdast";
 import { unified } from "unified";
 
-import docFrontmatterPlugin from "../remark/doc-frontmatter.ts";
+import docFrontmatter from "../remark/doc-frontmatter.ts";
 
 import {
   provenanceFromPaths,
@@ -32,9 +32,11 @@ import { VFile } from "vfile";
 import { GraphEdge } from "../edge/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
-import { insertImportPlaceholders } from "../remark/import-placeholders-generator.ts";
-import { resolveImportSpecs } from "../remark/import-specs-resolver.ts";
-import { nodeDecoratorPlugin } from "../remark/node-decorator.ts";
+import insertImportPlaceholders from "../remark/import-placeholders-generator.ts";
+import resolveImportSpecs from "../remark/import-specs-resolver.ts";
+import nodeDecorator from "../remark/node-decorator.ts";
+import spawnableCodeCandidates from "../remark/spawnable-code-candidates.ts";
+import codePartials from "../remark/code-partial.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -58,7 +60,7 @@ export function mardownParserPipeline() {
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"]) // extracts to YAML node but does not parse
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
-    .use(docFrontmatterPlugin) // parses extracted YAML and stores at md AST root
+    .use(docFrontmatter) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
     .use(resolveImportSpecs, { // find code cells which want to be imported from local/remote files
       interpolationCtx: (_root, vfile) => ({
@@ -79,7 +81,9 @@ export function mardownParserPipeline() {
         }
       },
     })
-    .use(nodeDecoratorPlugin); // look for @id and transform to node.type == "decorator"
+    .use(nodeDecorator) // look for @id and transform to node.type == "decorator"
+    .use(codePartials) // be sure this comes before spawnableCodeCandidates
+    .use(spawnableCodeCandidates);
 }
 
 // ---------------------------------------------------------------------------

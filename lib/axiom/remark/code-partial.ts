@@ -61,7 +61,7 @@ export function isCodePartial<
 }
 
 /**
- * Options for {@link codePartialPlugin}.
+ * Options for {@link codePartials}.
  */
 // deno-lint-ignore no-empty-interface
 export interface CodePartialOptions {
@@ -81,11 +81,10 @@ export interface CodePartialOptions {
  * intended as a primitive that other plugins can use to attach semantic
  * meaning to code blocks.
  */
-export const codePartialPlugin: Plugin<[CodePartialOptions?], Root> = () => {
+export const codePartials: Plugin<[CodePartialOptions?], Root> = () => {
   const partialParser = textInstrCandidateParser("PARTIAL");
   return (tree) => {
-    visit<Root, "code">(tree, "code", (node, index, parent) => {
-      if (!parent || typeof index !== "number") return;
+    visit<Root, "code">(tree, "code", (node) => {
       if (node.meta) {
         const pp = partialParser(node.meta);
         if (pp && pp.nature) {
@@ -102,3 +101,5 @@ export const codePartialPlugin: Plugin<[CodePartialOptions?], Root> = () => {
     });
   };
 };
+
+export default codePartials;

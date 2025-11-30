@@ -178,3 +178,5 @@ export const nodeDecoratorPlugin: Plugin<[NodeDecoratorOptions?], Root> = (
     });
   };
 };
+
+export default nodeDecoratorPlugin;
