@@ -3,7 +3,7 @@ import type { Code, Root } from "types/mdast";
 import type { Node } from "types/unist";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import { LanguageSpec } from "../../universal/code.ts";
+import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
 import {
   flexibleTextSchema,
   mergeFlexibleText,
@@ -80,18 +80,34 @@ export function isSpawnableCodeCandidate(
     : false;
 }
 
-// deno-lint-ignore no-empty-interface
+export const spawnableLangIds = ["shell"] as const;
+export type SpawnableLangIds = typeof spawnableLangIds[number];
+export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
+  const langSpec = languageRegistry.get(lid);
+  if (!langSpec) throw new Error("this should never happen");
+  return langSpec;
+});
+
 export interface SpawnableCodeCandidatesOptions {
-  /** for future extensions */
+  readonly isCandidate?: (code: Code) => boolean;
 }
 
 export const spawnableCodeCandidates: Plugin<
   [SpawnableCodeCandidatesOptions?],
   Root
-> = () => {
+> = (options) => {
+  const {
+    isCandidate = (code: Code) =>
+      spawnableLangSpecs.find((lang) =>
+          lang.id == code.lang || lang.aliases?.find((a) => a == code.lang)
+        )
+        ? true
+        : false,
+  } = options ?? {};
   return (tree) => {
     visit<Root, "code">(tree, "code", (code) => {
       if (isCodeDirectiveCandidate(code)) return;
+      if (!isCandidate(code)) return;
 
       if (code.meta) {
         const codeFM = codeFrontmatter(code);

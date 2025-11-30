@@ -1,13 +1,8 @@
-import { assert, assertEquals, assertFalse } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import { inspect } from "unist-util-inspect";
-import { graphEdgesTree, headingsTreeText, typicalRules } from "./edge/mod.ts";
+import { graphEdgesTree, headingsTreeText } from "./edge/mod.ts";
 import { fixturesFactory } from "./fixture/mod.ts";
-import {
-  astGraphEdges,
-  Graph,
-  graphToDot,
-  MarkdownEncountered,
-} from "./mod.ts";
+import { graph, GraphEdge, graphToDot, MarkdownEncountered } from "./mod.ts";
 import { flexibleProjectionFromFiles } from "./projection/flexible.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -17,9 +12,13 @@ const ff = fixturesFactory(import.meta.resolve, "./fixture");
 const fixtures = {
   ...ff,
   comprehensiveMdPath: ff.pmdPath("comprehensive.md"),
+  runbook1MdPath: ff.pmdPath("runbook-01.md"),
+  runbook2MdPath: ff.pmdPath("runbook-02.md"),
+  runbook3MdPath: ff.pmdPath("runbook-03.md"),
+  runbook4MdPath: ff.pmdPath("runbook-04.md"),
 };
 
-Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensiveMdPath)}`, async (t) => {
+Deno.test(`Axiom regression / smoke test`, async (t) => {
   const f = {
     comprehensive: {
       projection: "mod_test.ts-comprehensive.md-projection.json",
@@ -28,112 +27,216 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
     },
   };
 
-  let comprehensive: MarkdownEncountered;
+  const me: MarkdownEncountered[] = [];
   const fpff = await flexibleProjectionFromFiles(
-    [fixtures.comprehensiveMdPath],
-    (encountered) => {
-      // expecting only a single document
-      assertFalse(comprehensive);
-      comprehensive = encountered;
-    },
+    [
+      fixtures.comprehensiveMdPath, // always keep this first
+      fixtures.runbook1MdPath,
+      fixtures.runbook2MdPath,
+      fixtures.runbook3MdPath,
+      fixtures.runbook4MdPath,
+    ],
+    (encountered) => me.push(encountered),
   );
 
-  assert(comprehensive!);
-  const { mdastRoot: root } = comprehensive;
+  await t.step(ff.relToCWD(fixtures.comprehensiveMdPath), async (s) => {
+    const [comprehensive] = me;
 
-  await t.step(
-    `validate stable projection via JSON in ${
-      ff.relToCWD(f.comprehensive.projection)
-    }`,
-    async () => {
-      // when required, uncomment to store stable "golden" version as a JSON file
-      // await fixtures.goldenJSON(f.comprehensive.projection, fpff);
-      assertEquals(
-        JSON.stringify(fpff), // comparing string to string since the file is large
-        await fixtures.goldenText(f.comprehensive.projection),
-      );
-    },
-  );
+    assert(comprehensive);
+    const { mdastRoot: root } = comprehensive;
+    const gr = graph(root);
 
-  await t.step(
-    `validate stable mdast tree via 'inspect' output in ${
-      ff.relToCWD(f.comprehensive.inspect)
-    }`,
-    async () => {
-      // when required, uncomment to store stable "golden" version as a text file:
-      // await fixtures.goldenText(f.comprehensive.inspect, inspect(root));
-      assertEquals(
-        inspect(root),
-        await fixtures.goldenText(f.comprehensive.inspect),
-      );
-    },
-  );
+    // when required, set to true to store stable "golden" versions
+    const generateGoldens = false;
 
-  const graph: Graph<Any, Any> = {
-    root,
-    edges: Array.from(astGraphEdges(root, {
-      prepareContext: () => ({ root }),
-      rules: () => typicalRules(),
-    })),
-  };
+    await s.step(
+      `validate stable projection via JSON in ${
+        ff.relToCWD(f.comprehensive.projection)
+      }`,
+      async () => {
+        // when required, use this to store stable "golden" version as a JSON file
+        if (generateGoldens) {
+          await fixtures.goldenJSON(f.comprehensive.projection, fpff);
+          console.warn(
+            `This test run is invalid since ${
+              ff.relToCWD(f.comprehensive.projection)
+            } is being generated.`,
+          );
+        }
+        assertEquals(
+          JSON.stringify(fpff), // comparing string to string since the file is large
+          await fixtures.goldenText(f.comprehensive.projection),
+        );
+      },
+    );
 
-  await t.step(
-    `validate stable graph edges via GraphViz dot in ${
-      ff.relToCWD(f.comprehensive.graphDot)
-    }`,
-    async () => {
-      // when required, uncomment to store stable "golden" version of the edge in GraphViz dot format
-      // await fixtures.goldenText(f.comprehensive.graphDot, graphToDot(graph));
-      assertEquals(
-        graphToDot(graph),
-        await fixtures.goldenText(f.comprehensive.graphDot),
-      );
-    },
-  );
+    await s.step(
+      `validate stable mdast tree via 'inspect' output in ${
+        ff.relToCWD(f.comprehensive.inspect)
+      }`,
+      async () => {
+        // when required, use this to store stable "golden" version as a text file:
+        if (generateGoldens) {
+          await fixtures.goldenText(f.comprehensive.inspect, inspect(root));
+          console.warn(
+            `This test run is invalid since ${
+              ff.relToCWD(f.comprehensive.inspect)
+            } is being generated.`,
+          );
+        }
+        assertEquals(
+          inspect(root),
+          await fixtures.goldenText(f.comprehensive.inspect),
+        );
+      },
+    );
 
-  await t.step(`smoke test relations and headings`, () => {
-    const rels = new Set(graph.edges.map((e) => e.rel));
-    assertEquals(Array.from(rels), [
-      "containedInSection",
-      "sectionSemanticId",
-      "frontmatter",
-      "role:project",
-      "role:strategy",
-      "role:plan",
-      "role:suite",
-      "role:case",
-      "role:evidence",
+    await s.step(
+      `validate stable graph edges via GraphViz dot in ${
+        ff.relToCWD(f.comprehensive.graphDot)
+      }`,
+      async () => {
+        // when required, use this to store stable "golden" version of the edge in GraphViz dot format
+        if (generateGoldens) {
+          await fixtures.goldenText(f.comprehensive.graphDot, graphToDot(gr));
+          console.warn(
+            `This test run is invalid since ${
+              ff.relToCWD(f.comprehensive.graphDot)
+            } is being generated.`,
+          );
+        }
+
+        assertEquals(
+          graphToDot(gr),
+          await fixtures.goldenText(f.comprehensive.graphDot),
+        );
+      },
+    );
+
+    await s.step(
+      `smoke test relations and headings from ${comprehensive.file.basename}`,
+      () => {
+        assertEquals(Array.from(gr.rels), [
+          "containedInSection",
+          "sectionSemanticId",
+          "frontmatter",
+          "role:project",
+          "role:strategy",
+          "role:plan",
+          "role:suite",
+          "role:case",
+          "role:evidence",
+          "isCode",
+          "isCodePartialCandidate",
+          "isTask",
+        ]);
+
+        assertEquals(gr.relCounts, {
+          frontmatter: 12,
+          containedInSection: 1172,
+          isTask: 175,
+          "role:case": 8,
+          "role:evidence": 6,
+          "role:plan": 6,
+          "role:project": 1,
+          "role:strategy": 8,
+          "role:suite": 6,
+          isCode: 16,
+          isCodePartialCandidate: 2,
+          sectionSemanticId: 34,
+        });
+
+        const geTree = graphEdgesTree(
+          gr.edges as GraphEdge<"containedInSection">[],
+          { relationships: ["containedInSection"] },
+        );
+        assertEquals(headingsTreeText(geTree, false), headingsTreeGolden);
+      },
+    );
+  });
+
+  await t.step(ff.relToCWD(fixtures.runbook1MdPath), () => {
+    const [_, runbook1] = me;
+
+    assert(runbook1);
+    const { mdastRoot: root } = runbook1;
+    const gr = graph(root);
+
+    assertEquals(Array.from(gr.rels), [
+      "isImportant",
+      "isCode",
+      "isSpawnableCodeCandidate",
+      "codeDependsOn",
+    ]);
+
+    assertEquals(gr.relCounts, {
+      isCode: 5,
+      isSpawnableCodeCandidate: 5,
+      isImportant: 1,
+      codeDependsOn: 1,
+    });
+  });
+
+  await t.step(ff.relToCWD(fixtures.runbook2MdPath), () => {
+    const [_, _runbook1, runbook2] = me;
+
+    assert(runbook2);
+    const { mdastRoot: root } = runbook2;
+    const gr = graph(root);
+
+    assertEquals(Array.from(gr.rels), [
       "isCode",
       "isSpawnableCodeCandidate",
       "isCodePartialCandidate",
+      "codeDependsOn",
+    ]);
+
+    assertEquals(gr.relCounts, {
+      isCode: 5,
+      isSpawnableCodeCandidate: 5,
+      isCodePartialCandidate: 1,
+      codeDependsOn: 1,
+    });
+  });
+
+  await t.step(ff.relToCWD(fixtures.runbook3MdPath), () => {
+    const [_, _runbook1, _runbook2, runbook3] = me;
+
+    assert(runbook3);
+    const { mdastRoot: root } = runbook3;
+    const gr = graph(root);
+
+    assertEquals(Array.from(gr.rels), [
+      "isImportant",
+      "isCode",
+      "isSpawnableCodeCandidate",
+    ]);
+
+    assertEquals(gr.relCounts, {
+      isImportant: 1,
+      isCode: 18,
+      isSpawnableCodeCandidate: 3,
+    });
+  });
+
+  await t.step(ff.relToCWD(fixtures.runbook4MdPath), () => {
+    const [_, _runbook1, _runbook2, _runbook3, runbook4] = me;
+
+    assert(runbook4);
+    const { mdastRoot: root } = runbook4;
+    const gr = graph(root);
+
+    assertEquals(Array.from(gr.rels), [
+      "isCode",
+      "isSpawnableCodeCandidate",
       "isTask",
     ]);
 
-    const relCounts = graph.edges.reduce(
-      (acc, e) => ((acc[e.rel] = (acc[e.rel] ?? 0) + 1), acc),
-      {} as Record<Any, number>,
-    );
-    assertEquals(relCounts, {
-      frontmatter: 12,
-      containedInSection: 1172,
-      isTask: 175,
-      "role:case": 8,
-      "role:evidence": 6,
-      "role:plan": 6,
-      "role:project": 1,
-      "role:strategy": 8,
-      "role:suite": 6,
-      isCode: 16,
-      isCodePartialCandidate: 2,
-      isSpawnableCodeCandidate: 14,
-      sectionSemanticId: 34,
-      // deno-lint-ignore no-explicit-any
-    } as any);
-
-    const geTree = graphEdgesTree(graph.edges, {
-      relationships: ["containedInSection"],
+    assertEquals(gr.relCounts, {
+      isCode: 6,
+      isSpawnableCodeCandidate: 6,
+      isTask: 6,
     });
-    assertEquals(headingsTreeText(geTree, false), headingsTreeGolden);
   });
 });
 

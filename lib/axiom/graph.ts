@@ -1,6 +1,16 @@
 import { Root } from "types/mdast";
 import { Node } from "types/unist";
-import { GraphEdge } from "./edge/mod.ts";
+import {
+  astGraphEdges,
+  GraphEdge,
+  TypicalGraphEdge,
+  TypicalRelationship,
+  TypicalRuleCtx,
+  typicalRules,
+} from "./edge/mod.ts";
+
+// deno-lint-ignore no-explicit-any
+type Any = any;
 
 export type Graph<
   Relationship extends string,
@@ -9,6 +19,32 @@ export type Graph<
   readonly root: Root;
   readonly edges: readonly Edge[];
 };
+
+export function graph(root: Root) {
+  const graph: Graph<TypicalRelationship, TypicalGraphEdge> = {
+    root,
+    edges: Array.from(
+      astGraphEdges<TypicalRelationship, TypicalGraphEdge, TypicalRuleCtx>(
+        root,
+        {
+          prepareContext: () => ({ root }),
+          rules: () => typicalRules(),
+        },
+      ),
+    ),
+  };
+
+  return {
+    ...graph,
+
+    // just some convenience methods
+    rels: new Set(graph.edges.map((e) => e.rel)),
+    relCounts: graph.edges.reduce(
+      (acc, e) => ((acc[e.rel] = (acc[e.rel] ?? 0) + 1), acc),
+      {} as Record<Any, number>,
+    ),
+  };
+}
 
 // -----------------------------------------------------------------------------
 // Visual Debugging: Graphviz DOT Export

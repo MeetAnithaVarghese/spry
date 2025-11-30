@@ -585,10 +585,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─40  paragraph[1] (176:1-176:16, 5728-5743)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (176:1-176:16, 5728-5743)
@@ -726,10 +722,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─51  paragraph[1] (214:1-214:15, 6768-6782)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (214:1-214:15, 6768-6782)
@@ -812,10 +804,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─62  paragraph[1] (248:1-248:16, 7767-7782)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (248:1-248:16, 7767-7782)
@@ -863,10 +851,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─69  paragraph[1] (273:1-273:16, 8331-8346)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (273:1-273:16, 8331-8346)
@@ -963,10 +947,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─80  paragraph[1] (311:1-311:15, 9318-9332)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (311:1-311:15, 9318-9332)
@@ -1117,10 +1097,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─97  paragraph[1] (362:1-362:16, 10532-10547)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (362:1-362:16, 10532-10547)
@@ -1135,10 +1111,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "ts"
 │       meta: "ts-example-01 partial id=sample-code-meta"
 │       data: {"codeFM":{"lang":"ts","langSpec":{"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}},"meta":"ts-example-01 partial id=sample-code-meta","pi":{"args":["ts","ts-example-01","partial","id=sample-code-meta"],"pos":["ts-example-01","partial","id"],"flags":{"ts-example-01":true,"partial":true,"id":"sample-code-meta"},"count":4,"posCount":3},"cmdLang":"ts","cli":"ts ts-example-01 partial id=sample-code-meta"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "ts-example-01"
-│       language: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─101 paragraph[1] (387:1-387:18, 11154-11171)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (387:1-387:18, 11154-11171)
@@ -1253,10 +1225,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─110 thematicBreak (422:1-422:4, 12040-12043)
 ├─111 heading[1] (424:1-424:43, 12045-12087)
 │     │ depth: 2
@@ -1352,14 +1320,11 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "ts"
 │       meta: "PARTIAL TC-PARTIAL-0001"
 │       isCodeDirectiveCandidate: true
-│       identity: "PARTIAL"
+│       identity: "TC-PARTIAL-0001"
 │       directive: "PARTIAL"
 │       langSpec: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
 │       instructions: {"pi":{"args":["PARTIAL","TC-PARTIAL-0001"],"pos":["TC-PARTIAL-0001"],"flags":{"TC-PARTIAL-0001":true},"count":2,"posCount":1},"cmdLang":"PARTIAL","cli":"PARTIAL TC-PARTIAL-0001"}
 │       data: {"codeFM":{"lang":"ts","langSpec":{"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}},"meta":"PARTIAL TC-PARTIAL-0001","pi":{"args":["ts","PARTIAL","TC-PARTIAL-0001"],"pos":["PARTIAL","TC-PARTIAL-0001"],"flags":{"PARTIAL":true,"TC-PARTIAL-0001":true},"count":3,"posCount":2},"cmdLang":"ts","cli":"ts PARTIAL TC-PARTIAL-0001"}}
-│       isSpawnableCodeCandidate: true
-│       language: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─123 heading[1] (464:1-464:65, 13102-13166)
 │     │ depth: 5
 │     └─0 text "Define a reusable Markdown partial for use with directives" (464:7-464:65, 13108-13166)
@@ -1491,10 +1456,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─139 thematicBreak (517:1-517:4, 14491-14494)
 ├─140 heading[1] (519:1-519:23, 14496-14518)
 │     │ depth: 2
@@ -1549,10 +1510,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─152 paragraph[1] (556:1-556:16, 15245-15260)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (556:1-556:16, 15245-15260)
@@ -1639,10 +1596,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─163 thematicBreak (589:1-589:4, 15940-15943)
 ├─164 heading[1] (591:1-591:32, 15945-15976)
 │     │ depth: 2
@@ -1750,10 +1703,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─175 paragraph[1] (633:1-633:16, 16925-16940)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (633:1-633:16, 16925-16940)
@@ -1847,10 +1796,6 @@ root[194] (1:1-703:1, 0-18997)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       isSpawnableCodeCandidate: true
-│       identity: "HFM"
-│       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─186 paragraph[1] (668:1-668:15, 17828-17842)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (668:1-668:15, 17828-17842)
