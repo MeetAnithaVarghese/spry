@@ -28,6 +28,9 @@ import {
 } from "./resource.ts";
 
 import { basename, dirname, resolve } from "@std/path";
+import { VFile } from "vfile";
+import { GraphEdge } from "../edge/mod.ts";
+import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
 import { resolveImportSpecs } from "../remark/code-import.ts";
 import { insertCodeImportNodes } from "../remark/code-insert.ts";
@@ -35,6 +38,12 @@ import { nodeDecoratorPlugin } from "../remark/node-decorator.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
+
+// if you want to add any edges to the default graph, put them in here
+export const graphEdgesVFileDataBag = dataBag<"edges", GraphEdge<Any>[], VFile>(
+  "edges",
+  () => [],
+);
 
 export type Yielded<T> = T extends Generator<infer Y> ? Y
   : T extends AsyncGenerator<infer Y> ? Y

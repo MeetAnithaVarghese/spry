@@ -68,30 +68,21 @@ export function typicalRules() {
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "containedInSection",
-        headingLikeSectionContainer,
-      ),
+      >("containedInSection", headingLikeSectionContainer),
     )
     .use(
       sectionFrontmatterRule<
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "frontmatter",
-        ["containedInSection"] as TypicalRelationship[],
-      ),
+      >("frontmatter", ["containedInSection"] as TypicalRelationship[]),
     )
     .use(
       sectionSemanticIdRule<
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "sectionSemanticId",
-        ["containedInSection"] as TypicalRelationship[],
-      ),
+      >("sectionSemanticId", ["containedInSection"] as TypicalRelationship[]),
     )
     .use(
       frontmatterClassificationRule<
@@ -112,30 +103,21 @@ export function typicalRules() {
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "isCode",
-        (node) => node.type === "code",
-      ),
+      >("isCode", (node) => node.type === "code"),
     )
     .use(
       nodesClassificationRule<
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "isPartial",
-        (node) => isCodePartial(node) ? true : false,
-      ),
+      >("isPartial", (node) => isCodePartial(node) ? true : false),
     )
     .use(
       nodesClassificationRule<
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >(
-        "isTask",
-        (node) => node.type === "listItem",
-      ),
+      >("isTask", (node) => node.type === "listItem"),
     )
     .use(
       nodeDependencyRule<TypicalRelationship, TypicalRuleCtx, TypicalGraphEdge>(

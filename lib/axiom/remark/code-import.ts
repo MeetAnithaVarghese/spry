@@ -26,6 +26,7 @@ import z from "@zod/zod";
 import type { Code, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
+import { VFile } from "vfile";
 import { relativeUrlAsFsPath } from "../../universal/content-acquisition.ts";
 import {
   flexibleTextSchema,
@@ -44,7 +45,8 @@ import {
 import { safeInterpolate } from "../../universal/safe-interpolate.ts";
 import { CodeFrontmatter, codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
-import { VFile } from "vfile";
+import { GraphEdge } from "../mod.ts";
+import { InsertedContent } from "./code-insert.ts";
 
 export const codeImportPiFlagsSchema = z.object({
   base: flexibleTextSchema.optional(),
@@ -282,24 +284,29 @@ export function* prepareCodeNodes(specs: CodeImport) {
       }
       : undefined;
 
-    const generated: Code & {
-      readonly importedFrom: string;
-      readonly provenance: CodeImportSpecProvenance;
-      readonly isBinaryHint: boolean;
-    } = {
+    const generated: Code & InsertedContent = {
       type: "code",
       lang: language,
       meta: meta.join(" ").trim(),
       value: `import placeholder: ${specs.lang} ${specs.meta}`,
       // Optional position mapping approximate to spec line:
       position: position ? { start: position, end: position } : undefined,
-      importedFrom: `${specs.lang} ${specs.meta}`,
+      generatedBy: `${specs.lang} ${specs.meta}`,
       provenance,
       isBinaryHint: language === "utf8" ||
         (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false),
     };
 
-    yield generated;
+    yield {
+      generated,
+      edges: [
+        {
+          rel: "isInsertedContent",
+          from: specs,
+          to: generated,
+        } satisfies GraphEdge<"isInsertedContent">,
+      ],
+    };
   }
 }
 

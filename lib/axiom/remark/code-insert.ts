@@ -22,25 +22,31 @@
  *   - Parsing/import resolution never mutates the tree
  *   - Insertion logic is isolated and explicit
  */
-import type { Code, Root } from "types/mdast";
+import type { Code, Node, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import { dataBag } from "../mdast/data-bag.ts";
+import { VFile } from "vfile";
+import { graphEdgesVFileDataBag } from "../mod.ts";
 import {
   CodeImportSpecProvenance,
   isCodeImport,
   prepareCodeNodes,
 } from "./code-import.ts";
 
-/** Shape of the injectedNode metadata we attach to generated mdast.Code.data. */
-export type ImportedContent = {
-  readonly importedFrom: string;
+export type InsertedContent = {
+  readonly generatedBy: string;
   readonly provenance: CodeImportSpecProvenance;
+  readonly isBinaryHint: boolean;
+  // TODO: figure out how to create a graph edge to the origin
 };
 
-export const codeGenDataBag = dataBag<"generated", ImportedContent, Code>(
-  "generated",
-);
+export function isInsertedContent(node: Node): node is Code & InsertedContent {
+  return node && node.type === "code" && "generatedBy" in node &&
+      node.generatedBy &&
+      "provenance" in node && node.provenance
+    ? true
+    : false;
+}
 
 export interface CodeImportInsertOptions {
   readonly retainAfterInjections?: (code: Code) => boolean;
@@ -70,7 +76,7 @@ export interface CodeImportInsertOptions {
 export const insertCodeImportNodes: Plugin<[CodeImportInsertOptions?], Root> = (
   options,
 ) => {
-  return (tree: Root) => {
+  return (tree: Root, vfile: VFile) => {
     const { retainAfterInjections = () => true } = options ?? {};
 
     const mutations: {
@@ -91,7 +97,12 @@ export const insertCodeImportNodes: Plugin<[CodeImportInsertOptions?], Root> = (
           ? "retain-after-injections" as const
           : "remove-before-injections" as const);
 
-      const imported = Array.from(prepareCodeNodes(code));
+      const prepared = Array.from(prepareCodeNodes(code));
+      const imported = prepared.map((p) => p.generated);
+
+      if (graphEdgesVFileDataBag.is(vfile)) {
+        vfile.data.edges.push(...prepared.flatMap((p) => p.edges));
+      }
 
       if (imported.length) {
         mutations.push({ parent, index, injected: imported, mode });

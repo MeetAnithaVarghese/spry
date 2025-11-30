@@ -90,6 +90,7 @@ import {
 import { type GraphEdgeTreeNode } from "./edge/tree.ts";
 import { markdownASTs, MarkdownEncountered } from "./io/mod.ts";
 import { headingText } from "./mdast/node-content.ts";
+import { graphEdgesVFileDataBag } from "./mod.ts";
 import { NodeDecorator } from "./remark/node-decorator.ts";
 
 // -----------------------------------------------------------------------------
@@ -331,6 +332,9 @@ export async function graphProjectionFromFiles(
         },
       ),
     );
+    if (graphEdgesVFileDataBag.is(projectable.file)) {
+      docEdges.push(...projectable.file.data.edges);
+    }
 
     // Process edges: group by relationship, connect nodes, count rels
     for (const e of docEdges) {
