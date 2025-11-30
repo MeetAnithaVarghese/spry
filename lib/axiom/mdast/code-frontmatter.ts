@@ -56,6 +56,18 @@ export type CodeFrontmatterOptions =
      * every call.
      */
     readonly cacheableInCodeNodeData?: boolean;
+
+    /**
+     * If transform is passed in, first the lang and meta are allowed to be
+     * interpolated or otherwise modified before use.
+     */
+    readonly transform?: (
+      lang?: string | null | undefined,
+      meta?: string | null | undefined,
+    ) => false | {
+      lang?: string | null | undefined;
+      meta?: string | null | undefined;
+    };
   };
 
 /**
@@ -92,7 +104,17 @@ export function codeFrontmatter(
   if (!node || node.type !== "code") return null;
   const code = node as Code;
 
-  const rawMeta = code.meta ?? "";
+  let codeLang = code.lang;
+  let codeMeta = code.meta;
+  if (options?.transform) {
+    const newValues = options.transform(code.lang, code.meta);
+    if (newValues) {
+      codeLang = newValues.lang;
+      codeMeta = newValues.meta;
+    }
+  }
+
+  const rawMeta = codeMeta ?? "";
   if (rawMeta.trim().length === 0) return null;
 
   const { cacheableInCodeNodeData = true, ...instrOptions } = options ?? {};
@@ -103,7 +125,7 @@ export function codeFrontmatter(
       .codeFM;
   }
 
-  const command = `${code.lang ?? ""} ${rawMeta}`.trim();
+  const command = `${codeLang ?? ""} ${rawMeta}`.trim();
 
   const ir = instructionsFromText(
     command,

@@ -27,7 +27,7 @@ import {
   vfileResourcesFactory,
 } from "./resource.ts";
 
-import { basename } from "@std/path";
+import { basename, dirname, resolve } from "@std/path";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
 import { resolveImportSpecs } from "../remark/code-import.ts";
 import { insertCodeImportNodes } from "../remark/code-insert.ts";
@@ -51,7 +51,14 @@ export function mardownParserPipeline() {
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatterPlugin) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
-    .use(resolveImportSpecs) // find code cells which want to be imported from local/remote files
+    .use(resolveImportSpecs, {
+      interpolationCtx: (_root, vfile) => ({
+        cwd: Deno.cwd(),
+        env: Deno.env.toObject(),
+        mdSrcAbsPath: resolve(vfile.path),
+        mdSrcDirname: dirname(resolve(vfile.path)),
+      }),
+    }) // find code cells which want to be imported from local/remote files
     .use(insertCodeImportNodes) // generate code cells found by resolveImportSpecs
     .use(nodeDecoratorPlugin); // look for @id and transform to node.type == "decorator"
 }
@@ -142,7 +149,7 @@ export async function* markdownASTs<
     const text = String(file.value ?? "");
 
     const mdastRoot = pipeline.parse(file) as Root;
-    await pipeline.run(mdastRoot);
+    await pipeline.run(mdastRoot, file);
 
     const nst = nodeSrcText(mdastRoot, text);
 
