@@ -10,8 +10,8 @@ import {
 } from "../../universal/posix-pi.ts";
 
 /**
- * An asset in a code block which becomes a "partial" that can be included as
- * a template or (usually) text in other code blocks.
+ * An asset in a code block which becomes a directive like "partial" that can be
+ * included as a template or (usually) text in other code blocks.
  *
  * Example source:
  *   "```bash PARTIAL name"
@@ -29,10 +29,11 @@ import {
  * merely exposes them as structured values that other plugins or
  * later code can use to incorporate partials in other content.
  */
-export interface CodePartial<
+export interface CodeDirectiveCandidate<
   Identity extends string,
   Directive extends string = "PARTIAL",
 > extends Code {
+  isCodeDirectiveCandidate: true;
   directive: Directive;
   identity: Identity;
   langSpec?: LanguageSpec;
@@ -40,7 +41,7 @@ export interface CodePartial<
 }
 
 /**
- * Type guard for {@link CodePartial} nodes.
+ * Type guard for {@link CodeDirectiveCandidate} nodes.
  *
  * Safe to use with `unknown`, plain `Node`, or mdast node unions:
  *
@@ -50,21 +51,35 @@ export interface CodePartial<
  * }
  * ```
  */
-export function isCodePartial<
+export function isCodeDirectiveCandidate<
   Identity extends string,
-  Directive extends string = "PARTIAL",
->(node: Node | null | undefined): node is CodePartial<Identity, Directive> {
-  return node?.type === "code" && "directive" in node && node.directive &&
-      "identity" in node && node.identity
-    ? true
-    : false;
+  Directive extends string,
+>(
+  node: Node | null | undefined,
+  directive?: Directive,
+): node is CodeDirectiveCandidate<Identity, Directive> {
+  if (
+    node?.type === "code" && "isCodeDirectiveCandidate" in node &&
+    node.isCodeDirectiveCandidate && "directive" in node
+  ) {
+    if (directive) {
+      return directive == node.directive ? true : false;
+    }
+  }
+  return false;
+}
+
+export function isCodePartialCandidate<Identity extends string>(
+  node: Node | null | undefined,
+): node is CodeDirectiveCandidate<Identity, "PARTIAL"> {
+  return isCodeDirectiveCandidate(node, "PARTIAL");
 }
 
 /**
- * Options for {@link codePartials}.
+ * Options for {@link codeDirectiveCandidates}.
  */
 // deno-lint-ignore no-empty-interface
-export interface CodePartialOptions {
+export interface CodeDirectiveOptions {
   /** for future extensions */
 }
 
@@ -81,25 +96,27 @@ export interface CodePartialOptions {
  * intended as a primitive that other plugins can use to attach semantic
  * meaning to code blocks.
  */
-export const codePartials: Plugin<[CodePartialOptions?], Root> = () => {
-  const partialParser = textInstrCandidateParser("PARTIAL");
-  return (tree) => {
-    visit<Root, "code">(tree, "code", (node) => {
-      if (node.meta) {
-        const pp = partialParser(node.meta);
-        if (pp && pp.nature) {
-          // deno-lint-ignore no-explicit-any
-          const partial = node as CodePartial<any, "PARTIAL">;
-          partial.identity = pp.identity;
-          partial.directive = pp.nature;
-          if (partial.lang) {
-            partial.langSpec = languageRegistry.get(partial.lang);
+export const codeDirectiveCandidates: Plugin<[CodeDirectiveOptions?], Root> =
+  () => {
+    const directiveParser = textInstrCandidateParser("PARTIAL");
+    return (tree) => {
+      visit<Root, "code">(tree, "code", (node) => {
+        if (node.meta) {
+          const dp = directiveParser(node.meta);
+          if (dp && dp.nature === "PARTIAL") {
+            // deno-lint-ignore no-explicit-any
+            const partial = node as CodeDirectiveCandidate<any, "PARTIAL">;
+            partial.isCodeDirectiveCandidate = true;
+            partial.identity = dp.identity;
+            partial.directive = dp.nature;
+            if (partial.lang) {
+              partial.langSpec = languageRegistry.get(partial.lang);
+            }
+            partial.instructions = instructionsFromText(node.meta);
           }
-          partial.instructions = instructionsFromText(node.meta);
         }
-      }
-    });
+      });
+    };
   };
-};
 
-export default codePartials;
+export default codeDirectiveCandidates;

@@ -10,7 +10,7 @@ import {
 } from "../../universal/posix-pi.ts";
 import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
-import { isCodePartial } from "./code-partial.ts";
+import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
 
 export type CodeSpawnableCaptureSpec = {
   readonly nature: "relFsPath";
@@ -91,7 +91,7 @@ export const spawnableCodeCandidates: Plugin<
 > = () => {
   return (tree) => {
     visit<Root, "code">(tree, "code", (code) => {
-      if (isCodePartial(code)) return;
+      if (isCodeDirectiveCandidate(code)) return;
 
       if (code.meta) {
         const codeFM = codeFrontmatter(code);

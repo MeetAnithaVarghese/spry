@@ -5,7 +5,10 @@ import { queryPosixPI } from "../../../universal/posix-pi.ts";
 import { codeFrontmatter } from "../../mdast/code-frontmatter.ts";
 import { headingText } from "../../mdast/node-content.ts";
 import { type GraphEdgesTree, graphEdgesTree } from "../../projection/tree.ts";
-import { isCodePartial } from "../../remark/code-partial.ts";
+import {
+  isCodePartialCandidate,
+} from "../../remark/code-directive-candidates.ts";
+import { isSpawnableCodeCandidate } from "../../remark/spawnable-code-candidates.ts";
 import { GraphEdge } from "../orchestrate.ts";
 import {
   containedInSectionRule,
@@ -22,7 +25,6 @@ import {
   sectionSemanticIdRule,
   selectedNodesClassificationRule,
 } from "../rule/mod.ts";
-import { isSpawnableCodeCandidate } from "../../remark/spawnable-code-candidates.ts";
 
 export type TypicalRelationship = string;
 
@@ -118,7 +120,10 @@ export function typicalRules() {
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >("isPartial", (node) => isCodePartial(node) ? true : false),
+      >(
+        "isCodePartialCandidate",
+        (node) => isCodePartialCandidate(node) ? true : false,
+      ),
     )
     .use(
       nodesClassificationRule<

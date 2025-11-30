@@ -105,7 +105,7 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
       "role:evidence",
       "isCode",
       "isSpawnableCodeCandidate",
-      "isPartial",
+      "isCodePartialCandidate",
       "isTask",
     ]);
 
@@ -124,8 +124,8 @@ Deno.test(`Axiom regression / smoke test of ${ff.relToCWD(fixtures.comprehensive
       "role:strategy": 8,
       "role:suite": 6,
       isCode: 16,
-      isPartial: 2,
-      isSpawnableCodeCandidate: 13,
+      isCodePartialCandidate: 2,
+      isSpawnableCodeCandidate: 14,
       sectionSemanticId: 34,
       // deno-lint-ignore no-explicit-any
     } as any);

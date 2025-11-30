@@ -32,11 +32,11 @@ import { VFile } from "vfile";
 import { GraphEdge } from "../edge/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
+import codeDirectiveCandidates from "../remark/code-directive-candidates.ts";
 import insertImportPlaceholders from "../remark/import-placeholders-generator.ts";
 import resolveImportSpecs from "../remark/import-specs-resolver.ts";
 import nodeDecorator from "../remark/node-decorator.ts";
 import spawnableCodeCandidates from "../remark/spawnable-code-candidates.ts";
-import codePartials from "../remark/code-partial.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -82,7 +82,7 @@ export function mardownParserPipeline() {
       },
     })
     .use(nodeDecorator) // look for @id and transform to node.type == "decorator"
-    .use(codePartials) // be sure this comes before spawnableCodeCandidates
+    .use(codeDirectiveCandidates) // be sure this comes before spawnableCodeCandidates
     .use(spawnableCodeCandidates);
 }
 

@@ -1,7 +1,7 @@
 import type { Code, Root } from "types/mdast";
 import type { Node, Parent } from "types/unist";
 import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
-import { isCodePartial } from "../remark/code-partial.ts";
+import { isCodeDirectiveCandidate } from "../remark/code-directive-candidates.ts";
 import { docFrontmatterDataBag } from "../remark/doc-frontmatter.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -205,7 +205,7 @@ export function collectMdastStats(root: Root): MdastStats {
           codeCellsWithFrontmatter++;
         }
 
-        if (isCodePartial(code)) {
+        if (isCodeDirectiveCandidate(code)) {
           codeCellsWithPartials++;
         }
       }

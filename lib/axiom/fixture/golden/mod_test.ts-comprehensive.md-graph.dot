@@ -2450,13 +2450,14 @@ digraph G {
   n1173 -> n697 [label="isSpawnableCodeCandidate"];
   n1173 -> n706 [label="isSpawnableCodeCandidate"];
   n1173 -> n772 [label="isSpawnableCodeCandidate"];
+  n1173 -> n827 [label="isSpawnableCodeCandidate"];
   n1173 -> n898 [label="isSpawnableCodeCandidate"];
   n1173 -> n926 [label="isSpawnableCodeCandidate"];
   n1173 -> n978 [label="isSpawnableCodeCandidate"];
   n1173 -> n1036 [label="isSpawnableCodeCandidate"];
   n1173 -> n1091 [label="isSpawnableCodeCandidate"];
-  n1173 -> n827 [label="isPartial"];
-  n1173 -> n830 [label="isPartial"];
+  n1173 -> n827 [label="isCodePartialCandidate"];
+  n1173 -> n830 [label="isCodePartialCandidate"];
   n1173 -> n9 [label="isTask"];
   n1173 -> n13 [label="isTask"];
   n1173 -> n19 [label="isTask"];

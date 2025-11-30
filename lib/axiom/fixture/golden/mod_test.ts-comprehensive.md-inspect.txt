@@ -1351,17 +1351,22 @@ root[194] (1:1-703:1, 0-18997)
 ├─122 code "// TODO: be sure this works\n// this is a TypeScript comment which will be read stored as a partial so that\n// it can be \"included\" in another cell or markdown body using ::PARTIAL[TC-PARTIAL-0001] later" (458:1-462:4, 12864-13100)
 │       lang: "ts"
 │       meta: "PARTIAL TC-PARTIAL-0001"
-│       identity: "TC-PARTIAL-0001"
+│       isCodeDirectiveCandidate: true
+│       identity: "PARTIAL"
 │       directive: "PARTIAL"
 │       langSpec: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
 │       instructions: {"pi":{"args":["PARTIAL","TC-PARTIAL-0001"],"pos":["TC-PARTIAL-0001"],"flags":{"TC-PARTIAL-0001":true},"count":2,"posCount":1},"cmdLang":"PARTIAL","cli":"PARTIAL TC-PARTIAL-0001"}
 │       data: {"codeFM":{"lang":"ts","langSpec":{"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}},"meta":"PARTIAL TC-PARTIAL-0001","pi":{"args":["ts","PARTIAL","TC-PARTIAL-0001"],"pos":["PARTIAL","TC-PARTIAL-0001"],"flags":{"PARTIAL":true,"TC-PARTIAL-0001":true},"count":3,"posCount":2},"cmdLang":"ts","cli":"ts PARTIAL TC-PARTIAL-0001"}}
+│       isSpawnableCodeCandidate: true
+│       language: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
+│       args: {"deps":[],"capture":[],"graphs":[]}
 ├─123 heading[1] (464:1-464:65, 13102-13166)
 │     │ depth: 5
 │     └─0 text "Define a reusable Markdown partial for use with directives" (464:7-464:65, 13108-13166)
 ├─124 code "This markdown was inserted from the PARTIAL named TC-PARTIAL-0001" (466:1-468:4, 13168-13267)
 │       lang: "md"
 │       meta: "PARTIAL TC-PARTIAL-0001"
+│       isCodeDirectiveCandidate: true
 │       identity: "TC-PARTIAL-0001"
 │       directive: "PARTIAL"
 │       instructions: {"pi":{"args":["PARTIAL","TC-PARTIAL-0001"],"pos":["TC-PARTIAL-0001"],"flags":{"TC-PARTIAL-0001":true},"count":2,"posCount":1},"cmdLang":"PARTIAL","cli":"PARTIAL TC-PARTIAL-0001"}
