@@ -44,6 +44,7 @@ import {
 import { safeInterpolate } from "../../universal/safe-interpolate.ts";
 import { CodeFrontmatter, codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
+import { VFile } from "vfile";
 
 export const codeImportPiFlagsSchema = z.object({
   base: flexibleTextSchema.optional(),
@@ -108,6 +109,7 @@ export function isCodeImport(code: Code): code is CodeImport {
 export function codeImportSpecs(
   code: Code,
   importFM: CodeFrontmatter,
+  interpolationCtx?: Record<string, unknown>,
 ) {
   const importQPI = queryPosixPI<CodeImportPiFlags>(
     importFM.pi,
@@ -134,8 +136,7 @@ export function codeImportSpecs(
     specsSrc = safeInterpolate(specsSrc, {
       code,
       importFM,
-      cwd: Deno.cwd(),
-      env: Deno.env.toObject(),
+      ...interpolationCtx,
     });
   }
 
@@ -254,12 +255,7 @@ export function* resourceProvenanceFromCode(
  *
  * @yields Objects representing materialized code nodes.
  */
-export function* prepareCodeNodes(
-  specs: CodeImport,
-  options?: { readonly readLocalFsTextIntoValue?: boolean },
-) {
-  const readLocalFsText = options?.readLocalFsTextIntoValue ?? false;
-
+export function* prepareCodeNodes(specs: CodeImport) {
   for (const sd of strategyDecisions(specs.importable)) {
     const { provenance, strategy } = sd;
     const {
@@ -268,27 +264,11 @@ export function* prepareCodeNodes(
       base,
       lineNumInRawInstructions: pathLine,
     } = provenance;
-    const isBinaryHint = language === "utf8" ||
-      (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false);
-
     const rest = sd.provenance.ir.pi.args.slice(2);
     let meta: string[];
-    let value = "";
-    let isContentAcquired = false;
 
     if (strategy.target === "local-fs") {
       meta = [relative(base, path), "--import", path, ...rest];
-
-      // Non-binary local file: sync read into node.value
-      if (!isBinaryHint && readLocalFsText) {
-        try {
-          value = Deno.readTextFileSync(path);
-        } catch (error) {
-          value = `Unable to read ${path}:\n${error}`;
-          addIssue(specs, { message: value, severity: "error", error });
-        }
-        isContentAcquired = true;
-      }
     } else {
       const url = strategy.url?.toString() ?? path;
       meta = [relativeUrlAsFsPath(base, url), "--import", url, ...rest];
@@ -305,17 +285,18 @@ export function* prepareCodeNodes(
     const generated: Code & {
       readonly importedFrom: string;
       readonly provenance: CodeImportSpecProvenance;
-      readonly isContentAcquired: boolean;
+      readonly isBinaryHint: boolean;
     } = {
       type: "code",
       lang: language,
       meta: meta.join(" ").trim(),
-      value,
+      value: `import placeholder: ${specs.lang} ${specs.meta}`,
       // Optional position mapping approximate to spec line:
       position: position ? { start: position, end: position } : undefined,
       importedFrom: `${specs.lang} ${specs.meta}`,
       provenance,
-      isContentAcquired,
+      isBinaryHint: language === "utf8" ||
+        (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false),
     };
 
     yield generated;
@@ -330,6 +311,15 @@ export interface CodeImportOptions {
    *   - Otherwise, return `false`.
    */
   readonly isSpecBlock?: (node: Code) => boolean;
+
+  /**
+   * Key/value pairs to pass into the safe interpolation context that base
+   * dirs or other values can use.
+   */
+  readonly interpolationCtx?: (
+    tree: Root,
+    file: VFile,
+  ) => Record<string, unknown>;
 }
 
 /**
@@ -375,17 +365,27 @@ export const resolveImportSpecs: Plugin<[CodeImportOptions?], Root> = (
   options,
 ) => {
   const isSpecBlock = options?.isSpecBlock ?? defaultIsSpecBlock;
+  const interpolationCtx = options?.interpolationCtx;
 
-  return (tree: Root) => {
+  return (tree, vfile) => {
     visit(tree, "code", (code: Code) => {
       const mode = isSpecBlock(code); // has side effects: might get mutated
+      const iCtx = interpolationCtx?.(tree, vfile);
       const importFM = codeFrontmatter(code, {
         cacheableInCodeNodeData: false,
+        transform: iCtx
+          ? ((lang, meta) => {
+            if (meta) {
+              meta = safeInterpolate(meta, { code, ...iCtx });
+            }
+            return { lang: lang ?? undefined, meta: meta ?? undefined };
+          })
+          : undefined,
       });
 
       if (!importFM || !mode) return; // not a spec block
 
-      const cis = codeImportSpecs(code, importFM);
+      const cis = codeImportSpecs(code, importFM, iCtx);
       const importNode = code as CodeImport;
       importNode.identity = importFM.pi.pos[0];
       importNode.importFM = importFM;

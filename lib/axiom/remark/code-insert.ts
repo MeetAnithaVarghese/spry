@@ -36,7 +36,6 @@ import {
 export type ImportedContent = {
   readonly importedFrom: string;
   readonly provenance: CodeImportSpecProvenance;
-  readonly isContentAcquired: boolean;
 };
 
 export const codeGenDataBag = dataBag<"generated", ImportedContent, Code>(
@@ -45,7 +44,6 @@ export const codeGenDataBag = dataBag<"generated", ImportedContent, Code>(
 
 export interface CodeImportInsertOptions {
   readonly retainAfterInjections?: (code: Code) => boolean;
-  readonly readLocalFsTextIntoValue?: (code: Code) => boolean;
 }
 
 /**
@@ -55,8 +53,7 @@ export interface CodeImportInsertOptions {
  *   1. locate every `code` node that has `importSpecs` (added by resolveImportSpecs)
  *   2. run `prepareCodeNodes()` to create imported `code` nodes
  *   3. attach provenance to generated nodes via `codeGenNDF`
- *   4. attach summary insert metadata (`importInserts`)
- *   5. mutate the AST:
+ *   4. mutate the AST:
  *        • if retainAfterInjections(node) is true → keep original block
  *          and insert generated nodes immediately after it
  *        • else → replace the original block entirely with the generated nodes
@@ -74,10 +71,7 @@ export const insertCodeImportNodes: Plugin<[CodeImportInsertOptions?], Root> = (
   options,
 ) => {
   return (tree: Root) => {
-    const {
-      readLocalFsTextIntoValue = () => true,
-      retainAfterInjections = () => true,
-    } = options ?? {};
+    const { retainAfterInjections = () => true } = options ?? {};
 
     const mutations: {
       // deno-lint-ignore no-explicit-any
@@ -97,9 +91,7 @@ export const insertCodeImportNodes: Plugin<[CodeImportInsertOptions?], Root> = (
           ? "retain-after-injections" as const
           : "remove-before-injections" as const);
 
-      const imported = Array.from(prepareCodeNodes(code, {
-        readLocalFsTextIntoValue: readLocalFsTextIntoValue(code),
-      }));
+      const imported = Array.from(prepareCodeNodes(code));
 
       if (imported.length) {
         mutations.push({ parent, index, injected: imported, mode });
