@@ -4,6 +4,7 @@ import type { Node } from "types/unist";
 import { queryPosixPI } from "../../../universal/posix-pi.ts";
 import { codeFrontmatter } from "../../mdast/code-frontmatter.ts";
 import { headingText } from "../../mdast/node-content.ts";
+import { type GraphEdgesTree, graphEdgesTree } from "../../projection/tree.ts";
 import { isCodePartial } from "../../remark/code-partial.ts";
 import { GraphEdge } from "../orchestrate.ts";
 import {
@@ -21,7 +22,6 @@ import {
   sectionSemanticIdRule,
   selectedNodesClassificationRule,
 } from "../rule/mod.ts";
-import { type GraphEdgesTree, graphEdgesTree } from "../tree.ts";
 
 export type TypicalRelationship = string;
 

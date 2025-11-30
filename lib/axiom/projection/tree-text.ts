@@ -1,5 +1,5 @@
-import { GraphEdge } from "./mod.ts";
-import { headingLikeNodeDataBag } from "./rule/mod.ts";
+import { GraphEdge } from "../edge/mod.ts";
+import { headingLikeNodeDataBag } from "../edge/rule/mod.ts";
 import { GraphEdgesTree, GraphEdgeTreeNode } from "./tree.ts";
 
 // -----------------------------------------------------------------------------

@@ -1,7 +1,6 @@
-import { Heading, RootContent } from "types/mdast";
 import { Node } from "types/unist";
-import { headingText, nodePlainText } from "../mdast/node-content.ts";
-import { GraphEdge } from "./mod.ts";
+import { GraphEdge } from "../edge/mod.ts";
+import { typicalNodeLabel } from "../mdast/node-content.ts";
 
 // -----------------------------------------------------------------------------
 // Tree node + tree types
@@ -102,6 +101,15 @@ export type GraphEdgesTreeOptions<
 // Core: build a hierarchy from edges
 // -----------------------------------------------------------------------------
 
+function defaultResolveHierarchy<
+  Relationship extends string,
+  Edge extends GraphEdge<Relationship>,
+>(edge: Edge): { parent: Node; child: Node } {
+  // Same semantics as buildHierarchyTrees:
+  //   child --rel--> parent  (i.e. from = child, to = parent)
+  return { parent: edge.to, child: edge.from };
+}
+
 export function graphEdgesTree<
   Relationship extends string,
   Edge extends GraphEdge<Relationship>,
@@ -113,7 +121,7 @@ export function graphEdgesTree<
     relationships,
     resolveHierarchy = defaultResolveHierarchy,
     // Wrap defaultNodeLabel so the param type matches the options type
-    nodeLabel = (args) => defaultNodeLabel(args.node),
+    nodeLabel = (args) => typicalNodeLabel(args.node),
     nodeLevel,
   } = options;
 
@@ -250,46 +258,4 @@ export function graphEdgesTree<
     edges,
     roots: rootNodes,
   };
-}
-
-// -----------------------------------------------------------------------------
-// Defaults for builder
-// -----------------------------------------------------------------------------
-
-function defaultResolveHierarchy<
-  Relationship extends string,
-  Edge extends GraphEdge<Relationship>,
->(edge: Edge): { parent: Node; child: Node } {
-  // Same semantics as buildHierarchyTrees:
-  //   child --rel--> parent  (i.e. from = child, to = parent)
-  return { parent: edge.to, child: edge.from };
-}
-
-function defaultNodeLabel(node: Node): string {
-  const content = node as RootContent;
-  if (!node.type) return "(not a node!)";
-
-  if (content.type === "heading" || content.type === "paragraph") {
-    let text: string;
-    let depth: number | false = false;
-    switch (content.type) {
-      case "heading": {
-        const heading = node as Heading;
-        text = headingText(heading);
-        depth = heading.depth;
-        break;
-      }
-
-      case "paragraph":
-        text = nodePlainText(node);
-        break;
-    }
-
-    if (text) {
-      const depthPart = typeof depth === "number" ? `#${depth} ` : "";
-      return `${content.type}:${depthPart}${text}`;
-    }
-  }
-
-  return JSON.stringify(node);
 }

@@ -1,4 +1,4 @@
+export * from "../projection/tree-text.ts";
+export * from "../projection/tree.ts";
 export * from "./orchestrate.ts";
 export * from "./pipeline/typical.ts";
-export * from "./stringify.ts";
-export * from "./tree.ts";

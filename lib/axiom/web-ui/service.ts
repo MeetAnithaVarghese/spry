@@ -4,7 +4,7 @@
 // Deno entrypoint for the Spry Graph Viewer.
 // - Reads Markdown fixture(s)
 // - Runs the Ontology Graphs and Edges rule pipeline
-// - Builds a GraphProjection (graph-centric JSON)
+// - Builds a FlexibleProjection (graph-centric JSON)
 // - Injects that JSON into index.html and serves it via Deno.serve
 
 import { Command } from "@cliffy/command";
@@ -12,7 +12,7 @@ import { CompletionsCommand } from "@cliffy/completions";
 import { HelpCommand } from "@cliffy/help";
 import { fromFileUrl, join, relative } from "@std/path";
 import { computeSemVerSync } from "../../universal/version.ts";
-import { graphProjectionFromFiles } from "../projection.ts";
+import { flexibleProjectionFromFiles } from "../projection/flexible.ts";
 
 /* --------------------------------------------------------------------------- */
 /* Server + helpers                                                            */
@@ -146,7 +146,7 @@ export async function serve(args: {
 
     if (url.pathname === "/projection.view.json") {
       try {
-        const model = await graphProjectionFromFiles(mdSources);
+        const model = await flexibleProjectionFromFiles(mdSources);
         return Response.json(model, {
           headers: {
             "content-type": "application/json; charset=utf-8",

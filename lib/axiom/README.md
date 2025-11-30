@@ -1,16 +1,17 @@
-# Axiom — A Rule-Driven Graph Engine for `unist` and `mdast`
+# Axiom Rule-Driven Graph Engine for `unist` and `mdast`
 
 Axiom is the Spry Programmable Markdown library's lightweight, deterministic
-graph-building engine for the `unist` `mdast` ecosystem. It provides a
-remark-like pipeline for defining _rules_ that produce _edges_ connecting any
-`unist`-like `mdast` nodes by named relationships.
+graph-building and projections engine for the `unist` `mdast` ecosystem. It
+provides a remark-like pipeline for defining _rules_ that produce _edges_
+connecting any `unist`-like `mdast` nodes by named relationships.
 
-Axiom turns Markdown (and arbitrary `unist` trees) into semantic graphs that can
-be:
+Axiom turns Markdown (and arbitrary `unist` trees) into semantic graphs called
+_graph projections_ or just _projections_ that can be:
 
 - traversed as hierarchical trees
 - queried as general graph structures
-- consumed by tools, pipelines, runbooks, documentation systems, and AI agents
+- consumed by tools, text-UIs, web-UIs, pipelines, runbooks, documentation
+  systems, and AI agents via JSON
 - used as the semantic substrate underlying the _Spry Programmatic Markdown
   ecosystem_ ([https://sprymd.org](https://sprymd.org))
 
@@ -19,13 +20,13 @@ queryable knowledge system instead of just text.
 
 ## Try it out
 
-**Text-UI** (`CLI`)
+Text-UI (`CLI`)
 
 ```bash cli
 ./lib/axiom/text-ui/cli.ts ls lib/axiom/fixture/pmd/comprehensive.md
 ```
 
-**Web-UI**
+Web-UI
 
 ```bash web-ui
 ./lib/axiom/web-ui/service.ts web-ui lib/axiom/fixture/pmd/comprehensive.md
@@ -39,25 +40,132 @@ relationships, and meaning, not just syntax trees.
 
 Axiom is built for:
 
-- Programmable Documentation Automatically derive relationships between
+- Programmable Documentation which automatically derive relationships between
   sections, headings, code blocks, decorators, directives, tasks, steps, or
   roles.
 
-- Runbook Automation Extract operational steps, dependencies, preconditions, and
-  task semantics from Markdown and feed them into execution engines.
+- Runbook Automation which can extract operational steps, dependencies,
+  preconditions, and task semantics from Markdown and feed them into execution
+  engines.
 
-- Engineering Knowledge Graphs Build navigable, queryable graph models from
-  Markdown, YAML, TOML, code blocks, or mixed unist trees.
+- Engineering Knowledge Graphs that can build navigable, queryable graph models
+  from Markdown, YAML, TOML, code blocks, or mixed unist trees.
 
-- SpryMD Semantic Layers Provide the semantic substrate behind Spry content
-  rendering, decorator parsing, transformations, and programmatic notebooks.
+- AI-Enhanced Technical Systems can feed clean, explicit graph relationships
+  into LLMs as structured context rather than raw text.
 
-- AI-Enhanced Technical Systems Feed clean, explicit graph relationships into
-  LLMs as structured context rather than raw text.
+## How Spry Processing Works
 
-# Core Concepts
+### unist → the universal syntax tree
 
-## 1. Nodes (unist / mdast)
+- What it is: A generic tree model for representing any structured text.
+- Why Spry uses it: All higher-level trees (Markdown, HTML, MDX, custom nodes)
+  share the same basic shape.
+- Where to look: Core node types, `Node`, `Parent`, and traversal helpers.
+
+→ unist gives Spry the _base data structure_ for everything.
+
+### mdast → unist specialized for Markdown
+
+- What it is: A concrete schema on top of unist for headings, paragraphs, code
+  fences, lists, etc.
+- Why Spry uses it: Spry workflows live inside Markdown files, so mdast is the
+  structural grammar.
+- Where to look: `Heading`, `Paragraph`, `Code`, and other mdast node
+  definitions.
+
+→ mdast gives Spry a _Markdown-aware_ syntax tree.
+
+### remark → the Markdown parser/processor
+
+- What it is: Pipeline engine that takes raw `.md` text and produces mdast.
+- Why Spry uses it: Spry relies on remark’s mature ecosystem to parse, extend,
+  and decorate Markdown.
+- Where to look: remark plugins used by Spry (frontmatter, directives, code
+  imports, decorators, provenance, etc.).
+
+→ remark transforms Markdown text → mdast trees ready for enrichment.
+
+### axiom → mdast → graph pipeline
+
+- What it is: Spry’s structural analysis layer. It walks mdast and produces a
+  _graph of semantic edges_.
+- Why Spry uses it: Markdown documents aren’t linear lists; they form logical
+  structures (sections, flows, relationships). Axiom extracts these
+  relationships.
+- Where to look:
+
+  - Edge rules
+  - Edge pipeline
+  - Graph tree builders
+  - Semantic decorators and node enrichment
+
+→ axiom turns mdast into a _graph_ that captures meaning, not just structure.
+
+### axiom projections → converting graphs into Spry “business” pipelines
+
+- What they are: Projection modules that reshape the axiom graph into
+  domain-specific models.
+- Why Spry uses them: Different use cases (runbooks, data-quality checks, SQL
+  orchestration, notebook execution) need different views of the same underlying
+  doc.
+- Where to look: GraphProjection/GraphProjectionDocument types and projection
+  helpers.
+
+→ projections turn the generic graph into _task-specific structures_.
+
+### Spry runbooks, data-quality pipelines, SQL libraries
+
+- What they are: Final _pattern_, _service_ or _application_ layers that operate
+  on projection outputs.
+
+- Examples:
+
+  - Runbooks → ordered executable steps derived from headings + semantic
+    decorators
+  - Data Quality (Spry DQ) → validation edges, expectations, provenance
+  - SQL pipelines → SQL cells + code fences converted into executable or emitted
+    SQL
+  - Notebook notebooks → execution graphs for fenced code, producing artifacts
+
+- Where to look: Each feature has:
+
+  - A projection module
+  - A runtime module
+  - A CLI entry (usually under `cli.ts` or `service.ts`)
+
+→ these are the _end-user features_ built entirely on top of projections.
+
+### Putting It All Together (Mental Model)
+
+```
+Raw Markdown (.md)
+       ↓
+  remark (parsing)
+        ↓
+    mdast (Markdown AST, using unist underneath)
+          ↓
+      Axiom (semantics → graph + relationships)
+            ↓
+        Axiom projections (flexible operating views of graphs and relationships)
+              ↓
+          Spry pipelines (business-specific runbooks, DQ, SQL, notebooks, etc.)
+```
+
+- If you want to understand the raw Markdown structure, read mdast types.
+- If you want to understand how Markdown becomes a graph, look at axiom edge
+  rules.
+- If you want to understand the shapes used by Spry features, check the axiom
+  projection modules.
+- If you want to understand how runbooks / DQ / SQL behave, read the final
+  pipeline modules which consume projections.
+- If something “looks like a remark plugin,” it’s probably in the pipeline
+  before axiom.
+- If something “looks like relationships or graph rules,” it’s in axiom.
+- If something “looks like a business workflow,” it’s in projections or final
+  Spry pipelines.
+
+### Nodes (unist / mdast)
 
 Axiom works on any unist-compatible syntax tree:
 
@@ -71,7 +179,7 @@ Axiom works on any unist-compatible syntax tree:
 
 Every node is uniquely identified and included in the final graph.
 
-## 2. Rules
+### Axiom Rules
 
 Axiom provides a remark-like plugin API where each rule examines nodes and emits
 ModelGraphEdge entries:
@@ -101,12 +209,58 @@ Common rule patterns:
 Rules run in a deterministic pipeline, similar to how remark plugins operate,
 but produce _semantic edges_ instead of textual mutations.
 
-## 3. Edges
+Axiom rules might produce edges:
 
-Edges are stored as:
+- `semanticDecorator → heading`
+- `heading → codeBlock`
+- `containedInSection` hierarchy edges
+- `isTask` or `isStep` depending on your rule definitions
+
+These edges become a task graph consumable by:
+
+- Spry runbook engines
+- visualization components
+- AI agents
+- quality / compliance checks
+- or any other kind of projection consumer
+
+### Axiom Rules Features Summary
+
+- Full `unist` + `mdast` compatibility
+- Deterministic rule engine
+- Named edges expressing semantic relationships
+- Graph + hierarchy models
+- Multi-document support
+- Supports custom decorators & custom node types
+- Works directly inside Spry pipelines
+- Ideal for runbooks, standards, engineering docs, and AI-ready knowledge
+  systems
+- Easily extensible
+
+### Example Rule (pseudo-code)
 
 ```ts
-type GraphProjectionEdge = {
+export function semanticDecoratorRule(node, ctx) {
+  if (node.type !== "decorator") return [];
+  const nearestHeading = findNearestHeading(node, ctx.root);
+
+  return [{
+    rel: "sectionSemanticId",
+    from: node,
+    to: nearestHeading,
+  }];
+}
+```
+
+## Axiom Edges
+
+Low-level graph edges are stored as objects in memory for internal consumption
+and are not serialization friendly but higher-level projection edges are stored
+as strings to serialize them as JSON or text and process them in multiple
+clients:
+
+```ts
+type FlexibleProjectionEdge = {
   id: string;
   documentId: string;
   from: string;
@@ -115,7 +269,7 @@ type GraphProjectionEdge = {
 };
 ```
 
-Axiom accumulates edges across:
+Axiom flexible projections accumulate edges across:
 
 - entire Markdown documents
 - multi-file collections
@@ -124,11 +278,11 @@ Axiom accumulates edges across:
 
 Edges describe a semantic graph over your Markdown/unist trees.
 
-## 4. Graph + Tree Models
+## Graph + Tree Projections
 
 After rules execute, Axiom compiles the edges into:
 
-### Graph Model
+### `FlexibleProjection`
 
 A relational view where all nodes and edges can be queried arbitrarily.
 
@@ -140,7 +294,7 @@ Used for:
 - AI embeddings / RAG-free modeling
 - compliance / governance pipelines
 
-### Tree Model
+### `GraphTree`
 
 A hierarchy computed from structural relationships (like `containedInSection`).
 
@@ -152,7 +306,7 @@ Used for:
 - generating tables of contents
 - runbook step flows
 
-# How Axiom Fits into SpryMD ([https://sprymd.org](https://sprymd.org))
+## How Axiom Fits into SpryMD ([https://sprymd.org](https://sprymd.org))
 
 SpryMD defines a modern vision for Programmable Markdown, emphasizing:
 
@@ -165,98 +319,7 @@ SpryMD defines a modern vision for Programmable Markdown, emphasizing:
 
 Axiom is the semantic engine behind that vision.
 
-Specifically, Axiom enables:
-
-### ✔ Spry Semantic Decorators
-
-(`@id`, `@case`, `@role`, `@plan`, etc.) Bind decorators to their nearest
-semantic parent section, heading, or node, forming a graph of meaning.
-
-### ✔ Spry Content Rendering
-
-Extract the correct Markdown section based on the graph, not just text offsets.
-
-### ✔ Runbook Derivation
-
-Turn Markdown into structured task graphs for scheduled or automated execution.
-
-### ✔ Generated Documentation
-
-Use graph relationships to produce:
-
-- API reference mappings
-- test plans
-- compliance chains
-- SOPs
-- architectural or lineage diagrams
-
-### ✔ AI-Enhanced Workflows
-
-Provide structured models to language models, avoiding reliance on RAG against
-unstructured text.
-
-# Example: Axiom Rules in Action
-
-Given Markdown:
-
-````md
-@id step-001
-
-### Install dependencies
-
-Run:
-
-```bash
-npm install
-```
-````
-
-````
-Axiom rules might produce edges:
-
-- `semanticDecorator → heading`
-- `heading → codeBlock`
-- `containedInSection` hierarchy edges
-- `isTask` or `isStep` depending on your rule definitions
-
-These edges become a task graph consumable by:
-
-- Spry runbook engines  
-- visualization components  
-- AI agents  
-- quality / compliance checks  
-
-# Example Rule (pseudo-code)
-
-```ts
-export function semanticDecoratorRule(node, ctx) {
-  if (node.type !== "decorator") return [];
-  const nearestHeading = findNearestHeading(node, ctx.root);
-  
-  return [{
-    rel: "sectionSemanticId",
-    from: node,
-    to: nearestHeading
-  }];
-}
-````
-
-Rules remain simple, composable, and predictable.
-
-# Features Summary
-
-- ✔ Full `unist` + `mdast` compatibility
-- ✔ Deterministic rule engine
-- ✔ Named edges expressing semantic relationships
-- ✔ Graph + hierarchy models
-- ✔ Multi-document support
-- ✔ Supports custom decorators & custom node types
-- ✔ Works directly inside Spry pipelines
-- ✔ Ideal for runbooks, standards, engineering docs, and AI-ready knowledge
-  systems
-- ✔ Easily extensible
-
-# Roadmap
+## Roadmap
 
 Future planned enhancements:
 
@@ -268,7 +331,7 @@ Future planned enhancements:
 - AI-assisted rule authoring
 - Rule-based cross-file dependency tracking
 
-# Who Should Use Axiom?
+## Who Should Use Axiom?
 
 Axiom is ideal for:
 
@@ -279,7 +342,7 @@ Axiom is ideal for:
 - DevOps & SRE groups capturing operations in Markdown
 - AI-powered assistants needing structured context
 
-# License & Status
+## License & Status
 
 Axiom is currently an internal module of the Spry Ecosystem. Public packaging
 and documentation to follow.

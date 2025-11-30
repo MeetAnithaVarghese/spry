@@ -1,15 +1,15 @@
 /**
- * GraphProjection: build a reusable, UI-agnostic graph view over Markdown documents.
+ * FlexibleProjection: build a reusable, UI-agnostic graph view over Markdown documents.
  *
  * This module projects one or more Markdown files into a normalized graph model
- * (`GraphProjection`) that can be consumed by:
+ * (`FlexibleProjection`) that can be consumed by:
  *   - web UIs (graph viewers, explorers, dashboards),
  *   - text / CLI tools, or
  *   - orchestration and business logic that needs a node+edge view of mdast.
  *
  * What it does
  * ------------
- * Given a list of Markdown paths, `graphProjectionFromFiles()`:
+ * Given a list of Markdown paths, `flexibleProjectionFromFiles()`:
  *   - Parses each file into an mdast `Root` via `markdownASTs`.
  *   - Runs the edge pipeline (`typicalRules` + `astGraphEdges`) to discover
  *     relationships between mdast nodes (e.g. `containedInSection`, etc.).
@@ -21,7 +21,7 @@
  *       - `hierarchies`: tree-shaped views for hierarchical relationships
  *         (currently `containedInSection`), per document.
  *   - Stores the original mdast nodes in `mdastStore` so callers can
- *     dereference back from a `GraphProjectionNode` to the underlying AST.
+ *     dereference back from a `FlexibleProjectionNode` to the underlying AST.
  *
  * How it works
  * ------------
@@ -36,14 +36,14 @@
  *         only (no JSON dumps) so they are safe for UI and logs.
  *   - The edge pipeline (`typicalRules` + `astGraphEdges`) produces
  *     `TypicalGraphEdge` instances, which are normalized into
- *     `GraphProjectionEdge` entries and grouped by relationship name.
+ *     `FlexibleProjectionEdge` entries and grouped by relationship name.
  *   - `buildGraphTreeForRoot()` turns hierarchical relationships into
  *     forest-like structures; these are projected into `HierarchyNode`s and
  *     stored in `hierarchies[relationshipName][documentId]`.
  *   - Edge counts per relationship are summarized into
- *     `GraphProjectionRelationship` entries.
+ *     `FlexibleProjectionRelationship` entries.
  *
- * The resulting `GraphProjection` is stable and deterministic for a given set
+ * The resulting `FlexibleProjection` is stable and deterministic for a given set
  * of inputs and rule configuration, making it safe for testing, caching, and
  * downstream processing.
  *
@@ -51,9 +51,9 @@
  * -----
  * Typical usage in a CLI, web service, or orchestrator:
  *
- *   import { graphProjectionFromFiles } from "./projection.ts";
+ *   import { flexibleProjectionFromFiles } from "./projection.ts";
  *
- *   const projection = await graphProjectionFromFiles([
+ *   const projection = await flexibleProjectionFromFiles([
  *     "docs/intro.md",
  *     "docs/runbook.md",
  *   ]);
@@ -71,30 +71,29 @@
  *     // ... use node labels, types, or mdast indices for further logic
  *   }
  *
- * The `GraphProjection` type is intentionally UI-neutral: it can be used as
+ * The `FlexibleProjection` type is intentionally UI-neutral: it can be used as
  * a backing model for different front-ends (web, TUI, tests) as well as
  * for non-UI tasks such as automation, linting, or higher-level orchestration
  * over the Markdown + Axiom edge layer.
  */
 import { toMarkdown } from "mdast-util-to-markdown";
-import type { Heading, Root, RootContent } from "types/mdast";
+import type { Root, RootContent } from "types/mdast";
 import type { Node } from "types/unist";
-import { astGraphEdges } from "./edge/mod.ts";
+import { astGraphEdges } from "../edge/mod.ts";
 import {
   buildGraphTreeForRoot,
   TypicalGraphEdge,
   TypicalRelationship,
   TypicalRuleCtx,
   typicalRules,
-} from "./edge/pipeline/typical.ts";
-import { type GraphEdgeTreeNode } from "./edge/tree.ts";
-import { markdownASTs, MarkdownEncountered } from "./io/mod.ts";
-import { headingText } from "./mdast/node-content.ts";
-import { graphEdgesVFileDataBag } from "./mod.ts";
-import { NodeDecorator } from "./remark/node-decorator.ts";
+} from "../edge/pipeline/typical.ts";
+import { markdownASTs, MarkdownEncountered } from "../io/mod.ts";
+import { typicalNodeLabel } from "../mdast/node-content.ts";
+import { graphEdgesVFileDataBag } from "../mod.ts";
+import { type GraphEdgeTreeNode } from "./tree.ts";
 
 // -----------------------------------------------------------------------------
-// Types: GraphProjection (what index.js expects)
+// Types: FlexibleProjection (what index.js expects)
 // -----------------------------------------------------------------------------
 
 type HierarchyNode = {
@@ -104,19 +103,19 @@ type HierarchyNode = {
   readonly children: readonly HierarchyNode[];
 };
 
-export type GraphProjectionDocument = {
+export type FlexibleProjectionDocument = {
   readonly id: string;
   readonly label: string;
 };
 
-export type GraphProjectionRelationship = {
+export type FlexibleProjectionRelationship = {
   readonly name: string;
   readonly hierarchical: boolean;
   readonly description?: string;
   readonly edgeCount: number;
 };
 
-export type GraphProjectionNode = {
+export type FlexibleProjectionNode = {
   readonly id: string;
   readonly documentId: string;
   readonly type: string;
@@ -128,22 +127,22 @@ export type GraphProjectionNode = {
   readonly source?: string | null;
 };
 
-export type GraphProjectionEdge = {
+export type FlexibleProjectionEdge = {
   readonly id: string;
   readonly documentId: string;
   readonly from: string;
   readonly to: string;
 };
 
-export type GraphProjection = {
+export type FlexibleProjection = {
   readonly title: string;
   readonly version: string;
 
-  readonly documents: readonly GraphProjectionDocument[];
-  readonly relationships: readonly GraphProjectionRelationship[];
+  readonly documents: readonly FlexibleProjectionDocument[];
+  readonly relationships: readonly FlexibleProjectionRelationship[];
 
-  readonly nodes: Record<string, GraphProjectionNode>;
-  readonly edges: Record<string, GraphProjectionEdge[]>;
+  readonly nodes: Record<string, FlexibleProjectionNode>;
+  readonly edges: Record<string, FlexibleProjectionEdge[]>;
   readonly hierarchies: Record<string, Record<string, HierarchyNode[]>>;
 
   readonly mdastStore: readonly unknown[];
@@ -153,92 +152,7 @@ export type GraphProjection = {
 };
 
 // -----------------------------------------------------------------------------
-// Node label helper (similar to graph-tree's defaultNodeLabel)
-// -----------------------------------------------------------------------------
-
-function computeNodeLabel(node: Node): string {
-  const type = (node as { type?: string }).type ?? "unknown";
-
-  // Headings: "heading:#2 My title"
-  if (type === "heading") {
-    const heading = node as Heading;
-    const text = headingText(heading) || "(heading)";
-    const depthPart = typeof heading.depth === "number"
-      ? `#${heading.depth} `
-      : "";
-    return `heading:${depthPart}${text}`;
-  }
-
-  // Paragraphs: "paragraph:First few words…"
-  if (type === "paragraph") {
-    const text = nodePlainText(node) || "(paragraph)";
-    return `paragraph:${truncate(text, 80)}`;
-  }
-
-  // Code blocks: "code:yaml @id mdast-io-project"
-  if (type === "code") {
-    const c = node as Node & { lang?: string | null; value?: string };
-    const lang = c.lang ? c.lang.toLowerCase() : "";
-    const firstLine = (c.value ?? "").split(/\r?\n/, 1)[0] ?? "";
-    const langPart = lang ? `${lang} ` : "";
-    const textPart = firstLine ? truncate(firstLine, 60) : "(code)";
-    return `code:${langPart}${textPart}`;
-  }
-
-  // Lists and list items: "list", "- First list item…"
-  if (type === "listItem" || type === "list") {
-    const text = nodePlainText(node);
-    if (text) {
-      const prefix = type === "listItem" ? "- " : "list:";
-      return `${prefix}${truncate(text, 80)}`;
-    }
-    return type;
-  }
-
-  if (type === "decorator") {
-    const d = node as NodeDecorator;
-    return `decorator ${d.kind}${d.decorator}`;
-  }
-
-  // Fallback: type + truncated visible text, never JSON
-  const text = nodePlainText(node);
-  if (text) {
-    return `${type}:${truncate(text, 80)}`;
-  }
-  return type;
-}
-
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return text.slice(0, max - 1).trimEnd() + "…";
-}
-
-// Flatten visible text from a node (ignores formatting)
-function nodePlainText(node: Node): string {
-  if (node.type === "root") return "root";
-
-  const parts: string[] = [];
-
-  function walk(n: Node) {
-    if (
-      (n as { value?: unknown }).value &&
-      (n as { type?: string }).type === "text"
-    ) {
-      // deno-lint-ignore no-explicit-any
-      parts.push(String((n as any).value));
-    }
-    const anyN = n as { children?: Node[] };
-    if (Array.isArray(anyN.children)) {
-      for (const c of anyN.children) walk(c);
-    }
-  }
-
-  walk(node);
-  return parts.join("");
-}
-
-// -----------------------------------------------------------------------------
-// GraphProjection builder
+// FlexibleProjection builder
 // -----------------------------------------------------------------------------
 
 // The main hierarchical relationship we care about for the tree view.
@@ -246,13 +160,13 @@ const HIERARCHICAL_RELS = new Set<TypicalRelationship>([
   "containedInSection",
 ]);
 
-export async function graphProjectionFromFiles(
+export async function flexibleProjectionFromFiles(
   markdownPaths: string[],
   encountered?: (projectable: MarkdownEncountered) => void,
-): Promise<GraphProjection> {
-  const documents: GraphProjectionDocument[] = [];
-  const nodes: Record<string, GraphProjectionNode> = {};
-  const edgesByRel: Record<string, GraphProjectionEdge[]> = {};
+): Promise<FlexibleProjection> {
+  const documents: FlexibleProjectionDocument[] = [];
+  const nodes: Record<string, FlexibleProjectionNode> = {};
+  const edgesByRel: Record<string, FlexibleProjectionEdge[]> = {};
   const hierarchies: Record<string, Record<string, HierarchyNode[]>> = {};
   const mdastStore: unknown[] = [];
 
@@ -291,7 +205,7 @@ export async function graphProjectionFromFiles(
       mdastStore.push(n);
 
       const type = (n as { type?: string }).type ?? "unknown";
-      const label = computeNodeLabel(n);
+      const label = typicalNodeLabel(n);
 
       let language: string | null = null;
       let source: string | null = null;
@@ -394,7 +308,7 @@ export async function graphProjectionFromFiles(
   }
 
   // Build relationships list from counts
-  const relationships: GraphProjectionRelationship[] = [];
+  const relationships: FlexibleProjectionRelationship[] = [];
   for (const [name, count] of relEdgeCounts.entries()) {
     relationships.push({
       name,
@@ -413,7 +327,7 @@ export async function graphProjectionFromFiles(
     relationships.find((r) => r.hierarchical)?.name ??
       (relationships[0]?.name ?? null);
 
-  const model: GraphProjection = {
+  const model: FlexibleProjection = {
     title: "Spry Axiom Graph Projection",
     version: "0.1.0",
     documents,

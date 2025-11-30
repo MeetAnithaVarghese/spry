@@ -4,7 +4,7 @@
 //
 // Spry Graph Viewer CLI
 // - Reads Markdown fixture(s)
-// - Builds a GraphProjection via graphProjectionFromFiles()
+// - Builds a FlexibleProjection via flexibleProjectionFromFiles()
 // - Shows the containedInSection hierarchy in a TUI tree
 
 import { Command } from "@cliffy/command";
@@ -21,11 +21,11 @@ import { TreeLister } from "../../universal/lister-tree-tui.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 import { headingLikeNodeDataBag } from "../edge/rule/mod.ts";
 import { markdownASTs } from "../io/mod.ts";
-import { graphProjectionFromFiles } from "../projection.ts";
+import { flexibleProjectionFromFiles } from "../projection/flexible.ts";
 import * as webUI from "../web-ui/service.ts";
 
-type GraphProjection = Awaited<
-  ReturnType<typeof graphProjectionFromFiles>
+type FlexibleProjection = Awaited<
+  ReturnType<typeof flexibleProjectionFromFiles>
 >;
 
 type HierarchyRow = {
@@ -60,7 +60,7 @@ function resolveMarkdownPaths(
 }
 
 /**
- * Build flat rows suitable for TreeLister from the GraphProjection
+ * Build flat rows suitable for TreeLister from the FlexibleProjection
  * for a single hierarchical relationship (e.g., "containedInSection").
  *
  * `includeNodeType` controls which mdast node.type values are rendered as rows.
@@ -69,7 +69,7 @@ function resolveMarkdownPaths(
  * ancestor.
  */
 function buildHierarchyRowsForRelationship(
-  model: GraphProjection,
+  model: FlexibleProjection,
   relName: string,
   includeNodeType: (node: Node) => boolean,
 ): HierarchyRow[] {
@@ -268,7 +268,7 @@ export class CLI {
 
   /**
    * `ls` command:
-   * - builds GraphProjection from markdown sources
+   * - builds FlexibleProjection from markdown sources
    * - shows the `containedInSection` hierarchy as a tree
    * - by default shows only heading + code nodes
    * - `-n, --node <type>` adds more mdast node.type values (e.g., paragraph)
@@ -305,7 +305,7 @@ export class CLI {
             return;
           }
 
-          const model = await graphProjectionFromFiles(markdownPaths);
+          const model = await flexibleProjectionFromFiles(markdownPaths);
 
           // Default types: heading + code
           const baseTypes = new Set<string>(["heading", "code"]);
