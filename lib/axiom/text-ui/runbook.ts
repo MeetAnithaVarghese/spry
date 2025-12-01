@@ -41,17 +41,17 @@ import {
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 
+import { type PartialCollection } from "../../interpolate/partial.ts";
+import {
+  unsafeInterpFactory,
+  UnsafeInterpolationResult,
+} from "../../interpolate/unsafe.ts";
 import {
   captureFactory,
   CaptureSpec,
   gitignorableOnCapture,
 } from "../../universal/capture.ts";
 import { eventBus } from "../../universal/event-bus.ts";
-import {
-  unsafeInterpFactory,
-  UnsafeInterpolationResult,
-} from "../../universal/interpolate.ts";
-import { partialContentCollection } from "../../universal/partial.ts";
 import { shell } from "../../universal/shell.ts";
 import {
   executionPlanVisuals,
@@ -66,9 +66,10 @@ type Any = any;
 export function executeTasksFactory<
   T extends RunnableTask,
   Context extends { readonly runId: string },
+  FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 >(
   opts?: {
-    partials: ReturnType<typeof partialContentCollection>;
+    partials: PartialCollection<FragmentLocals>;
     shellBus?: ReturnType<typeof eventBus<ShellBusEvents>>;
     tasksBus?: ReturnType<typeof eventBus<TaskExecEventMap<T, Context>>>;
   },
@@ -107,7 +108,7 @@ export function executeTasksFactory<
   const { capture, history: captured } = cf;
   const { partials } = opts ?? {};
   const unsafeInterp = unsafeInterpFactory({
-    partials,
+    partialsCollec: partials,
     interpCtx: () => ({ captured }),
   });
   const sh = shell({ bus: opts?.shellBus });
@@ -116,6 +117,7 @@ export function executeTasksFactory<
   const execute = async (plan: TaskExecutionPlan<T>) =>
     await executeDAG(plan, async (task, ctx) => {
       const interpResult = await interpolateUnsafely({
+        task,
         source: task.value,
         interpolate: task.args.interpolate,
       });

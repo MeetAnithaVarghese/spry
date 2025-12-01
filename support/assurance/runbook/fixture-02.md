@@ -23,13 +23,13 @@ ${await partial("test-partial", { newLocal: "passed from task-3"})}
 
 ```bash task-4 --interpolate --descr "Another demo task"
 #!/usr/bin/env -S cat
-echo "task: ${safeJsonStringify(partial)}"
+echo "task: ${SELF.task.identity}"
 
 # partial 1 (error): ${await partial("non-existent")}
 
-# partial 2 (works): ${await partial("test-partial", { newLocal: "passed from debug.sql"})}
+# partial 2 (works): ${await partial("test-partial", { newLocal: "passed from task-4"})}
 
-# partial 3 (error): ${await partial("test-partial", { mistypedNewLocal: "passed from debug.sql"})}
+# partial 3 (error): ${await partial("test-partial", { mistypedNewLocal: "passed from task-4"})}
 
 ${await partial("test-partial", { newLocal: "passed from task-4 with await"})}
 ```

@@ -25,6 +25,7 @@ import type { Code, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
+import { safeInterpolate } from "../../interpolate/safe.ts";
 import { relativeUrlAsFsPath } from "../../universal/content-acquisition.ts";
 import {
   flexibleTextSchema,
@@ -40,7 +41,6 @@ import {
   strategyDecisions,
   tryParseHttpUrl,
 } from "../../universal/resource.ts";
-import { safeInterpolate } from "../../universal/safe-interpolate.ts";
 import { CodeFrontmatter, codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { ImportPlaceholder } from "./import-placeholders-generator.ts";
