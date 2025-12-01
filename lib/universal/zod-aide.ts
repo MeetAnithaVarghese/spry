@@ -52,7 +52,7 @@ function applyNullability<T extends z.ZodTypeAny>(
   return schema;
 }
 
-function build(s: JS): z.ZodTypeAny {
+export function build(s: JS): z.ZodTypeAny {
   // --- const / enum -------------------------------------------------------
   if ("const" in s) {
     const value = (s as { const: unknown }).const;

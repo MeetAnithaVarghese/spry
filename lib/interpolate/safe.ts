@@ -1,5 +1,3 @@
-// safe-interpolate.ts
-//
 // Safe Interpolator
 //
 // Safe, configurable text interpolation with:

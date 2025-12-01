@@ -1,5 +1,3 @@
-// safe-interpolate_test.ts
-
 import { assertEquals } from "@std/assert";
 import {
   compileSafeTemplate,
@@ -9,7 +7,7 @@ import {
   SafeInterpolationContext,
   SafeInterpolationOptions,
   SafeString,
-} from "./safe-interpolate.ts";
+} from "./safe.ts";
 
 Deno.test("Safe Interpolator - simple ${} with HTML escaping", () => {
   const ctx: SafeInterpolationContext = {
