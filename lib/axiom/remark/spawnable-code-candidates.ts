@@ -3,7 +3,7 @@ import type { Code, Root } from "types/mdast";
 import type { Node } from "types/unist";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import { CaptureSpec } from "../../universal/capture.ts";
+import { CaptureSpec } from "../../interpolate/capture.ts";
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
 import {
   flexibleTextSchema,

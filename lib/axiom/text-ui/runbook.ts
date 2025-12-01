@@ -50,7 +50,7 @@ import {
   captureFactory,
   CaptureSpec,
   gitignorableOnCapture,
-} from "../../universal/capture.ts";
+} from "../../interpolate/capture.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { shell } from "../../universal/shell.ts";
 import {
