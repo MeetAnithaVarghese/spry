@@ -7,6 +7,9 @@
  * Use ONLY with trusted templates and data.
  */
 
+import { PartialContent, partialContentCollection } from "./partial.ts";
+import { safeJsonStringify } from "./tmpl-literal-aide.ts";
+
 /* ---------------------------
    Example (trusted template)
 ---------------------------
@@ -205,4 +208,81 @@ export function unsafeInterpolator<Context extends Record<string, unknown>>(
   }
 
   return { interpolate, ctx };
+}
+
+export type UnsafeInterpolationResult =
+  & { status: false | "unmodified" | "mutated" }
+  & ({ status: "mutated"; source: string } | {
+    status: "unmodified";
+    source: string;
+  } | {
+    status: false;
+    source: string;
+    error: unknown;
+  });
+
+export function unsafeInterpFactory<Context>(
+  opts?: {
+    interpCtx?: (
+      purpose: "default" | "prime" | "partial",
+      options?: { readonly prime: Context; readonly partial?: PartialContent },
+    ) => Record<string, unknown>;
+    partials?: ReturnType<typeof partialContentCollection>;
+  },
+) {
+  const { interpCtx, partials } = opts ?? {};
+  const unsafeInterp = unsafeInterpolator(interpCtx?.("default") ?? {});
+
+  // "unsafely" means we're using JavaScript "eval"
+  async function interpolateUnsafely(
+    ctx: Context & { readonly source: string; readonly interpolate?: boolean },
+  ): Promise<UnsafeInterpolationResult> {
+    const { source, interpolate } = ctx;
+    if (!interpolate) {
+      return { status: "unmodified", source };
+    }
+
+    try {
+      // NOTE: This is intentionally unsafe. Do not feed untrusted content.
+      // Assume you're treating code cell blocks as fully trusted source code.
+      const mutated = await unsafeInterp.interpolate(source, {
+        ...interpCtx?.("prime", { prime: ctx }),
+        safeJsonStringify,
+        partial: async (
+          name: string,
+          partialLocals?: Record<string, unknown>,
+        ) => {
+          const found = partials?.get(name);
+          if (found) {
+            const { content: partial, interpolate, locals } = await found
+              .content({
+                safeJsonStringify,
+                ...interpCtx?.("partial", { prime: ctx, partial: found }),
+                ...partialLocals,
+                partial: found,
+              });
+            if (!interpolate) return partial;
+            return await unsafeInterp.interpolate(partial, locals, [{
+              template: partial,
+            }]);
+          } else {
+            return `/* partial '${name}' not found (available: ${
+              partials?.catalog
+                ? Array.from(partials.catalog.keys()).join(", ")
+                : "?"
+            }) */`;
+          }
+        },
+      });
+      if (mutated !== source) return { status: "mutated", source: mutated };
+      return { status: "unmodified", source };
+    } catch (error) {
+      return { status: false, error, source };
+    }
+  }
+
+  return {
+    unsafeInterp,
+    interpolateUnsafely,
+  };
 }
