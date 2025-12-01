@@ -20,7 +20,7 @@ queryable knowledge system instead of just text.
 
 ## Try it out
 
-Text-UI (`CLI`)
+Explorer Text-UI (`CLI`)
 
 ```bash cli
 ./lib/axiom/text-ui/cli.ts ls lib/axiom/fixture/pmd/comprehensive.md
@@ -30,6 +30,18 @@ Web-UI
 
 ```bash web-ui
 ./lib/axiom/web-ui/service.ts web-ui lib/axiom/fixture/pmd/comprehensive.md
+```
+
+Runbook Text-UI (`runbook.ts`)
+
+```bash cli
+# spry.ts imports from lib/axiom/text-ui/runbook.ts
+cd support/assurance/runbook
+./spry.ts ls fixture-01.md
+./spry.ts run fixture-01.md
+
+./spry.ts run fixture-01.md --graph special
+./spry.ts task clean fixture-01.md
 ```
 
 ## Why Axiom?
