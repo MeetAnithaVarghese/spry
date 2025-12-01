@@ -3,6 +3,7 @@ import type { Code, Root } from "types/mdast";
 import type { Node } from "types/unist";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
+import { CaptureSpec } from "../../universal/capture.ts";
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
 import {
   flexibleTextSchema,
@@ -11,14 +12,6 @@ import {
 import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
-
-export type CodeSpawnableCaptureSpec = {
-  readonly nature: "relFsPath";
-  readonly fsPath: string;
-} | {
-  readonly nature: "memory";
-  readonly key: string;
-};
 
 export const codeSpawnablePiFlagsSchema = z.object({
   descr: z.string().optional(),
@@ -29,6 +22,7 @@ export const codeSpawnablePiFlagsSchema = z.object({
   gitignore: z.union([z.string(), z.boolean()]).optional(),
   graph: flexibleTextSchema.optional(),
   branch: flexibleTextSchema.optional(),
+  injectedDep: flexibleTextSchema.optional(),
 
   // shortcuts
   /* capture */ C: z.string().optional(),
@@ -40,20 +34,21 @@ export const codeSpawnablePiFlagsSchema = z.object({
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
   const capture = mergeFlexibleText(raw.C, raw.capture);
+  const injectedDep = mergeFlexibleText(raw.injectedDep);
   return {
     description: raw.descr,
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
     capture: capture.map((c) =>
       (c.startsWith("./")
-        ? { nature: "relFsPath", fsPath: c }
-        : { nature: "memory", key: c }) satisfies CodeSpawnableCaptureSpec
+        ? { nature: "relFsPath", fsPath: c, gitignore: raw.gitignore }
+        : { nature: "memory", key: c }) satisfies CaptureSpec
     ),
     interpolate: raw.I ?? raw.interpolate,
-    gitignore: raw.gitignore,
     graphs: graphRaw
       ? typeof graphRaw === "string" ? [graphRaw] : graphRaw
       : undefined,
     silent: raw.silent,
+    injectedDep,
   };
 });
 

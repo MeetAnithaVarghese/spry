@@ -193,7 +193,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
 
     assertEquals(gr.relCounts, {
       isCode: 5,
-      isSpawnableCodeCandidate: 5,
+      isSpawnableCodeCandidate: 4,
       isCodePartialCandidate: 1,
       codeDependsOn: 1,
     });

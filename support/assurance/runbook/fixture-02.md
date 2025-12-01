@@ -31,5 +31,5 @@ echo "task: ${safeJsonStringify(partial)}"
 
 # partial 3 (error): ${await partial("test-partial", { mistypedNewLocal: "passed from debug.sql"})}
 
-${await partial("test-partial", { newLocal: "passed from task-3 without await"})}
+${await partial("test-partial", { newLocal: "passed from task-4 with await"})}
 ```

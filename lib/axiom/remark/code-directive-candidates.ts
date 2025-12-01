@@ -64,6 +64,8 @@ export function isCodeDirectiveCandidate<
   ) {
     if (directive) {
       return directive == node.directive ? true : false;
+    } else {
+      return true;
     }
   }
   return false;
