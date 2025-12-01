@@ -59,7 +59,7 @@ Deno.test("pmd-shebang factory behavior", async (t) => {
       const fakeFileUrl = "file:///virtual/project/pm-bootstrap.ts";
 
       const s = shebang({
-        defaultEntrypoint: "./pm-bootstrap.ts",
+        entrypoint: "./pm-bootstrap.ts",
         resolver: () => fakeFileUrl,
       });
 
@@ -85,7 +85,7 @@ Deno.test("pmd-shebang factory behavior", async (t) => {
       const remote = "https://example.com/default/pm-bootstrap.ts";
 
       const s = shebang({
-        defaultEntrypoint: "./pm-bootstrap.ts",
+        entrypoint: "./pm-bootstrap.ts",
         resolver: () => remote,
       });
 

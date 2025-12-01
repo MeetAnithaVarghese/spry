@@ -86,7 +86,7 @@ export interface ShebangOptions {
    *
    * Example: "./pm-bootstrap.ts"
    */
-  defaultEntrypoint?: string;
+  entrypoint?: string;
 
   /**
    * Deno permissions / flags used in the shebang.
@@ -95,9 +95,20 @@ export interface ShebangOptions {
   denoFlags?: string[];
 
   /**
+   * Default arguments passed to the entrypoint itself.
+   *
+   * These appear after the entrypoint in the shebang line:
+   *
+   *   #!/usr/bin/env -S deno run ... <entry> <entryArgs...>
+   *
+   * Defaults to [] (no extra args).
+   */
+  entrypointArgs?: string[];
+
+  /**
    * If true, local FS values from the env var are used "as-is"
    * (absolute, relative, etc.), without converting to a path
-   * relative to the current working directory.
+   * relative to the base directory for the target file.
    *
    * Remote URLs (http/https) are always used as-is regardless.
    *
@@ -115,14 +126,20 @@ export interface ShebangOptions {
   resolver?: (specifier: string) => string | Promise<string>;
 
   /**
-   * If true (default), emit(filePath) will also try to make the
-   * file executable (chmod +x) after updating the shebang so that
+   * If true (default), emit(filePaths) will also try to make the
+   * file(s) executable (chmod +x) after updating the shebang so that
    * `./file.md` works directly on Unix-like systems.
    *
    * On platforms where chmod is not meaningful (e.g. Windows),
    * failures will be ignored.
    */
   makeExecutable?: boolean;
+
+  /**
+   * If true, no file modifications or chmod operations occur.
+   * Instead, all actions are printed. Defaults to false.
+   */
+  dryRun?: boolean;
 }
 
 /**
@@ -130,38 +147,35 @@ export interface ShebangOptions {
  *
  * Usage:
  *   const s = shebang();
- *   const line = await s.line();
- *   await s.emit("notebook.md");
+ *   const line = await s.line();            // uses process cwd as base
+ *   await s.emit("notebook.md");           // single file
+ *   await s.emit(["a.md", "b.md"]);        // multiple files
  */
 export function shebang(options: ShebangOptions = {}) {
   const {
     envVarName = "SPRY_PMD_ENTRYPOINT",
-    defaultEntrypoint = "./pm-bootstrap.ts",
+    entrypoint: defaultEntrypoint = "./pm-bootstrap.ts",
     denoFlags = ["--allow-all"],
+    entrypointArgs: entryArgs = [],
     useRawEnvValue = false,
     resolver = (specifier: string): string => import.meta.resolve(specifier),
     makeExecutable = true,
+    dryRun = false,
   } = options;
 
-  const cwd = Deno.cwd();
-
-  async function resolveFromEnv(raw: string): Promise<string> {
+  async function resolveFromEnv(raw: string, baseDir: string): Promise<string> {
     const value = raw.trim();
 
-    // Remote endpoints are always used as-is.
     if (value.startsWith("http://") || value.startsWith("https://")) {
       return value;
     }
 
-    // For local FS, caller can opt into raw usage.
     if (useRawEnvValue) {
       return value;
     }
 
-    // Treat as a local filesystem path (absolute or relative to CWD).
-    const abs = path.isAbsolute(value) ? value : path.join(cwd, value);
+    const abs = path.isAbsolute(value) ? value : path.join(baseDir, value);
 
-    // Canonicalize if possible.
     let real: string;
     try {
       real = await Deno.realPath(abs);
@@ -169,103 +183,103 @@ export function shebang(options: ShebangOptions = {}) {
       real = abs;
     }
 
-    // Make it relative to cwd if possible.
-    const rel = path.relative(cwd, real);
+    const rel = path.relative(baseDir, real);
     return rel || path.basename(real);
   }
 
-  async function resolveFromDefault(): Promise<string> {
-    // Use the injected resolver (sync or async).
+  async function resolveFromDefault(baseDir: string): Promise<string> {
     const resolved = await resolver(defaultEntrypoint);
 
-    // Try to treat as file URL and make relative to cwd.
     try {
       const fsPath = path.fromFileUrl(new URL(resolved));
-      const rel = path.relative(cwd, fsPath);
+      const rel = path.relative(baseDir, fsPath);
       return rel || path.basename(fsPath);
     } catch {
-      // Not a file URL (e.g. remote) – use as-is.
       return resolved;
     }
   }
 
-  /**
-   * Resolve the entrypoint argument that will appear after `deno run` in the shebang.
-   *
-   * - If env var is set: apply remote/local rules.
-   * - If not set: resolver(defaultEntrypoint), then:
-   *   - file URL → local path relative to cwd
-   *   - remote/other → use as-is
-   */
-  async function resolveEntrypointArg(): Promise<string> {
+  async function resolveEntrypointArg(baseDir: string): Promise<string> {
     const raw = Deno.env.get(envVarName);
 
-    if (raw && raw.trim() !== "") {
-      return await resolveFromEnv(raw);
+    if (raw && raw.trim()) {
+      return await resolveFromEnv(raw, baseDir);
     }
 
-    return await resolveFromDefault();
+    return await resolveFromDefault(baseDir);
   }
 
-  /**
-   * Build the full shebang line.
-   */
-  async function line(): Promise<string> {
-    const entry = await resolveEntrypointArg();
-    const flagsPart = denoFlags.join(" ");
-    return `#!/usr/bin/env -S deno run ${flagsPart} ${entry}`;
+  async function line(baseDir?: string): Promise<string> {
+    const effectiveBase = baseDir ?? Deno.cwd();
+    const entry = await resolveEntrypointArg(effectiveBase);
+
+    return [
+      "#!/usr/bin/env",
+      "-S",
+      "deno",
+      "run",
+      ...denoFlags,
+      entry,
+      ...entryArgs,
+    ].join(" ");
   }
 
-  async function makeFileExecutableIfNeeded(filePath: string): Promise<void> {
-    if (!makeExecutable) return;
+  async function makeExecutableIfNeeded(filePath: string): Promise<void> {
+    if (!makeExecutable || dryRun) return;
 
-    // On Windows or restricted environments, chmod may fail; ignore errors.
     try {
       const info = await Deno.lstat(filePath);
       const currentMode = info.mode;
 
       if (currentMode != null) {
-        const newMode = currentMode | 0o111; // add execute bits for user/group/other
+        const newMode = currentMode | 0o111;
         if (newMode !== currentMode) {
           await Deno.chmod(filePath, newMode);
         }
       } else {
-        // If mode is null, just set a reasonable default.
         await Deno.chmod(filePath, 0o755);
       }
     } catch {
-      // Ignore chmod-related errors (e.g., on Windows).
+      // ignore errors on Windows or restricted FS
     }
   }
 
-  /**
-   * Emit the shebang:
-   *
-   * - If no filePath is provided -> print the shebang to stdout.
-   * - If filePath is provided:
-   *     - If the file already has a shebang on the first line -> replace it.
-   *     - Else -> insert the shebang as the first line.
-   *     - Optionally (default), mark the file as executable.
-   */
-  async function emit(filePath?: string): Promise<void> {
-    const shebangLine = await line();
-
-    if (!filePath) {
+  async function emit(filePaths?: string | string[]): Promise<void> {
+    if (!filePaths) {
+      const shebangLine = await line();
       console.log(shebangLine);
       return;
     }
 
-    const original = await Deno.readTextFile(filePath);
+    const files = Array.isArray(filePaths) ? filePaths : [filePaths];
 
-    let updated: string;
-    if (original.startsWith("#!")) {
-      updated = original.replace(/^#![^\n]*\n/, `${shebangLine}\n`);
-    } else {
-      updated = `${shebangLine}\n${original}`;
+    for (const filePath of files) {
+      const baseDir = path.dirname(filePath);
+      const shebangLine = await line(baseDir);
+
+      const original = await Deno.readTextFile(filePath);
+
+      const replacing = original.startsWith("#!");
+      const updated = replacing
+        ? original.replace(/^#![^\n]*\n/, `${shebangLine}\n`)
+        : `${shebangLine}\n${original}`;
+
+      if (dryRun) {
+        console.log(`=== DRY RUN: would update file: ${filePath}`);
+        console.log(
+          `Action: ${replacing ? "replace shebang" : "insert shebang"}`,
+        );
+        console.log(`Computed shebang: ${shebangLine}`);
+        if (makeExecutable) {
+          console.log("Executable bit: would be set (chmod +x)");
+        }
+        console.log("");
+        continue;
+      }
+
+      await Deno.writeTextFile(filePath, updated);
+      await makeExecutableIfNeeded(filePath);
     }
-
-    await Deno.writeTextFile(filePath, updated);
-    await makeFileExecutableIfNeeded(filePath);
   }
 
   return { line, emit, resolveEntrypointArg };

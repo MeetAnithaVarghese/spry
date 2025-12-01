@@ -18,6 +18,7 @@ import { inspect } from "unist-util-inspect";
 
 import { ListerBuilder } from "../../universal/lister-tabular-tui.ts";
 import { TreeLister } from "../../universal/lister-tree-tui.ts";
+import { shebang } from "../../universal/pmd-shebang.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 import { headingLikeNodeDataBag } from "../edge/rule/mod.ts";
 import { markdownASTs } from "../io/mod.ts";
@@ -200,12 +201,14 @@ export class CLI {
     return new Command()
       .name("graph-cli")
       .version(() => computeSemVerSync(import.meta.url))
-      .description("Spry Graph Viewer CLI")
+      .description("Spry Axiom Explorer CLI")
       .command("help", new HelpCommand())
       .command("completions", new CompletionsCommand())
       .command("web-ui", this.webUiCLI.docCommand())
       .command("ls", this.lsCommand())
-      .command("inspect", this.inspectCommand());
+      .command("inspect", this.inspectCommand())
+      .command("projection", this.projectionCommand())
+      .command("shebang", this.shebangCommand());
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
@@ -238,13 +241,7 @@ export class CLI {
       .arguments("[paths...:string]")
       .option("--no-color", "Show output without ANSI colors")
       .action(
-        async (
-          options: {
-            node?: string | string[];
-            color?: boolean;
-          },
-          ...paths: string[]
-        ) => {
+        async (options: { color?: boolean }, ...paths: string[]) => {
           const markdownPaths = resolveMarkdownPaths(
             paths,
             this.conf?.defaultFiles,
@@ -262,6 +259,54 @@ export class CLI {
           for await (const mdAST of markdownASTs(markdownPaths)) {
             console.log(inspect(mdAST.mdastRoot, { color: options.color }));
           }
+        },
+      );
+  }
+
+  shebangCommand(cmdName = "shebang") {
+    return this.baseCommand({ examplesCmd: cmdName })
+      .description(
+        "convert markdown files into executables with shebang (#!) helpers",
+      )
+      .arguments("[paths...:string]")
+      .option("--dry-run", "Emit the shebang line without updating")
+      .option("--entrypoint", "The launcher to use", {
+        default: "./cli.ts",
+      })
+      .option("--entrypoint-arg", "The launcher's arguments to use", {
+        default: ["projection", "--pretty"],
+        collect: true,
+      })
+      .action(
+        async (
+          options: {
+            envVarName: string;
+            entrypoint: string;
+            entrypointArg: string[];
+            dryRun?: boolean;
+          },
+          ...paths: string[]
+        ) => {
+          const markdownPaths = resolveMarkdownPaths(
+            paths,
+            this.conf?.defaultFiles,
+          );
+
+          if (markdownPaths.length === 0) {
+            console.log(
+              gray(
+                "No markdown paths provided and no default files configured.",
+              ),
+            );
+            return;
+          }
+
+          const sb = shebang({
+            ...options,
+            entrypointArgs: options.entrypointArg,
+            resolver: import.meta.resolve,
+          });
+          await sb.emit(paths);
         },
       );
   }
@@ -374,6 +419,43 @@ export class CLI {
             .dirFirst(true);
 
           await treeLister.ls(true);
+        },
+      );
+  }
+
+  /**
+   * `projection` command:
+   * - builds FlexibleProjection from markdown sources
+   * - emits as JSON to STDOUT
+   */
+  projectionCommand(cmdName = "projection") {
+    return this.baseCommand({ examplesCmd: cmdName })
+      .description(
+        "compute a projection and emit as JSON (defaults to flexible)",
+      )
+      .arguments("[paths...:string]")
+      .option("--pretty", "Pretty-print (indent) the JSON")
+      .action(
+        async (
+          options: { pretty?: boolean },
+          ...paths: string[]
+        ) => {
+          const markdownPaths = resolveMarkdownPaths(
+            paths,
+            this.conf?.defaultFiles,
+          );
+
+          if (markdownPaths.length === 0) {
+            console.log(
+              gray(
+                "No markdown paths provided and no default files configured.",
+              ),
+            );
+            return;
+          }
+
+          const model = await flexibleProjectionFromFiles(markdownPaths);
+          console.log(JSON.stringify(model, null, options.pretty ? 2 : 0));
         },
       );
   }
