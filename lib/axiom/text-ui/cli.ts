@@ -434,10 +434,15 @@ export class CLI {
         "compute a projection and emit as JSON (defaults to flexible)",
       )
       .arguments("[paths...:string]")
-      .option("--pretty", "Pretty-print (indent) the JSON")
+      .option("--pretty", "Pretty-print (indent) the JSON", {
+        conflicts: ["jsonl"],
+      })
+      .option("--jsonl", "Independently prepare JSON per file as JSONL", {
+        conflicts: ["pretty"],
+      })
       .action(
         async (
-          options: { pretty?: boolean },
+          options: { jsonl?: boolean; pretty?: boolean },
           ...paths: string[]
         ) => {
           const markdownPaths = resolveMarkdownPaths(
@@ -454,8 +459,15 @@ export class CLI {
             return;
           }
 
-          const model = await flexibleProjectionFromFiles(markdownPaths);
-          console.log(JSON.stringify(model, null, options.pretty ? 2 : 0));
+          if (!options.jsonl || options.pretty) {
+            const model = await flexibleProjectionFromFiles(markdownPaths);
+            console.log(JSON.stringify(model, null, options.pretty ? 2 : 0));
+          } else {
+            for (const mp of markdownPaths) {
+              const model = await flexibleProjectionFromFiles([mp]);
+              console.log(JSON.stringify(model)); // one JSON per line ("JSONL")
+            }
+          }
         },
       );
   }
