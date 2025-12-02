@@ -24,37 +24,16 @@
 import { visit } from "unist-util-visit";
 import {
   PartialCollection,
-  partialContent,
   partialContentCollection as partialsCollection,
 } from "../../interpolate/partial.ts";
 import { depsResolver } from "../../universal/depends.ts";
 import { markdownASTs, MarkdownEncountered } from "../io/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import {
-  CodeDirectiveCandidate,
-  isCodeDirectiveCandidate,
-} from "../remark/code-directive-candidates.ts";
-import {
   isSpawnableCodeCandidate,
   SpawnableCodeCandidate,
 } from "../remark/spawnable-code-candidates.ts";
-
-/**
- * A directive is a code cell that controls behavior instead of being executed.
- *
- * Example: a fenced block like
- *
- * ```md
- * ```sql PARTIAL footer
- * -- footer here
- * ```
- *
- * is parsed as a `CodeDirectiveCandidate`, and we wrap it as a `Directive`
- * with an added `provenance` (where it came from in which Markdown file).
- */
-export type Directive =
-  & Omit<CodeDirectiveCandidate<string, string>, "isCodeDirectiveCandidate">
-  & { readonly provenance: MarkdownEncountered };
+import { collectDirectives, Directive } from "./directives.ts";
 
 /**
  * A *runnable* is a spawnable code cell:
@@ -139,6 +118,7 @@ export async function runbooksFromFiles<
 ): Promise<RunbookProjection<FragmentLocals>> {
   const { onDuplicateRunnable, encountered, filter } = init ?? {};
   const directives: Directive[] = [];
+  const partials = partialsCollection<FragmentLocals>();
   const runnablesById: Record<string, Runnable> = {};
   const runnables: Runnable[] = [];
 
@@ -162,11 +142,10 @@ export async function runbooksFromFiles<
             runnablesById[spawnable.identity] = runnable;
           }
         }
-      } else if (isCodeDirectiveCandidate(code)) {
-        const { isCodeDirectiveCandidate: _, ...rest } = code;
-        directives.push({ ...rest, provenance: src });
       }
     });
+
+    collectDirectives(src, directives, partials);
   }
 
   // Resolve dependencies across all runnables.
@@ -178,52 +157,6 @@ export async function runbooksFromFiles<
     taskId: () => o.identity, // satisfies Task interface
     taskDeps: () => dr.deps(o.identity, o.args.deps), // satisfies Task interface
   }));
-
-  // Build the partials collection from all `PARTIAL` directives.
-  const partials = partialsCollection<FragmentLocals>();
-
-  for (const d of directives) {
-    if (d.directive === "PARTIAL") {
-      const { pi: { flags }, attrs } = d.instructions;
-
-      const hasFlag = (k: string) =>
-        k in flags && flags[k] !== false && flags[k] !== undefined;
-
-      // `--inject` can be:
-      //   - absent        → no injection
-      //   - string        → single glob
-      //   - string[]      → multiple globs
-      const injectGlobs = flags.inject === undefined
-        ? []
-        : Array.isArray(flags.inject)
-        ? (flags.inject as string[])
-        : [String(flags.inject)];
-
-      // Only build a spec when attrs are present
-      const schemaSpec = attrs && Object.keys(attrs).length > 0
-        ? attrs
-        : undefined;
-
-      // Always pass schemaSpec + strictArgs; inject is optional.
-      partials.register(
-        partialContent<FragmentLocals>(
-          d.identity,
-          d.value,
-          {
-            schemaSpec,
-            strictArgs: true,
-            inject: injectGlobs.length
-              ? {
-                globs: injectGlobs,
-                prepend: hasFlag("prepend"),
-                append: hasFlag("append"),
-              }
-              : undefined,
-          },
-        ),
-      );
-    }
-  }
 
   return {
     runnables,
