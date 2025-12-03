@@ -120,7 +120,7 @@ export const codeDirectiveCandidates: Plugin<[CodeDirectiveOptions?], Root> =
           if (partial.lang) {
             partial.langSpec = languageRegistry.get(partial.lang);
           }
-          partial.instructions = instructionsFromText(node.meta);
+          partial.instructions = instructions;
         }
       });
     };
