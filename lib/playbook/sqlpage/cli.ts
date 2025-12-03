@@ -19,6 +19,7 @@ import {
   join,
   relative,
 } from "@std/path";
+import { isStorable } from "../../axiom/projection/playbook.ts";
 import { docFrontmatterDataBag } from "../../axiom/remark/doc-frontmatter.ts";
 import { isImportPlaceholder } from "../../axiom/remark/import-placeholders-generator.ts";
 import { collectAsyncGenerated } from "../../universal/collectable.ts";
@@ -87,8 +88,8 @@ const flagsFrom = (spc: SqlPageContent) => {
         isInterpolated: spc.isInterpolated ? true : false,
         isError: spc.error ? true : false,
         isPartialInjected: spc.partialInjected ? true : false,
-        isRouteSupplier: isRouteSupplier(spc.cell?.storableAttrs)
-          ? true
+        isRouteSupplier: isStorable(spc.cell)
+          ? (isRouteSupplier(spc.cell?.storableAttrs) ? true : false)
           : false,
         isVirtual: spc.cell ? isImportPlaceholder(spc.cell) : false,
         isBinary: false, // TODO: spc.cell?.sourceElaboration?.isRefToBinary ?? false,

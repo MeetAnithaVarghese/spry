@@ -1,5 +1,6 @@
 import z from "@zod/zod";
 import { codeFrontmatter } from "../../axiom/mdast/code-frontmatter.ts";
+import { Directive } from "../../axiom/projection/directives.ts";
 import { Storable } from "../../axiom/projection/playbook.ts";
 import { PartialCollection } from "../../interpolate/partial.ts";
 import {
@@ -20,6 +21,9 @@ import {
   literal,
 } from "../../universal/sql-text.ts";
 import { safeJsonStringify } from "../../universal/tmpl-literal-aide.ts";
+
+export const sqlCodeCellLangId = "sql" as const;
+export const sqlCodeCellLangSpec = ensureLanguageByIdOrAlias(sqlCodeCellLangId);
 
 export type SqlPagePath =
   & {
@@ -98,7 +102,7 @@ type SqlPageFileBase = {
   /** Optional timestamp (not used in DML; engine time is used) */
   readonly lastModified?: Date;
   /** The notebook/playbook cell this file originated from, if any */
-  readonly cell?: Storable;
+  readonly cell?: Storable | Directive;
 };
 
 /** Minimal variant for static head/tail SQL files */
@@ -382,24 +386,21 @@ export function contentSuppliers() {
     },
   });
 
-  langHandlers.register(
-    ensureLanguageByIdOrAlias("sql"),
-    (storable, { registerIssue }) => {
-      const path = storable.storableIdentity;
-      mutateRouteInCellAttrs(storable, path, registerIssue);
-      return {
-        kind: "sqlpage_file_upsert",
-        path,
-        isRoutable: true,
-        contents: storable.value,
-        asErrorContents: (text) => text.replaceAll(/^/gm, "-- "),
-        isUnsafeInterpolatable: true,
-        isInjectableCandidate: true,
-        isBinary: false,
-        cell: storable,
-      };
-    },
-  );
+  langHandlers.register(sqlCodeCellLangSpec, (storable, { registerIssue }) => {
+    const path = storable.storableIdentity;
+    mutateRouteInCellAttrs(storable, path, registerIssue);
+    return {
+      kind: "sqlpage_file_upsert",
+      path,
+      isRoutable: true,
+      contents: storable.value,
+      asErrorContents: (text) => text.replaceAll(/^/gm, "-- "),
+      isUnsafeInterpolatable: true,
+      isInjectableCandidate: true,
+      isBinary: false,
+      cell: storable,
+    };
+  });
 
   langHandlers.register(ensureLanguageByIdOrAlias("css"), (storable) => ({
     kind: "sqlpage_file_upsert",
