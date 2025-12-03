@@ -1,5 +1,5 @@
 /**
- * Runbook projection for Spry.
+ * Playbook projection for Spry.
  *
  * This module:
  * - Reads one or more Markdown sources via `markdownASTs`.
@@ -7,11 +7,12 @@
  *   - *Spawnable* code cells (turned into `Runnable` / `RunnableTask`).
  *   - `PARTIAL` code directives (turned into typed content fragments / partials).
  * - Resolves task dependencies, including implicit “injected” dependencies.
- * - Returns a `RunbookProjection<FragmentLocals>` that other layers
+ * - Returns a `PlaybookProjection<FragmentLocals>` that other layers
  *   (CLI, interpolator, executor) can work with.
  *
  * Key ideas:
  * - **Runnable**: a code cell that can be executed (e.g. shell task).
+ * - **Storable**: a code cell that can be stored but not executed (e.g. SQL without a connection task, HTML, JS, CSS, etc.).
  * - **RunnableTask**: a `Runnable` plus `taskId` and `taskDeps` helpers.
  * - **Directive**: a “meta” code cell that defines behavior/config
  *   (for example, `PARTIAL` fragments).
@@ -30,8 +31,10 @@ import { depsResolver } from "../../universal/depends.ts";
 import { markdownASTs, MarkdownEncountered } from "../io/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import {
-  isSpawnableCodeCandidate,
-  SpawnableCodeCandidate,
+  ExecutableCodeCandidate,
+  isExecutableCodeCandidate,
+  isStorableCodeCandidate,
+  StorableCodeCandidate,
 } from "../remark/spawnable-code-candidates.ts";
 import { collectDirectives, Directive } from "./directives.ts";
 
@@ -42,7 +45,17 @@ import { collectDirectives, Directive } from "./directives.ts";
  * - It is associated with a Markdown origin (`provenance`).
  */
 export type Runnable =
-  & Omit<SpawnableCodeCandidate, "isSpawnableCodeCandidate">
+  & Omit<ExecutableCodeCandidate, "isSpawnableCodeCandidate">
+  & { readonly provenance: MarkdownEncountered };
+
+/**
+ * A *storable* is a spawnable code cell:
+ * - It has an identified language/engine (sql, yaml, etc.).
+ * - It carries arguments / flags parsed from the fence along with attributes.
+ * - It is associated with a Markdown origin (`provenance`).
+ */
+export type Storable =
+  & Omit<StorableCodeCandidate, "isSpawnableCodeCandidate">
   & { readonly provenance: MarkdownEncountered };
 
 /**
@@ -58,21 +71,25 @@ export type RunnableTask = Runnable & {
 };
 
 /**
- * RunbookProjection represents everything we discovered across Markdown files:
+ * PlaybookProjection represents everything we discovered across Markdown files:
  *
  * - `runnablesById` – lookup table of runnable code cells by identity.
  * - `runnables`     – all runnable code cells in input order.
+ * - `storablesById` – lookup table of storable code cells by identity.
+ * - `storables`     – all storable code cells in input order.
  * - `tasks`         – runnables decorated with `taskId` / `taskDeps`.
  * - `directives`    – directive cells (e.g. PARTIAL definitions).
  * - `partials`      – typed collection of partials / fragments that
  *                     can be used by interpolators (`FragmentLocals` is
  *                     the shape of locals passed when rendering a partial).
  */
-export type RunbookProjection<
+export type PlaybookProjection<
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 > = {
   readonly runnablesById: Record<string, Runnable>;
   readonly runnables: readonly Runnable[];
+  readonly storablesById: Record<string, Storable>;
+  readonly storables: readonly Storable[];
   readonly tasks: readonly RunnableTask[];
   readonly directives: readonly Directive[];
   readonly partials: PartialCollection<FragmentLocals>;
@@ -113,34 +130,54 @@ export async function runbooksFromFiles<
       r: Runnable,
       byIdentity: Record<string, Runnable>,
     ) => void;
+    readonly onDuplicateStorable?: (
+      r: Storable,
+      byIdentity: Record<string, Storable>,
+    ) => void;
     readonly encountered?: (projectable: MarkdownEncountered) => void;
   },
-): Promise<RunbookProjection<FragmentLocals>> {
-  const { onDuplicateRunnable, encountered, filter } = init ?? {};
+): Promise<PlaybookProjection<FragmentLocals>> {
+  const { onDuplicateRunnable, onDuplicateStorable, encountered, filter } =
+    init ?? {};
   const directives: Directive[] = [];
   const partials = partialsCollection<FragmentLocals>();
   const runnablesById: Record<string, Runnable> = {};
   const runnables: Runnable[] = [];
+  const storablesById: Record<string, Storable> = {};
+  const storables: Storable[] = [];
 
   // Discover all runnables and directives across all Markdown sources.
   for await (const src of markdownASTs(markdownPaths)) {
     encountered?.(src);
 
     visit(src.mdastRoot, "code", (code) => {
-      if (isSpawnableCodeCandidate(code)) {
-        const { isSpawnableCodeCandidate: _, ...spawnable } = code;
-        const runnable: Runnable = { ...spawnable, provenance: src };
+      if (isExecutableCodeCandidate(code)) {
+        const { isSpawnableCodeCandidate: _, ...executable } = code;
+        const runnable: Runnable = { ...executable, provenance: src };
 
         if (!filter || filter(runnable)) {
           // `spawnable` is a shallow clone of `code`; we attach provenance.
           runnables.push(runnable);
 
-          if (spawnable.identity in runnablesById) {
+          if (executable.spawnableIdentity in runnablesById) {
             // Caller decides what to do with duplicates (warn, override, etc.).
             onDuplicateRunnable?.(runnable, runnablesById);
           } else {
-            runnablesById[spawnable.identity] = runnable;
+            runnablesById[executable.spawnableIdentity] = runnable;
           }
+        }
+      } else if (isStorableCodeCandidate(code)) {
+        const { isSpawnableCodeCandidate: _, ...rest } = code;
+        const storable: Storable = { ...rest, provenance: src };
+
+        // `spawnable` is a shallow clone of `code`; we attach provenance.
+        storables.push(storable);
+
+        if (rest.storableIdentity in storablesById) {
+          // Caller decides what to do with duplicates (warn, override, etc.).
+          onDuplicateStorable?.(storable, storablesById);
+        } else {
+          storablesById[rest.storableIdentity] = storable;
         }
       }
     });
@@ -154,17 +191,19 @@ export async function runbooksFromFiles<
 
   const tasks: RunnableTask[] = runnables.map((o) => ({
     ...o,
-    taskId: () => o.identity, // satisfies Task interface
-    taskDeps: () => dr.deps(o.identity, o.spawnableArgs.deps), // satisfies Task interface
+    taskId: () => o.spawnableIdentity, // satisfies Task interface
+    taskDeps: () => dr.deps(o.spawnableIdentity, o.spawnableArgs.deps), // satisfies Task interface
   }));
 
   return {
     runnables,
     runnablesById,
+    storables,
+    storablesById,
     tasks,
     directives,
     partials,
-  } as RunbookProjection<FragmentLocals>;
+  };
 }
 
 /**
@@ -232,7 +271,7 @@ export function runnableDepsResolver(
 
   return depsResolver(catalog, {
     // This tells depsResolver how to identify each node.
-    getId: (node) => node.identity,
+    getId: (node) => node.spawnableIdentity,
 
     /**
      * Compute implicit dependencies for a given task:
@@ -247,10 +286,10 @@ export function runnableDepsResolver(
     getImplicit: (node) => {
       const injected: string[] = [];
 
-      const tasks = Array.from(catalog).map((n) => n.identity);
+      const tasks = Array.from(catalog).map((n) => n.spawnableIdentity);
 
       for (const task of catalog) {
-        const taskId = task.identity;
+        const taskId = task.spawnableIdentity;
         const di = task.spawnableArgs.injectedDep;
         if (di.length === 0) continue;
 
@@ -259,7 +298,7 @@ export function runnableDepsResolver(
           let matches = false;
           for (const re of task.data.injectedDepCache) {
             if (
-              re instanceof RegExp && re.test(node.identity)
+              re instanceof RegExp && re.test(node.spawnableIdentity)
             ) {
               matches = true;
               break;
