@@ -128,7 +128,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
           "role:case",
           "role:evidence",
           "isCode",
-          "isCodePartialCandidate",
+          "isSpawnableCodeCandidate",
           "isTask",
         ]);
 
@@ -143,7 +143,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
           "role:strategy": 8,
           "role:suite": 6,
           isCode: 16,
-          isCodePartialCandidate: 2,
+          isSpawnableCodeCandidate: 14,
           sectionSemanticId: 34,
         });
 
@@ -188,6 +188,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     assertEquals(Array.from(gr.rels), [
       "isCode",
       "isSpawnableCodeCandidate",
+      "isDirectiveCandidate",
       "isCodePartialCandidate",
       "codeDependsOn",
     ]);
@@ -197,6 +198,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
       isSpawnableCodeCandidate: 4,
       isCodePartialCandidate: 1,
       codeDependsOn: 1,
+      isDirectiveCandidate: 1,
     });
   });
 
@@ -216,7 +218,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     assertEquals(gr.relCounts, {
       isImportant: 1,
       isCode: 18,
-      isSpawnableCodeCandidate: 3,
+      isSpawnableCodeCandidate: 4,
     });
   });
 
