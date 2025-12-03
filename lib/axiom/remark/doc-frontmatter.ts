@@ -17,6 +17,7 @@ import { z } from "@zod/zod";
 import type { Node, Root, RootContent } from "types/mdast";
 import type { Plugin } from "unified";
 import type { VFile } from "vfile";
+import { safeInterpolate } from "../../interpolate/safe.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -61,6 +62,12 @@ export interface DocumentFrontmatterOptions<FM extends Dict = Dict> {
   readonly schema?: z.ZodType<FM, Any, Any>;
   // If true, remove the YAML block from tree.children after parsing
   readonly removeYamlNode?: boolean;
+  // after loading frontmatter and before assignign to doc, interpolate
+  readonly interpolate?: <Context>() => {
+    contextKeyName: "project" | string;
+    context: Context;
+    locals: Record<string, unknown>;
+  };
 }
 
 function isObject(value: unknown): value is Dict {
@@ -86,12 +93,21 @@ export const documentFrontmatter: Plugin<
       { type: "yaml" }
     >;
 
-    const raw = typeof yamlNode.value === "string" ? yamlNode.value : "";
+    let rawFM = typeof yamlNode.value === "string" ? yamlNode.value : "";
+    if (rawFM && rawFM.length > 0 && options?.interpolate) {
+      const iu = options.interpolate();
+      rawFM = safeInterpolate(rawFM, {
+        [iu.contextKeyName]: iu.context, // fully custom, can be anything passed from project init location
+        env: Deno.env.toObject(),
+        ...iu.locals,
+      });
+    }
+
     let yamlErr: Error | undefined;
     let parsedYaml: unknown = {};
 
     try {
-      parsedYaml = YAMLparse(raw);
+      parsedYaml = YAMLparse(rawFM);
       if (!isObject(parsedYaml)) {
         parsedYaml = {};
       }
