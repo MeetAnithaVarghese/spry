@@ -254,4 +254,14 @@ export function detectLanguageByShebang(
     extensions: [".r", ".R"],
     comment: { line: ["#"], block: [] },
   });
+  registerLanguage({
+    id: "envrc",
+    extensions: [".envrc"],
+    comment: { line: ["#"], block: [] },
+  });
+  registerLanguage({
+    id: "env",
+    extensions: [".env"],
+    comment: { line: ["#"], block: [] },
+  });
 })();
