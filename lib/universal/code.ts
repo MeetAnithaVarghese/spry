@@ -265,3 +265,102 @@ export function detectLanguageByShebang(
     comment: { line: ["#"], block: [] },
   });
 })();
+
+/**
+ * Create a per-language handler registry.
+ *
+ * - Each language (id and aliases) can have multiple handlers.
+ * - Handlers are strongly typed via <Args, R>.
+ * - If no handlers are registered for a language, the default handler is used.
+ */
+export function languageHandlers<Args extends unknown[], R>(init: {
+  defaultHandler: (...args: Args) => R;
+}) {
+  type Handler = (...args: Args) => R;
+
+  // Internal map keyed by language id or alias.
+  const byLangIdOrAlias = new Map<string, Handler[]>();
+
+  /**
+   * Register a handler for the given language and all of its aliases.
+   * Multiple handlers per language are allowed; duplicates are ignored.
+   */
+  function register(language: LanguageSpec, handler: Handler): void {
+    const keys = [language.id, ...(language.aliases ?? [])];
+
+    for (const key of keys) {
+      const current = byLangIdOrAlias.get(key);
+      if (current) {
+        // Avoid accidental duplicate registrations of the same handler.
+        if (!current.includes(handler)) current.push(handler);
+      } else {
+        byLangIdOrAlias.set(key, [handler]);
+      }
+    }
+  }
+
+  /**
+   * Return all handlers for a language.
+   *
+   * - If `language` is undefined, you get just the default handler.
+   * - If no handlers are registered for that language, you get just the default handler.
+   * - Returned array is a shallow copy so callers cannot mutate internal state.
+   */
+  function handlers(language?: LanguageSpec): Handler[] {
+    if (!language) return [init.defaultHandler];
+
+    const byId = byLangIdOrAlias.get(language.id);
+    if (byId && byId.length > 0) return [...byId];
+
+    for (const alias of language.aliases ?? []) {
+      const byAlias = byLangIdOrAlias.get(alias);
+      if (byAlias && byAlias.length > 0) return [...byAlias];
+    }
+
+    return [init.defaultHandler];
+  }
+
+  /**
+   * Convenience helper: run all handlers for the language and
+   * return their results.
+   */
+  function runAll(
+    language: LanguageSpec | undefined,
+    ...args: Args
+  ): R[] {
+    return handlers(language).map((fn) => fn(...args));
+  }
+
+  /**
+   * Check whether any *custom* handlers are registered for a language.
+   * (Useful in debugging / diagnostics.)
+   */
+  function hasHandlers(language: LanguageSpec): boolean {
+    const byId = byLangIdOrAlias.get(language.id);
+    if (byId && byId.length > 0) return true;
+
+    for (const alias of language.aliases ?? []) {
+      const byAlias = byLangIdOrAlias.get(alias);
+      if (byAlias && byAlias.length > 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Debug / introspection snapshot.
+   * Returns a read-only view of the registry so callers cannot mutate it.
+   */
+  function snapshot(): ReadonlyMap<string, readonly Handler[]> {
+    const clone = new Map<string, Handler[]>();
+    for (const [k, v] of byLangIdOrAlias) clone.set(k, [...v]);
+    return clone;
+  }
+
+  return {
+    register,
+    handlers,
+    runAll,
+    hasHandlers,
+    snapshot,
+  };
+}
