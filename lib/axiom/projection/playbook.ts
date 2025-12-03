@@ -86,6 +86,7 @@ export type RunnableTask = Runnable & {
 export type PlaybookProjection<
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 > = {
+  readonly sources: readonly MarkdownEncountered[];
   readonly runnablesById: Record<string, Runnable>;
   readonly runnables: readonly Runnable[];
   readonly storablesById: Record<string, Storable>;
@@ -120,7 +121,7 @@ export type PlaybookProjection<
  *   - `onDuplicateRunnable`: callback when two runnables share the same identity.
  *   - `encountered`: callback for each Markdown source as it is parsed.
  */
-export async function runbooksFromFiles<
+export async function playbooksFromFiles<
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 >(
   markdownPaths: Parameters<typeof markdownASTs>[0],
@@ -139,6 +140,7 @@ export async function runbooksFromFiles<
 ): Promise<PlaybookProjection<FragmentLocals>> {
   const { onDuplicateRunnable, onDuplicateStorable, encountered, filter } =
     init ?? {};
+  const sources: MarkdownEncountered[] = [];
   const directives: Directive[] = [];
   const partials = partialsCollection<FragmentLocals>();
   const runnablesById: Record<string, Runnable> = {};
@@ -148,6 +150,7 @@ export async function runbooksFromFiles<
 
   // Discover all runnables and directives across all Markdown sources.
   for await (const src of markdownASTs(markdownPaths)) {
+    sources.push(src);
     encountered?.(src);
 
     visit(src.mdastRoot, "code", (code) => {
@@ -196,6 +199,7 @@ export async function runbooksFromFiles<
   }));
 
   return {
+    sources,
     runnables,
     runnablesById,
     storables,

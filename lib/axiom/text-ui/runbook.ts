@@ -57,7 +57,7 @@ import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../../universal/task-visuals.ts";
-import { runbooksFromFiles, RunnableTask } from "../projection/playbook.ts";
+import { playbooksFromFiles, RunnableTask } from "../projection/playbook.ts";
 import * as axiomCLI from "./cli.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -361,7 +361,7 @@ export class CLI {
       .option("--summarize", "Emit summary after execution in JSON")
       .action(
         async (opts, taskId, ...paths: string[]) => {
-          const { tasks, partials } = await runbooksFromFiles(
+          const { tasks, partials } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
           if (tasks.find((t) => t.taskId() == taskId)) {
@@ -407,7 +407,7 @@ export class CLI {
       .option("--visualize <style:visualStyle>", "Visualize the DAG")
       .action(
         async (opts, ...paths: string[]) => {
-          const { tasks, partials } = await runbooksFromFiles(
+          const { tasks, partials } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
             {
               filter: opts.graph?.length
@@ -465,7 +465,7 @@ export class CLI {
       .action(
         async (options, ...paths: string[]) => {
           const sh = shell();
-          const { tasks } = await runbooksFromFiles(
+          const { tasks } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
           const lsRows = tasks.map((task) => {
