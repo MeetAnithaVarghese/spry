@@ -145,7 +145,6 @@ import {
 import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
-import { isCodeImport } from "./import-specs-resolver.ts";
 
 export const codeSpawnablePiFlagsSchema = z.object({
   descr: z.string().optional(),
@@ -274,7 +273,7 @@ export const spawnableCodeCandidates: Plugin<
 > = () => {
   return (tree) => {
     visit<Root, "code">(tree, "code", (code) => {
-      if (isCodeDirectiveCandidate(code) || isCodeImport(code)) return;
+      if (isCodeDirectiveCandidate(code)) return;
 
       if (code.meta) {
         const codeFM = codeFrontmatter(code);
