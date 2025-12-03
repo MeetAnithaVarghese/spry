@@ -157,6 +157,7 @@ export const codeSpawnablePiFlagsSchema = z.object({
   graph: flexibleTextSchema.optional(),
   branch: flexibleTextSchema.optional(),
   injectedDep: flexibleTextSchema.optional(),
+  injectable: z.boolean().optional(),
 
   // shortcuts
   /* capture */ C: z.string().optional(),
@@ -164,6 +165,7 @@ export const codeSpawnablePiFlagsSchema = z.object({
   /* dep */ D: flexibleTextSchema.optional(),
   /* graph/branch */ G: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
+  /* injectable */ J: z.boolean().optional(),
 }).transform((raw) => {
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
@@ -178,6 +180,7 @@ export const codeSpawnablePiFlagsSchema = z.object({
         : { nature: "memory", key: c }) satisfies CaptureSpec
     ),
     interpolate: raw.I ?? raw.interpolate,
+    injectable: raw.J ?? raw.injectable,
     graphs: graphRaw
       ? typeof graphRaw === "string" ? [graphRaw] : graphRaw
       : undefined,
