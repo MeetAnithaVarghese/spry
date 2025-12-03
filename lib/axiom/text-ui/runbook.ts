@@ -41,23 +41,23 @@ import {
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 
-import { type PartialCollection } from "../../interpolate/partial.ts";
-import {
-  unsafeInterpFactory,
-  UnsafeInterpolationResult,
-} from "../../interpolate/unsafe.ts";
 import {
   captureFactory,
   CaptureSpec,
   gitignorableOnCapture,
 } from "../../interpolate/capture.ts";
+import { type PartialCollection } from "../../interpolate/partial.ts";
+import {
+  unsafeInterpFactory,
+  UnsafeInterpolationResult,
+} from "../../interpolate/unsafe.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { shell } from "../../universal/shell.ts";
 import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../../universal/task-visuals.ts";
-import { runbooksFromFiles, RunnableTask } from "../projection/runbook.ts";
+import { runbooksFromFiles, RunnableTask } from "../projection/playbook.ts";
 import * as axiomCLI from "./cli.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -114,6 +114,7 @@ export function executeTasksFactory<
   const sh = shell({ bus: opts?.shellBus });
   const { interpolateUnsafely } = unsafeInterp;
 
+  const te = new TextEncoder();
   const execute = async (plan: TaskExecutionPlan<T>) =>
     await executeDAG(plan, async (task, ctx) => {
       const interpResult = await interpolateUnsafely({
@@ -122,7 +123,14 @@ export function executeTasksFactory<
         interpolate: task.spawnableArgs.interpolate,
       });
       if (interpResult.status) {
-        const execResult = await sh.auto(interpResult.source, undefined, task);
+        const execResult = task.captureOnly
+          ? { // could be "env", "envrc" or other "output-only" tasks
+            code: 0,
+            success: true,
+            stdout: te.encode(interpResult.source),
+            stderr: new Uint8Array(),
+          }
+          : await sh.auto(interpResult.source, undefined, task);
         await capture(task, { interpResult, execResult });
         return ok(ctx);
       } else {
@@ -142,13 +150,18 @@ export type LsTaskRow = {
   code: Code;
   name: string;
   origin: string;
-  engine: ReturnType<ReturnType<typeof shell>["strategy"]>;
+  engine: ReturnType<ReturnType<typeof shell>["strategy"]> | {
+    engine: "capture-only";
+    label: "Capture Only";
+    linesOfCode: string[];
+  };
   descr: string;
   deps?: string;
   flags: {
     isInterpolated: boolean;
     isSilent: boolean;
     isCaptured: CaptureSpec | false;
+    isCaptureOnly: boolean;
     isGitIgnored: boolean;
     hasIssues: boolean;
   };
@@ -207,6 +220,8 @@ function lsCmdEngineField<Row extends LsTaskRow>(): Partial<
           return green(v.label);
         case "deno-task":
           return cyan(v.label);
+        case "capture-only":
+          return gray(v.label);
       }
     },
   };
@@ -461,10 +476,17 @@ export class CLI {
               deps: task.taskDeps().join(", "),
               descr: args.description ?? "",
               origin: task.provenance.fileRef(task),
-              engine: sh.strategy(task.value),
+              engine: task.captureOnly
+                ? {
+                  engine: "capture-only",
+                  label: "Capture Only",
+                  linesOfCode: [],
+                }
+                : sh.strategy(task.value),
               flags: {
                 isInterpolated: args.interpolate ? true : false,
                 isCaptured: args.capture.length > 0 ? args.capture[0] : false,
+                isCaptureOnly: task.captureOnly ?? false,
                 isGitIgnored: args.capture[0]?.gitignore ? true : false,
                 isSilent: args.silent ?? false,
                 hasIssues: false,
