@@ -41,14 +41,18 @@ import {
   watcher,
   WatcherEvents,
 } from "../../universal/watcher.ts";
-import { SqlPageConf, sqlPageConf } from "./conf.ts";
 import {
   normalizeSPC,
   SqlPageContent,
   SqlPageFilesUpsertDialect,
   sqlPageFilesUpsertDML,
 } from "./content.ts";
-import { sqlPageFiles, sqlPagePlaybook } from "./orchestrate.ts";
+import {
+  SqlPageConf,
+  sqlPageConf,
+  sqlPageFiles,
+  sqlPagePlaybook,
+} from "./orchestrate.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
