@@ -32,11 +32,11 @@ import { VFile } from "vfile";
 import { GraphEdge } from "../edge/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
+import actionableCodeCandidates from "../remark/actionable-code-candidates.ts";
 import codeDirectiveCandidates from "../remark/code-directive-candidates.ts";
 import insertImportPlaceholders from "../remark/import-placeholders-generator.ts";
 import resolveImportSpecs from "../remark/import-specs-resolver.ts";
 import nodeDecorator from "../remark/node-decorator.ts";
-import spawnableCodeCandidates from "../remark/spawnable-code-candidates.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -60,7 +60,7 @@ export function mardownParserPipeline() {
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"]) // extracts to YAML node but does not parse
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
-    .use(docFrontmatter) // parses extracted YAML and stores at md AST root
+    .use(docFrontmatter, { interpolate: true }) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
     .use(resolveImportSpecs, { // find code cells which want to be imported from local/remote files
       interpolationCtx: (_root, vfile) => ({
@@ -82,8 +82,8 @@ export function mardownParserPipeline() {
       },
     })
     .use(nodeDecorator) // look for @id and transform to node.type == "decorator"
-    .use(codeDirectiveCandidates) // be sure this comes before spawnableCodeCandidates
-    .use(spawnableCodeCandidates);
+    .use(codeDirectiveCandidates) // be sure this comes before actionableCodeCandidates
+    .use(actionableCodeCandidates);
 }
 
 // ---------------------------------------------------------------------------

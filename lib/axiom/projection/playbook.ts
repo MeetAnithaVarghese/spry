@@ -4,7 +4,7 @@
  * This module:
  * - Reads one or more Markdown sources via `markdownASTs`.
  * - Walks the mdast trees to find:
- *   - *Spawnable* code cells (turned into `Runnable` / `RunnableTask`).
+ *   - *Actionable* code cells (turned into `Executable` / `ExecutableTask`).
  *   - `PARTIAL` code directives (turned into typed content fragments / partials).
  * - Resolves task dependencies, including implicit “injected” dependencies.
  * - Returns a `PlaybookProjection<FragmentLocals>` that other layers
@@ -12,8 +12,8 @@
  *
  * Key ideas:
  * - **Runnable**: a code cell that can be executed (e.g. shell task).
- * - **Storable**: a code cell that can be stored but not executed (e.g. SQL without a connection task, HTML, JS, CSS, etc.).
- * - **RunnableTask**: a `Runnable` plus `taskId` and `taskDeps` helpers.
+ * - **Materializable**: a code cell that can be stored but not executed (e.g. SQL without a connection task, HTML, JS, CSS, etc.).
+ * - **ExecutableTask**: a `Runnable` plus `taskId` and `taskDeps` helpers.
  * - **Directive**: a “meta” code cell that defines behavior/config
  *   (for example, `PARTIAL` fragments).
  * - **PartialCollection**: a registry of named partials/fragments, each with:
@@ -34,35 +34,36 @@ import { dataBag } from "../mdast/data-bag.ts";
 import {
   ExecutableCodeCandidate,
   isExecutableCodeCandidate,
-  isStorableCodeCandidate,
-  StorableCodeCandidate,
-} from "../remark/spawnable-code-candidates.ts";
+  isMateriazableCodeCandidate,
+  MaterializableCodeCandidate,
+} from "../remark/actionable-code-candidates.ts";
 import { collectDirectives, Directive } from "./directives.ts";
 
 /**
- * A *runnable* is a spawnable code cell:
+ * A *executable* is an actionable code cell:
  * - It has an identified language/engine (shell, deno-task, etc.).
  * - It carries arguments / flags parsed from the fence.
  * - It is associated with a Markdown origin (`provenance`).
  */
-export type Runnable =
-  & Omit<ExecutableCodeCandidate, "isSpawnableCodeCandidate">
+export type Executable =
+  & Omit<ExecutableCodeCandidate, "isActionableCodeCandidate">
   & { readonly provenance: MarkdownEncountered };
 
 /**
- * A *storable* is a spawnable code cell:
+ * A *materializable* is a actionable code cell:
  * - It has an identified language/engine (sql, yaml, etc.).
  * - It carries arguments / flags parsed from the fence along with attributes.
  * - It is associated with a Markdown origin (`provenance`).
  */
-export type Storable =
-  & Omit<StorableCodeCandidate, "isSpawnableCodeCandidate">
+export type Materializable =
+  & Omit<MaterializableCodeCandidate, "isActionableCodeCandidate">
   & { readonly provenance: MarkdownEncountered };
 
-export function isStorable(
+export function isMaterializable(
   node: Node | null | undefined,
-): node is Storable {
-  return node?.type === "code" && "nature" in node && node.nature === "STORABLE"
+): node is Materializable {
+  return node?.type === "code" && "nature" in node &&
+      node.nature === "MATERIALIZABLE"
     ? true
     : false;
 }
@@ -74,7 +75,7 @@ export function isStorable(
  * - `taskId()`  → unique ID for the task.
  * - `taskDeps()` → list of other task IDs that must run before this one.
  */
-export type RunnableTask = Runnable & {
+export type ExecutableTask = Executable & {
   readonly taskId: () => string; // satisfies lib/universal/task.ts interface
   readonly taskDeps: () => string[]; // satisfies lib/universal/task.ts interface
 };
@@ -96,11 +97,11 @@ export type PlaybookProjection<
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 > = {
   readonly sources: readonly MarkdownEncountered[];
-  readonly runnablesById: Record<string, Runnable>;
-  readonly runnables: readonly Runnable[];
-  readonly storablesById: Record<string, Storable>;
-  readonly storables: readonly Storable[];
-  readonly tasks: readonly RunnableTask[];
+  readonly executablesById: Record<string, Executable>;
+  readonly executables: readonly Executable[];
+  readonly materializablesById: Record<string, Materializable>;
+  readonly materializables: readonly Materializable[];
+  readonly tasks: readonly ExecutableTask[];
   readonly directives: readonly Directive[];
   readonly partials: PartialCollection<FragmentLocals>;
 };
@@ -112,7 +113,7 @@ export type PlaybookProjection<
  * 1. Stream all Markdown inputs via `markdownASTs(markdownPaths)`.
  * 2. For each mdast root:
  *    - Visit `code` nodes.
- *    - If `isSpawnableCodeCandidate(code)`, create a `Runnable`.
+ *    - If `isActionableCodeCandidate(code)`, create a `Runnable`.
  *    - If `isCodeDirectiveCandidate(code)`, create a `Directive`.
  * 3. After scanning everything:
  *    - Build a `RunnableTask` list with dependency resolution.
@@ -135,14 +136,14 @@ export async function playbooksFromFiles<
 >(
   markdownPaths: Parameters<typeof markdownASTs>[0],
   init?: {
-    readonly filter?: (task: Runnable) => boolean;
+    readonly filter?: (task: Executable) => boolean;
     readonly onDuplicateRunnable?: (
-      r: Runnable,
-      byIdentity: Record<string, Runnable>,
+      r: Executable,
+      byIdentity: Record<string, Executable>,
     ) => void;
     readonly onDuplicateStorable?: (
-      r: Storable,
-      byIdentity: Record<string, Storable>,
+      r: Materializable,
+      byIdentity: Record<string, Materializable>,
     ) => void;
     readonly encountered?: (projectable: MarkdownEncountered) => void;
   },
@@ -152,10 +153,10 @@ export async function playbooksFromFiles<
   const sources: MarkdownEncountered[] = [];
   const directives: Directive[] = [];
   const partials = partialsCollection<FragmentLocals>();
-  const runnablesById: Record<string, Runnable> = {};
-  const runnables: Runnable[] = [];
-  const storablesById: Record<string, Storable> = {};
-  const storables: Storable[] = [];
+  const executablesById: Record<string, Executable> = {};
+  const executables: Executable[] = [];
+  const materializablesById: Record<string, Materializable> = {};
+  const materializables: Materializable[] = [];
 
   // Discover all runnables and directives across all Markdown sources.
   for await (const src of markdownASTs(markdownPaths)) {
@@ -164,32 +165,31 @@ export async function playbooksFromFiles<
 
     visit(src.mdastRoot, "code", (code) => {
       if (isExecutableCodeCandidate(code)) {
-        const { isSpawnableCodeCandidate: _, ...executable } = code;
-        const runnable: Runnable = { ...executable, provenance: src };
+        const { isActionableCodeCandidate: _, ...executable } = code;
+        const runnable: Executable = { ...executable, provenance: src };
 
         if (!filter || filter(runnable)) {
-          // `spawnable` is a shallow clone of `code`; we attach provenance.
-          runnables.push(runnable);
+          executables.push(runnable);
 
-          if (executable.spawnableIdentity in runnablesById) {
+          if (executable.spawnableIdentity in executablesById) {
             // Caller decides what to do with duplicates (warn, override, etc.).
-            onDuplicateRunnable?.(runnable, runnablesById);
+            onDuplicateRunnable?.(runnable, executablesById);
           } else {
-            runnablesById[executable.spawnableIdentity] = runnable;
+            executablesById[executable.spawnableIdentity] = runnable;
           }
         }
-      } else if (isStorableCodeCandidate(code)) {
-        const { isSpawnableCodeCandidate: _, ...rest } = code;
-        const storable: Storable = { ...rest, provenance: src };
+      } else if (isMateriazableCodeCandidate(code)) {
+        const { isActionableCodeCandidate: _, ...rest } = code;
+        const storable: Materializable = { ...rest, provenance: src };
 
         // `spawnable` is a shallow clone of `code`; we attach provenance.
-        storables.push(storable);
+        materializables.push(storable);
 
-        if (rest.storableIdentity in storablesById) {
+        if (rest.materializableIdentity in materializablesById) {
           // Caller decides what to do with duplicates (warn, override, etc.).
-          onDuplicateStorable?.(storable, storablesById);
+          onDuplicateStorable?.(storable, materializablesById);
         } else {
-          storablesById[rest.storableIdentity] = storable;
+          materializablesById[rest.materializableIdentity] = storable;
         }
       }
     });
@@ -199,9 +199,9 @@ export async function playbooksFromFiles<
 
   // Resolve dependencies across all runnables.
   // - `depsResolver` knows how to compute transitive deps + injected deps.
-  const dr = runnableDepsResolver(runnables);
+  const dr = runnableDepsResolver(executables);
 
-  const tasks: RunnableTask[] = runnables.map((o) => ({
+  const tasks: ExecutableTask[] = executables.map((o) => ({
     ...o,
     taskId: () => o.spawnableIdentity, // satisfies Task interface
     taskDeps: () => dr.deps(o.spawnableIdentity, o.spawnableArgs.deps), // satisfies Task interface
@@ -209,10 +209,10 @@ export async function playbooksFromFiles<
 
   return {
     sources,
-    runnables,
-    runnablesById,
-    storables,
-    storablesById,
+    executables,
+    executablesById,
+    materializables,
+    materializablesById,
     tasks,
     directives,
     partials,
@@ -236,7 +236,7 @@ export async function playbooksFromFiles<
  * - implicit injected dependencies (from other tasks’ flags).
  */
 export function runnableDepsResolver(
-  catalog: Iterable<Runnable>,
+  catalog: Iterable<Executable>,
   init?: {
     /**
      * Optional hook invoked when a `--injected-dep` pattern cannot be compiled
@@ -249,7 +249,7 @@ export function runnableDepsResolver(
      * The callback is responsible for logging or collecting the error.
      */
     onInvalidInjectedDepRegEx?: (
-      r: Runnable,
+      r: Executable,
       source: string,
       error: unknown,
       compiledList: RegExp[],
@@ -260,7 +260,7 @@ export function runnableDepsResolver(
 
   // `dataBag` attaches cached data to nodes without changing their public type.
   // Here we store a compiled list of regexes for each task’s injected-dep flags.
-  const injectedDepCache = dataBag<"injectedDepCache", RegExp[], Runnable>(
+  const injectedDepCache = dataBag<"injectedDepCache", RegExp[], Executable>(
     "injectedDepCache",
     (r) => {
       const compiledList: RegExp[] = [];

@@ -302,8 +302,8 @@ export function* prepareCodeNodes(specs: CodeImport) {
       value: `import placeholder: ${specs.lang} ${specs.meta}`,
       // Optional position mapping approximate to spec line:
       position: position ? { start: position, end: position } : undefined,
-      provenance,
-      isBinaryHint: language === "utf8" ||
+      importSpecProvenance: provenance,
+      isImportSpecBinaryHint: language === "utf8" ||
         (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false),
     };
 

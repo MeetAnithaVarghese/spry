@@ -19,7 +19,7 @@ import {
   join,
   relative,
 } from "@std/path";
-import { isStorable } from "../../axiom/projection/playbook.ts";
+import { isMaterializable } from "../../axiom/projection/playbook.ts";
 import { docFrontmatterDataBag } from "../../axiom/remark/doc-frontmatter.ts";
 import { isImportPlaceholder } from "../../axiom/remark/import-placeholders-generator.ts";
 import { collectAsyncGenerated } from "../../universal/collectable.ts";
@@ -79,7 +79,9 @@ const flagsFrom = (spc: SqlPageContent) => {
         isPartialInjected: false,
         isRouteSupplier: false,
         isVirtual: spc.cell ? isImportPlaceholder(spc.cell) : false,
-        isBinary: false, // TODO: spc.cell?.sourceElaboration?.isRefToBinary ?? false,
+        isBinary: isMaterializable(spc.cell)
+          ? (spc.cell.isBlob ?? false)
+          : false,
       };
 
     case "sqlpage_file_upsert":
@@ -88,11 +90,13 @@ const flagsFrom = (spc: SqlPageContent) => {
         isInterpolated: spc.isInterpolated ? true : false,
         isError: spc.error ? true : false,
         isPartialInjected: spc.partialInjected ? true : false,
-        isRouteSupplier: isStorable(spc.cell)
-          ? (isRouteSupplier(spc.cell?.storableAttrs) ? true : false)
+        isRouteSupplier: isMaterializable(spc.cell)
+          ? (isRouteSupplier(spc.cell?.materializationAttrs) ? true : false)
           : false,
         isVirtual: spc.cell ? isImportPlaceholder(spc.cell) : false,
-        isBinary: false, // TODO: spc.cell?.sourceElaboration?.isRefToBinary ?? false,
+        isBinary: isMaterializable(spc.cell)
+          ? (spc.cell.isBlob ?? false)
+          : false,
       };
   }
 };
@@ -551,7 +555,7 @@ export class CLI<Project> {
           "notebook",
         )
         .from(
-          spp.storables.map((s) => {
+          spp.materializables.map((s) => {
             return {
               line: s.position?.start.line ?? -1,
               language: s.language?.id ?? "?",

@@ -9,7 +9,7 @@ import {
   isCodeDirectiveCandidate,
   isCodePartialCandidate,
 } from "../../remark/code-directive-candidates.ts";
-import { isSpawnableCodeCandidate } from "../../remark/spawnable-code-candidates.ts";
+import { isActionableCodeCandidate } from "../../remark/actionable-code-candidates.ts";
 import { GraphEdge } from "../orchestrate.ts";
 import {
   containedInSectionRule,
@@ -114,7 +114,7 @@ export function typicalRules() {
         TypicalRelationship,
         TypicalRuleCtx,
         TypicalGraphEdge
-      >("isSpawnableCodeCandidate", (node) => isSpawnableCodeCandidate(node)),
+      >("isActionableCodeCandidate", (node) => isActionableCodeCandidate(node)),
     )
     .use(
       nodesClassificationRule<

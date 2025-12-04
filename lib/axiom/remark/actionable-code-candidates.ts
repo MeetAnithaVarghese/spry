@@ -15,11 +15,11 @@
  * **not** execute them. It only enriches them with enough metadata for later
  * stages to either:
  *   - run them as *executable* cells (e.g., a runbook engine), or
- *   - persist them as *storable* templates (e.g., SQLPage snippets, browser
+ *   - persist them as *materializable* templates (e.g., SQLPage snippets, browser
  *     assets, env files) to be executed by some external system.
  *
- * EXECUTABLE vs STORABLE
- * ----------------------
+ * EXECUTABLE vs MATERIALIZABLE
+ * ----------------------------
  * After parsing the PI flags and language information, each candidate is
  * classified into one of two natures:
  *
@@ -35,10 +35,11 @@
  *     the `interpolate` flag; if it remains `undefined`, downstream executors
  *     should treat that as “do not interpolate unless explicitly requested.”
  *
- * - `nature: "STORABLE"`
+ * - `nature: "MATERIALIZABLE"`
  *   - A code block that is *not* run as part of the current runbook; instead,
- *     it is treated as content to store (filesystem, DB, config registry, etc.)
- *     for later use by another system, such as SQLPage or a web browser.
+ *     it is treated as content to track / materialize (filesystem, DB, config
+ *     registry, etc.) for later use by another system, such as SQLPage or a web
+ *     browser.
  *   - This includes:
  *       - Env-style snippets (`env`, `envrc`) that are only captured and not
  *         executed.
@@ -113,19 +114,19 @@
  *                 `nature: "STORABLE"`.
  *               - Otherwise, set `nature: "EXECUTABLE"`.
  *           - Cast the node to `SpawnableCodeCandidate` and attach:
- *               - `isSpawnableCodeCandidate = true`.
+ *               - `isActionableCodeCandidate = true`.
  *               - For EXECUTABLE:
  *                   - `spawnableIdentity`, `language`, `spawnableArgs`.
  *               - For STORABLE:
  *                   - `storableIdentity`, `language`, `storableArgs`,
  *                     `storableAttrs`.
- *           - Sanity-check with `isSpawnableCodeCandidate`; if that fails,
+ *           - Sanity-check with `isActionableCodeCandidate`; if that fails,
  *             attach an error via `addIssue`.
  *        c. On parse failure:
  *           - Attach an error issue to the node (`"Unable to parse PI flags"`).
  *
  * At the end of this pass, consumers can:
- * - Use `isSpawnableCodeCandidate`, `isExecutableCodeCandidate`, and
+ * - Use `isActionableCodeCandidate`, `isExecutableCodeCandidate`, and
  *   `isStorableCodeCandidate` to find annotated code nodes.
  * - Respect the conceptual defaults for `interpolate` based on `nature`.
  * - Execute EXECUTABLE nodes or persist STORABLE nodes in a filesystem or
@@ -146,7 +147,7 @@ import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
 
-export const codeSpawnablePiFlagsSchema = z.object({
+export const actionableCodePiFlagsSchema = z.object({
   descr: z.string().optional(),
   dep: flexibleTextSchema.optional(), // collected as multiple --dep
   capture: flexibleTextSchema.optional(),
@@ -188,45 +189,46 @@ export const codeSpawnablePiFlagsSchema = z.object({
   };
 });
 
-export type CodeSpawnablePiFlags = z.infer<typeof codeSpawnablePiFlagsSchema>;
+export type ActionableCodePiFlags = z.infer<typeof actionableCodePiFlagsSchema>;
 
-export const codeSpawnableSchema = z.discriminatedUnion("nature", [
+export const actionableCodeSchema = z.discriminatedUnion("nature", [
   z.object({
     nature: z.literal("EXECUTABLE"),
     captureOnly: z.boolean().optional(), // don't execute, just capture interpolation results
     spawnableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema,
-    spawnableArgs: codeSpawnablePiFlagsSchema, // typed, parsed, validated
+    spawnableArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
   }).strict(),
   z.object({
-    nature: z.literal("STORABLE"),
-    storableIdentity: z.string().min(1), // required, names the task
+    nature: z.literal("MATERIALIZABLE"),
+    materializableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema.optional(),
-    storableArgs: codeSpawnablePiFlagsSchema, // typed, parsed, validated
-    storableAttrs: z.custom<Record<string, unknown>>().optional(),
+    isBlob: z.boolean().optional(),
+    materializationArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
+    materializationAttrs: z.custom<Record<string, unknown>>().optional(),
   }).strict(),
 ]);
 
-export type SpawnableCodeCandidate =
+export type ActionableCodeCandidate =
   & Code
-  & { isSpawnableCodeCandidate: true }
-  & z.infer<typeof codeSpawnableSchema>;
+  & { isActionableCodeCandidate: true }
+  & z.infer<typeof actionableCodeSchema>;
 
 export type ExecutableCodeCandidate = Extract<
-  SpawnableCodeCandidate,
+  ActionableCodeCandidate,
   { nature: "EXECUTABLE" }
 >;
 
-export type StorableCodeCandidate = Extract<
-  SpawnableCodeCandidate,
-  { nature: "STORABLE" }
+export type MaterializableCodeCandidate = Extract<
+  ActionableCodeCandidate,
+  { nature: "MATERIALIZABLE" }
 >;
 
-export function isSpawnableCodeCandidate(
+export function isActionableCodeCandidate(
   node: Node | null | undefined,
-): node is SpawnableCodeCandidate {
-  return node?.type === "code" && "isSpawnableCodeCandidate" in node &&
-      node.isSpawnableCodeCandidate
+): node is ActionableCodeCandidate {
+  return node?.type === "code" && "isActionableCodeCandidate" in node &&
+      node.isActionableCodeCandidate
     ? true
     : false;
 }
@@ -234,15 +236,15 @@ export function isSpawnableCodeCandidate(
 export function isExecutableCodeCandidate(
   node: Node | null | undefined,
 ): node is ExecutableCodeCandidate {
-  return isSpawnableCodeCandidate(node) && node.nature === "EXECUTABLE"
+  return isActionableCodeCandidate(node) && node.nature === "EXECUTABLE"
     ? true
     : false;
 }
 
-export function isStorableCodeCandidate(
+export function isMateriazableCodeCandidate(
   node: Node | null | undefined,
-): node is StorableCodeCandidate {
-  return isSpawnableCodeCandidate(node) && node.nature === "STORABLE"
+): node is MaterializableCodeCandidate {
+  return isActionableCodeCandidate(node) && node.nature === "MATERIALIZABLE"
     ? true
     : false;
 }
@@ -264,11 +266,11 @@ export const captureOnlySpawnableLangSpecs = captureOnlySpawnableLangIds.map(
 );
 
 // deno-lint-ignore no-empty-interface
-export interface SpawnableCodeCandidatesOptions {
+export interface ActionableCodeCandidatesOptions {
 }
 
-export const spawnableCodeCandidates: Plugin<
-  [SpawnableCodeCandidatesOptions?],
+export const actionableCodeCandidates: Plugin<
+  [ActionableCodeCandidatesOptions?],
   Root
 > = () => {
   return (tree) => {
@@ -277,29 +279,29 @@ export const spawnableCodeCandidates: Plugin<
 
       if (code.meta) {
         const codeFM = codeFrontmatter(code);
-        if (codeFM?.langSpec && codeFM?.pi.posCount) {
+        if (codeFM?.pi.posCount) {
           const args = z.safeParse(
-            codeSpawnablePiFlagsSchema,
+            actionableCodePiFlagsSchema,
             codeFM.pi.flags,
           );
           if (args.success) {
             const identity = codeFM.pi.pos[0];
-            const nature: SpawnableCodeCandidate["nature"] =
+            const nature: ActionableCodeCandidate["nature"] =
               spawnableLangSpecs.find((l) => l.id == codeFM.langSpec?.id)
                 ? "EXECUTABLE" as const
-                : "STORABLE" as const;
+                : "MATERIALIZABLE" as const;
 
-            const spawnable = code as SpawnableCodeCandidate;
-            spawnable.nature = nature;
-            spawnable.isSpawnableCodeCandidate = true;
+            const actionable = code as ActionableCodeCandidate;
+            actionable.nature = nature;
+            actionable.isActionableCodeCandidate = true;
 
-            switch (spawnable.nature) {
+            switch (actionable.nature) {
               case "EXECUTABLE": {
-                spawnable.nature = "EXECUTABLE";
-                spawnable.spawnableIdentity = identity;
-                spawnable.language = codeFM.langSpec;
-                spawnable.spawnableArgs = args.data;
-                spawnable.captureOnly = captureOnlySpawnableLangSpecs.find(
+                actionable.nature = "EXECUTABLE";
+                actionable.spawnableIdentity = identity;
+                actionable.language = codeFM.langSpec!;
+                actionable.spawnableArgs = args.data;
+                actionable.captureOnly = captureOnlySpawnableLangSpecs.find(
                     (l) => l.id == codeFM.langSpec?.id,
                   )
                   ? true
@@ -307,16 +309,17 @@ export const spawnableCodeCandidates: Plugin<
                 break;
               }
 
-              case "STORABLE": {
-                spawnable.nature = "STORABLE";
-                spawnable.storableIdentity = identity;
-                spawnable.language = codeFM.langSpec;
-                spawnable.storableArgs = args.data;
-                spawnable.storableAttrs = codeFM.attrs;
+              case "MATERIALIZABLE": {
+                actionable.nature = "MATERIALIZABLE";
+                actionable.materializableIdentity = identity;
+                actionable.language = codeFM.langSpec;
+                actionable.isBlob = code.lang == "utf8";
+                actionable.materializationArgs = args.data;
+                actionable.materializationAttrs = codeFM.attrs;
               }
             }
 
-            if (!isSpawnableCodeCandidate(code)) {
+            if (!isActionableCodeCandidate(code)) {
               addIssue(code, {
                 severity: "error",
                 message: "Code should be a spawnable candidate now",
@@ -338,4 +341,4 @@ export const spawnableCodeCandidates: Plugin<
   };
 };
 
-export default spawnableCodeCandidates;
+export default actionableCodeCandidates;

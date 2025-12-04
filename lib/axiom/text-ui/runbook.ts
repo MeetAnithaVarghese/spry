@@ -57,14 +57,14 @@ import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../../universal/task-visuals.ts";
-import { playbooksFromFiles, RunnableTask } from "../projection/playbook.ts";
+import { ExecutableTask, playbooksFromFiles } from "../projection/playbook.ts";
 import * as axiomCLI from "./cli.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
 export function executeTasksFactory<
-  T extends RunnableTask,
+  T extends ExecutableTask,
   Context extends { readonly runId: string },
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 >(
@@ -77,7 +77,7 @@ export function executeTasksFactory<
   const td = new TextDecoder();
 
   const cf = captureFactory<
-    RunnableTask,
+    ExecutableTask,
     {
       readonly interpResult: UnsafeInterpolationResult;
       readonly execResult?: Awaited<
@@ -233,7 +233,7 @@ export enum VerboseStyle {
   Markdown = "markdown",
 }
 
-export function informationalEventBuses<T extends RunnableTask, Context>(
+export function informationalEventBuses<T extends ExecutableTask, Context>(
   verbose?: VerboseStyle,
 ) {
   const emitStdOut = (ev: ShellBusEvents<T>["spawn:done"]) =>

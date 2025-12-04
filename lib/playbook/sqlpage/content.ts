@@ -1,13 +1,21 @@
 import z from "@zod/zod";
-import { codeFrontmatter } from "../../axiom/mdast/code-frontmatter.ts";
+import {
+  CodeFrontmatter,
+  codeFrontmatter,
+} from "../../axiom/mdast/code-frontmatter.ts";
 import { Directive } from "../../axiom/projection/directives.ts";
-import { Storable } from "../../axiom/projection/playbook.ts";
+import { Materializable } from "../../axiom/projection/playbook.ts";
+import { isImportPlaceholder } from "../../axiom/remark/import-placeholders-generator.ts";
 import { PartialCollection } from "../../interpolate/partial.ts";
 import {
   ensureLanguageByIdOrAlias,
   languageHandlers,
 } from "../../universal/code.ts";
 import { isAsyncIterator } from "../../universal/collectable.ts";
+import {
+  provenanceResource,
+  ResourceProvenance,
+} from "../../universal/resource.ts";
 import {
   isRouteSupplier,
   muateRoutePaths,
@@ -102,7 +110,7 @@ type SqlPageFileBase = {
   /** Optional timestamp (not used in DML; engine time is used) */
   readonly lastModified?: Date;
   /** The notebook/playbook cell this file originated from, if any */
-  readonly cell?: Storable | Directive;
+  readonly cell?: Materializable | Directive;
 };
 
 /** Minimal variant for static head/tail SQL files */
@@ -291,7 +299,7 @@ export async function sqlPageFilesUpsertDML(
 }
 
 export function mutateRouteInCellAttrs(
-  cell: Storable,
+  cell: Materializable,
   identity: string,
   registerIssue?: (message: string, error?: unknown) => void,
   candidateAnns?: unknown, // if routes were supplied in annotation
@@ -309,30 +317,30 @@ export function mutateRouteInCellAttrs(
   };
 
   // if no route was supplied in the cell attributes, use what's in annotations
-  if (!isRouteSupplier(cell.storableAttrs)) {
+  if (!isRouteSupplier(cell.materializationAttrs)) {
     if (candidateAnns) {
-      (cell.storableAttrs ?? {}).route = candidateAnns;
+      (cell.materializationAttrs ?? {}).route = candidateAnns;
       const mrp = muateRoutePaths(
-        (cell.storableAttrs ?? {}).route as PageRoute,
+        (cell.materializationAttrs ?? {}).route as PageRoute,
         identity,
       );
-      return mrp || validated(cell.storableAttrs?.route);
+      return mrp || validated(cell.materializationAttrs?.route);
     }
   }
 
   // if route was supplied in the cell attributes, merge with annotations with
   // what's in the annotations overriding what's in cell attributes
-  if (isRouteSupplier(cell.storableAttrs) && candidateAnns) {
+  if (isRouteSupplier(cell.materializationAttrs) && candidateAnns) {
     // deno-lint-ignore no-explicit-any
-    (cell.storableAttrs as any).route = {
-      ...cell.storableAttrs.route,
+    (cell.materializationAttrs as any).route = {
+      ...cell.materializationAttrs.route,
       ...candidateAnns,
     };
     const mrp = muateRoutePaths(
-      cell.storableAttrs.route as PageRoute,
+      cell.materializationAttrs.route as PageRoute,
       identity,
     );
-    return mrp || validated(cell.storableAttrs.route);
+    return mrp || validated(cell.materializationAttrs.route);
   }
 
   return false;
@@ -365,67 +373,103 @@ export function contentSuppliers() {
     ...candidate,
   });
 
+  const contentsFromResource = async (rp: ResourceProvenance) => {
+    let contents: SqlPageFileUpsert["contents"];
+    let isBinary: SqlPageFileUpsert["isBinary"];
+    const resource = await provenanceResource(rp);
+    if (resource.strategy.encoding === "utf8-binary") {
+      contents = await resource.stream();
+      isBinary = contents;
+    } else {
+      contents = await resource.text();
+      isBinary = false as const;
+    }
+    return { contents, isBinary };
+  };
+
+  const contents = async (
+    materializable: Materializable,
+    codeFM: CodeFrontmatter | null,
+  ) => {
+    if (isImportPlaceholder(materializable)) {
+      return await contentsFromResource(materializable.importSpecProvenance);
+    } else {
+      if (
+        codeFM?.pi && "import" in codeFM.pi.flags &&
+        typeof codeFM.pi.flags.import === "string"
+      ) {
+        return await contentsFromResource({ path: codeFM.pi.flags.import });
+      } else {
+        return { contents: materializable.value, isBinary: false as const };
+      }
+    }
+  };
+
   const langHandlers = languageHandlers<
-    [Storable, { registerIssue: (message: string, error?: unknown) => void }],
-    SqlPageContent | false
+    [Materializable, {
+      registerIssue: (message: string, error?: unknown) => void;
+    }],
+    SqlPageContent | false | Promise<SqlPageContent | false>
   >({
-    defaultHandler: (storable) => {
-      const codeFM = codeFrontmatter(storable);
+    defaultHandler: async (materializable) => {
+      const codeFM = codeFrontmatter(materializable);
       if (!(codeFM?.pi.flags) || !("spc" in codeFM?.pi.flags)) return false;
-      const path = storable.storableIdentity;
+      const path = materializable.materializableIdentity;
       return {
         kind: "sqlpage_file_upsert",
         path,
-        contents: "TODO", // TODO
         asErrorContents: (supplied) => supplied,
-        isBinary: false, // TODO
-        isUnsafeInterpolatable: storable.storableArgs.interpolate,
-        isInjectableCandidate: storable.storableArgs.injectable,
-        cell: storable,
+        isUnsafeInterpolatable: materializable.materializationArgs.interpolate,
+        isInjectableCandidate: materializable.materializationArgs.injectable,
+        cell: materializable,
+        ...await contents(materializable, codeFM),
       };
     },
   });
 
-  langHandlers.register(sqlCodeCellLangSpec, (storable, { registerIssue }) => {
-    const path = storable.storableIdentity;
-    mutateRouteInCellAttrs(storable, path, registerIssue);
-    return {
-      kind: "sqlpage_file_upsert",
-      path,
-      isRoutable: true,
-      contents: storable.value,
-      asErrorContents: (text) => text.replaceAll(/^/gm, "-- "),
-      isUnsafeInterpolatable: true,
-      isInjectableCandidate: true,
-      isBinary: false,
-      cell: storable,
-    };
-  });
-
-  langHandlers.register(ensureLanguageByIdOrAlias("css"), (storable) => ({
-    kind: "sqlpage_file_upsert",
-    path: storable.storableIdentity,
-    isRoutable: false,
-    contents: storable.value,
-    asErrorContents: (text) => text.replaceAll(/^/gm, "// "),
-    isUnsafeInterpolatable: true,
-    isInjectableCandidate: false,
-    isBinary: false,
-    cell: storable,
-  }));
+  langHandlers.register(
+    sqlCodeCellLangSpec,
+    async (materializable, { registerIssue }) => {
+      const path = materializable.materializableIdentity;
+      mutateRouteInCellAttrs(materializable, path, registerIssue);
+      return {
+        kind: "sqlpage_file_upsert",
+        path,
+        isRoutable: true,
+        asErrorContents: (text) => text.replaceAll(/^/gm, "-- "),
+        isUnsafeInterpolatable: true,
+        isInjectableCandidate: true,
+        cell: materializable,
+        ...await contents(materializable, codeFrontmatter(materializable)),
+      };
+    },
+  );
 
   langHandlers.register(
-    ensureLanguageByIdOrAlias("typescript"),
-    (storable) => ({
+    ensureLanguageByIdOrAlias("css"),
+    async (materializable) => ({
       kind: "sqlpage_file_upsert",
-      path: storable.storableIdentity,
+      path: materializable.materializableIdentity,
       isRoutable: false,
-      contents: storable.value,
       asErrorContents: (text) => text.replaceAll(/^/gm, "// "),
       isUnsafeInterpolatable: true,
       isInjectableCandidate: false,
-      isBinary: false,
-      cell: storable,
+      cell: materializable,
+      ...await contents(materializable, codeFrontmatter(materializable)),
+    }),
+  );
+
+  langHandlers.register(
+    ensureLanguageByIdOrAlias("typescript"),
+    async (materializable) => ({
+      kind: "sqlpage_file_upsert",
+      path: materializable.materializableIdentity,
+      isRoutable: false,
+      asErrorContents: (text) => text.replaceAll(/^/gm, "// "),
+      isUnsafeInterpolatable: true,
+      isInjectableCandidate: false,
+      cell: materializable,
+      ...await contents(materializable, codeFrontmatter(materializable)),
     }),
   );
 

@@ -585,11 +585,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM --not-directive --descr \"Don't treat as a directive\""
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM --not-directive --descr \"Don't treat as a directive\"","pi":{"args":["yaml","HFM","--not-directive","--descr","Don't treat as a directive"],"pos":["HFM","not-directive","descr"],"flags":{"HFM":true,"not-directive":true,"descr":"Don't treat as a directive"},"count":5,"posCount":3},"cmdLang":"yaml","cli":"yaml HFM --not-directive --descr \"Don't treat as a directive\""}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"description":"Don't treat as a directive","deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"description":"Don't treat as a directive","deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─40  paragraph[1] (176:1-176:16, 5781-5796)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (176:1-176:16, 5781-5796)
@@ -727,11 +728,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─51  paragraph[1] (214:1-214:15, 6821-6835)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (214:1-214:15, 6821-6835)
@@ -814,11 +816,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─62  paragraph[1] (248:1-248:16, 7820-7835)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (248:1-248:16, 7820-7835)
@@ -866,11 +869,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─69  paragraph[1] (273:1-273:16, 8384-8399)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (273:1-273:16, 8384-8399)
@@ -967,11 +971,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─80  paragraph[1] (311:1-311:15, 9371-9385)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (311:1-311:15, 9371-9385)
@@ -1122,11 +1127,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─97  paragraph[1] (362:1-362:16, 10585-10600)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (362:1-362:16, 10585-10600)
@@ -1141,11 +1147,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "ts"
 │       meta: "ts-example-01 partial id=sample-code-meta"
 │       data: {"codeFM":{"lang":"ts","langSpec":{"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}},"meta":"ts-example-01 partial id=sample-code-meta","pi":{"args":["ts","ts-example-01","partial","id=sample-code-meta"],"pos":["ts-example-01","partial","id"],"flags":{"ts-example-01":true,"partial":true,"id":"sample-code-meta"},"count":4,"posCount":3},"cmdLang":"ts","cli":"ts ts-example-01 partial id=sample-code-meta"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "ts-example-01"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "ts-example-01"
 │       language: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─101 paragraph[1] (387:1-387:18, 11207-11224)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (387:1-387:18, 11207-11224)
@@ -1260,11 +1267,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─110 thematicBreak (422:1-422:4, 12093-12096)
 ├─111 heading[1] (424:1-424:43, 12098-12140)
 │     │ depth: 2
@@ -1360,11 +1368,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "ts"
 │       meta: "PARTIAL TC-PARTIAL-0001"
 │       data: {"codeFM":{"lang":"ts","langSpec":{"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}},"meta":"PARTIAL TC-PARTIAL-0001","pi":{"args":["ts","PARTIAL","TC-PARTIAL-0001"],"pos":["PARTIAL","TC-PARTIAL-0001"],"flags":{"PARTIAL":true,"TC-PARTIAL-0001":true},"count":3,"posCount":2},"cmdLang":"ts","cli":"ts PARTIAL TC-PARTIAL-0001"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "PARTIAL"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "PARTIAL"
 │       language: {"id":"typescript","aliases":["ts","javascript","js","tsx","jsx"],"extensions":[".ts",".tsx",".js",".jsx",".mjs",".cjs",".jsonc",".json5"],"shebangs":["node","deno"],"mime":"text/typescript","comment":{"line":["//"],"block":[{"open":"/*","close":"*/","nested":false}]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─123 heading[1] (464:1-464:65, 13155-13219)
 │     │ depth: 5
 │     └─0 text "Define a reusable Markdown partial for use with directives" (464:7-464:65, 13161-13219)
@@ -1372,6 +1381,11 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "md"
 │       meta: "PARTIAL TC-PARTIAL-0001"
 │       data: {"codeFM":{"lang":"md","meta":"PARTIAL TC-PARTIAL-0001","pi":{"args":["md","PARTIAL","TC-PARTIAL-0001"],"pos":["PARTIAL","TC-PARTIAL-0001"],"flags":{"PARTIAL":true,"TC-PARTIAL-0001":true},"count":3,"posCount":2},"cmdLang":"md","cli":"md PARTIAL TC-PARTIAL-0001"}}
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "PARTIAL"
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─125 heading[1] (470:1-470:57, 13322-13378)
 │     │ depth: 5
 │     └─0 text "Inject the partial into another cell by logical ID" (470:7-470:57, 13328-13378)
@@ -1383,6 +1397,11 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "csv"
 │       meta: "--import ./sundry/group1-patients.csv"
 │       data: {"codeFM":{"lang":"csv","meta":"--import ./sundry/group1-patients.csv","pi":{"args":["csv","--import","./sundry/group1-patients.csv"],"pos":["import"],"flags":{"import":"./sundry/group1-patients.csv"},"count":3,"posCount":1},"cmdLang":"csv","cli":"csv --import ./sundry/group1-patients.csv"}}
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "import"
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─128 paragraph[1] (478:1-478:16, 13525-13540)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (478:1-478:16, 13525-13540)
@@ -1492,11 +1511,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─139 thematicBreak (517:1-517:4, 14544-14547)
 ├─140 heading[1] (519:1-519:23, 14549-14571)
 │     │ depth: 2
@@ -1551,11 +1571,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─152 paragraph[1] (556:1-556:16, 15298-15313)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (556:1-556:16, 15298-15313)
@@ -1642,11 +1663,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─163 thematicBreak (589:1-589:4, 15993-15996)
 ├─164 heading[1] (591:1-591:32, 15998-16029)
 │     │ depth: 2
@@ -1754,11 +1776,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─175 paragraph[1] (633:1-633:16, 16978-16993)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (633:1-633:16, 16978-16993)
@@ -1852,11 +1875,12 @@ root[194] (1:1-703:1, 0-19050)
 │       lang: "yaml"
 │       meta: "HFM"
 │       data: {"codeFM":{"lang":"yaml","langSpec":{"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}},"meta":"HFM","pi":{"args":["yaml","HFM"],"pos":["HFM"],"flags":{"HFM":true},"count":2,"posCount":1},"cmdLang":"yaml","cli":"yaml HFM"}}
-│       nature: "STORABLE"
-│       isSpawnableCodeCandidate: true
-│       storableIdentity: "HFM"
+│       nature: "MATERIALIZABLE"
+│       isActionableCodeCandidate: true
+│       materializableIdentity: "HFM"
 │       language: {"id":"yaml","extensions":[".yaml",".yml"],"comment":{"line":["#"],"block":[]}}
-│       storableArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
+│       isBlob: false
+│       materializationArgs: {"deps":[],"capture":[],"graphs":[],"injectedDep":[]}
 ├─186 paragraph[1] (668:1-668:15, 17881-17895)
 │     │ data: {"isHeadingLikeText":true}
 │     └─0 strong[1] (668:1-668:15, 17881-17895)
