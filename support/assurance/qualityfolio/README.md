@@ -516,11 +516,7 @@ status: passed
 
 ## Executing SQL Queries from Surveilr-Generated SQLite Database
 
-This section explains how to generate a SQLite database from Qualityfolio test artifacts (Markdown files) using Surveilr, and how to run SQL queries - such as the one below - to derive test metrics:
-
-```sql
-SELECT title FROM t_all_sections WHERE role_name = 'case';
-```
+This section explains how to generate a SQLite database from Qualityfolio test artifacts (Markdown files) using Surveilr, and how to run SQL queries to derive test metrics:
 
 The workflow covers:
 
@@ -548,12 +544,12 @@ Run the following commands in the `assurance` folder (where `sqlite-etl.sql` is 
 **Ingest Markdown Artifacts**
 
 ```fish
-surveilr ingest files -r sample/ && surveilr orchestrate transform-markdown
+surveilr ingest files -r ./qualityfolio/sample/  && surveilr orchestrate transform-markdown
 ```
 
 This performs:
 
-* Parsing of every Markdown file under `qualityfolio/`
+* Parsing of every Markdown file under `qualityfolio/sample/`
 * Extraction of metadata (YAML, ontology, section roles)
 * Transformation into Surveilr’s internal format
 
@@ -569,26 +565,14 @@ This command:
 
 * Opens the Surveilr SQL shell
 * Runs **sqlite-etl.sql**, which creates and populates database tables
-* Produces the file:
+* Produces the file: `resource-surveillance.sqlite.db`
 
-```
-resource-surveillance.sqlite.db
-```
-
-This file is automatically placed inside:
-
-```
-support/assurance/
-```
+This file is automatically placed inside: `support/assurance/`
 
 ### 3. Inspecting the SQLite DB in VS Code
 
 1. Use the **SQLite3 Editor** or **SQLite Viewer** extension in VS Code.
-2. Open the file:
-
-```
-support/assurance/resource-surveillance.sqlite.db
-```
+2. Open the file: `support/assurance/resource-surveillance.sqlite.db`
 
 You will see tables such as:
 
@@ -634,7 +618,7 @@ A list of all section titles whose role has been classified as **case**, meaning
 
 | Step                      | Command / Action                                           | Output                            |
 | ------------------------- | ---------------------------------------------------------- | --------------------------------- |
-| **1. Ingest artifacts**   | `surveilr ingest files -r sample/`                         | Raw ingestion                     |
+| **1. Ingest artifacts**   | `surveilr ingest files -r ./qualityfolio/sample/`          | Raw ingestion                     |
 | **2. Transform Markdown** | `surveilr orchestrate transform-markdown`                  | Canonicalized representation      |
 | **3. Run ETL**            | `surveilr shell sqlite-etl.sql`                            | `resource-surveillance.sqlite.db` |
 | **4. Open DB in VS Code** | SQL extension                                              | Table overview                    |
