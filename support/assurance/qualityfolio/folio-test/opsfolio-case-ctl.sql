@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS v_detailed_document_hierarchy;
 -- 2. Step 1: Extract Base Data and Count
 ----------------------------------------------------------------------------------------------------
 
-CREATE TEMP TABLE transformed_data AS 
+CREATE  TABLE transformed_data AS 
 SELECT
     urt.content,
     urpe.file_basename,
@@ -40,7 +40,7 @@ SELECT 'Step 1: Total records in transformed_data' AS label, COUNT(*) AS count_r
 -- 3. Step 2: Pre-aggregate Evidence History and Count (FIX: Explicit JSON CAST)
 ----------------------------------------------------------------------------------------------------
 
-CREATE TEMP TABLE t_evidence_history AS 
+CREATE  TABLE t_evidence_history AS 
 SELECT
     td.uniform_resource_id,
     JSON_EXTRACT_STRING(e_item, '$.test_case_id') AS test_case_id,
@@ -70,7 +70,7 @@ SELECT 'Step 2: Total records in t_evidence_history' AS label, COUNT(*) AS count
 -- 4. Step 3: Detailed Hierarchical Query and Count (FIX: Explicit JSON CAST)
 ----------------------------------------------------------------------------------------------------
 
-CREATE TEMP TABLE v_detailed_document_hierarchy AS
+CREATE  TABLE v_detailed_document_hierarchy AS
 SELECT
     td.file_basename,
     
