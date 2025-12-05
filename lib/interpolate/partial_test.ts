@@ -12,7 +12,7 @@ import {
 
 Deno.test("partialContent", async (t) => {
   await t.step("creates a plain partial without injection", () => {
-    const p = createPlainPartial("plain", "hello world");
+    const p = createPlainPartial("plain", "hello world", undefined);
 
     assertEquals(p.identity, "plain");
     assertEquals(p.source, "hello world");
@@ -36,6 +36,7 @@ Deno.test("partialContent", async (t) => {
       const p = partialContent(
         "with-schema-strict",
         "content with schema",
+        undefined,
         {
           schema,
           strictArgs: true,
@@ -65,6 +66,7 @@ Deno.test("partialContent", async (t) => {
       const p = partialContent(
         "with-schema-strict-ok",
         "ok content",
+        undefined,
         {
           schema,
           strictArgs: true,
@@ -90,6 +92,7 @@ Deno.test("partialContent", async (t) => {
       const p = partialContent(
         "with-schema-nonstrict",
         "lenient content",
+        undefined,
         {
           schema,
           strictArgs: false,
@@ -139,21 +142,25 @@ Deno.test("partialContent", async (t) => {
     const prepend = createInjectablePartial(
       "prepend-wrapper",
       "-- header --",
+      undefined,
       { globs: ["reports/**.sql"], prepend: true },
     );
     const append = createInjectablePartial(
       "append-wrapper",
       "-- footer --",
+      undefined,
       { globs: ["logs/**.sql"], append: true },
     );
     const both = createInjectablePartial(
       "both-wrapper",
       "-- both --",
+      undefined,
       { globs: ["**/*.md"], prepend: true, append: true },
     );
     const explicit = createInjectablePartial(
       "explicit-wrapper",
       "-- explicit --",
+      undefined,
       { globs: ["**/*.txt"], mode: "append" },
     );
 
@@ -175,8 +182,8 @@ Deno.test("partialContentCollection", async (t) => {
   await t.step("registers and retrieves partials", () => {
     const coll = partialContentCollection();
 
-    const p1 = createPlainPartial("one", "content one");
-    const p2 = createPlainPartial("two", "content two");
+    const p1 = createPlainPartial("one", "content one", undefined);
+    const p2 = createPlainPartial("two", "content two", undefined);
 
     coll.register(p1);
     coll.register(p2);
@@ -188,8 +195,8 @@ Deno.test("partialContentCollection", async (t) => {
   await t.step("duplicate policy controls registration behavior", () => {
     const coll = partialContentCollection();
 
-    const first = createPlainPartial("dup", "first");
-    const second = createPlainPartial("dup", "second");
+    const first = createPlainPartial("dup", "first", undefined);
+    const second = createPlainPartial("dup", "second", undefined);
 
     coll.register(first);
 
@@ -217,14 +224,16 @@ Deno.test("partialContentCollection", async (t) => {
     const broad = createInjectablePartial(
       "broad",
       "-- broad --",
+      undefined,
       { globs: ["**/*.sql"], prepend: true },
     );
     const specific = createInjectablePartial(
       "specific",
       "-- specific --",
+      undefined,
       { globs: ["reports/monthly/*.sql"], prepend: true },
     );
-    const plain = createPlainPartial("plain", "no injection here");
+    const plain = createPlainPartial("plain", "no injection here", undefined);
 
     coll.register(broad);
     coll.register(specific);
@@ -250,11 +259,13 @@ Deno.test("partialContentCollection", async (t) => {
     const broad = createInjectablePartial(
       "broad",
       "-- broad --",
+      undefined,
       { globs: ["**/*.sql"], prepend: true },
     );
     const specific = createInjectablePartial(
       "specific",
       "-- specific --",
+      undefined,
       { globs: ["reports/monthly/*.sql"], prepend: true },
     );
 
@@ -274,9 +285,14 @@ Deno.test("partialContentCollection", async (t) => {
     const wrapper = createInjectablePartial(
       "wrapper",
       "-- header --",
+      undefined,
       { globs: ["reports/**.sql"], prepend: true },
     );
-    const inner = createPlainPartial("inner", "SELECT * FROM table;");
+    const inner = createPlainPartial(
+      "inner",
+      "SELECT * FROM table;",
+      undefined,
+    );
 
     coll.register(wrapper);
     coll.register(inner);
@@ -304,14 +320,16 @@ Deno.test("partialContentCollection", async (t) => {
       const appendWrapper = createInjectablePartial(
         "append-wrapper",
         "-- footer --",
+        undefined,
         { globs: ["logs/**.sql"], append: true },
       );
       const bothWrapper = createInjectablePartial(
         "both-wrapper",
         "-- both --",
+        undefined,
         { globs: ["notes/**.sql"], prepend: true, append: true },
       );
-      const inner = createPlainPartial("inner", "BODY");
+      const inner = createPlainPartial("inner", "BODY", undefined);
 
       coll.register(appendWrapper);
       coll.register(bothWrapper);
@@ -342,7 +360,7 @@ Deno.test("partialContentCollection", async (t) => {
     "compose leaves content unchanged when no injectable matches",
     async () => {
       const coll = partialContentCollection();
-      const inner = createPlainPartial("inner", "plain content");
+      const inner = createPlainPartial("inner", "plain content", undefined);
 
       coll.register(inner);
 
@@ -368,6 +386,7 @@ Deno.test("partialContentCollection", async (t) => {
       const wrapper = partialContent<{ name: string }>(
         "strict-wrapper",
         "-- strict --",
+        undefined,
         {
           schema,
           strictArgs: true,
@@ -377,6 +396,7 @@ Deno.test("partialContentCollection", async (t) => {
       const inner = createPlainPartial<{ name: string }>(
         "inner",
         "inner body",
+        undefined,
       );
 
       coll.register(wrapper);
@@ -409,6 +429,7 @@ Deno.test("partialContentCollection", async (t) => {
       const wrapper = createInjectablePartial<{ foo: string }>(
         "wrapper",
         "-- header --",
+        undefined,
         { globs: ["**/*.sql"], prepend: true },
       );
       coll.register(wrapper);
@@ -438,11 +459,13 @@ Deno.test("partialContentCollection", async (t) => {
       const wrapper = createInjectablePartial<{ user: string }>(
         "wrapper",
         "-- header for user --",
+        undefined,
         { globs: ["reports/**.sql"], prepend: true },
       );
       const inner = createPlainPartial<{ user: string }>(
         "inner",
         "SELECT * FROM report;",
+        undefined,
       );
 
       coll.register(wrapper);

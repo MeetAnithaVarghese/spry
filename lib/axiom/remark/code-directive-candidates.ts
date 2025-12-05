@@ -3,19 +3,22 @@ import type { Node } from "types/unist";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
+import { directivesParser } from "../../universal/directive.ts";
 import {
   instructionsFromText,
   InstructionsResult,
-  textInstrCandidateParser,
 } from "../../universal/posix-pi.ts";
 
 /**
  * An asset in a code block which becomes a directive like "partial" that can be
- * included as a template or (usually) text in other code blocks.
+ * included as a template or (usually) text in other code blocks. A directive is
+ * any code cell whose first token is all uppercase and optionally followed by
+ * an "identity".
  *
  * Example source:
  *   "```bash PARTIAL name"
  *   "```sql PARTIAL name --flag key=value"
+ *   "```sql PARTIAL name --flag key=value --not-directive" # force to not be a directive
  *
  * Parsed as:
  *   lang: "bash" or "sql"
@@ -100,22 +103,24 @@ export interface CodeDirectiveOptions {
  */
 export const codeDirectiveCandidates: Plugin<[CodeDirectiveOptions?], Root> =
   () => {
-    const directiveParser = textInstrCandidateParser("PARTIAL");
+    const dp = directivesParser();
     return (tree) => {
       visit<Root, "code">(tree, "code", (node) => {
         if (node.meta) {
-          const dp = directiveParser(node.meta);
-          if (dp && dp.nature === "PARTIAL") {
-            // deno-lint-ignore no-explicit-any
-            const partial = node as CodeDirectiveCandidate<any, "PARTIAL">;
-            partial.isCodeDirectiveCandidate = true;
-            partial.identity = dp.identity;
-            partial.directive = dp.nature;
-            if (partial.lang) {
-              partial.langSpec = languageRegistry.get(partial.lang);
-            }
-            partial.instructions = instructionsFromText(node.meta);
+          const directive = dp.isDirective(node.meta);
+          if (!directive) return;
+
+          const instructions = instructionsFromText(node.meta);
+          if (instructions.pi.flags["not-directive"]) return false;
+
+          const partial = node as CodeDirectiveCandidate<string, string>;
+          partial.isCodeDirectiveCandidate = true;
+          partial.directive = directive.nature;
+          partial.identity = directive.identity;
+          if (partial.lang) {
+            partial.langSpec = languageRegistry.get(partial.lang);
           }
+          partial.instructions = instructions;
         }
       });
     };

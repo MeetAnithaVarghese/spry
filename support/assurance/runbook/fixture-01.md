@@ -32,6 +32,12 @@ as necessary with isolate them from the "main" graph and allow execution using
 ```bash clean --graph special --silent
 rm -f task-3.txt
 rm -f .gitignore
+rm -f .envrc
+```
+
+```envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
+export SPRY_DB="sqlite://scf-2025.3.sqlite.db?mode=rwc"
+export PORT=9227
 ```
 
 > You can run clean using `./spry.ts task clean fixture-01.md` or

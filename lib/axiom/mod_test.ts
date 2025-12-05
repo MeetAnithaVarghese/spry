@@ -47,7 +47,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const gr = graph(root);
 
     // when required, set to true to store stable "golden" versions
-    const generateGoldens = false;
+    const generateGoldens = true;
 
     // TODO: there's something unstable in the JSON (file paths, etc.) so fix it
     // await s.step(
@@ -128,7 +128,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
           "role:case",
           "role:evidence",
           "isCode",
-          "isCodePartialCandidate",
+          "isActionableCodeCandidate",
           "isTask",
         ]);
 
@@ -143,7 +143,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
           "role:strategy": 8,
           "role:suite": 6,
           isCode: 16,
-          isCodePartialCandidate: 2,
+          isActionableCodeCandidate: 16,
           sectionSemanticId: 34,
         });
 
@@ -166,13 +166,13 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     assertEquals(Array.from(gr.rels), [
       "isImportant",
       "isCode",
-      "isSpawnableCodeCandidate",
+      "isActionableCodeCandidate",
       "codeDependsOn",
     ]);
 
     assertEquals(gr.relCounts, {
       isCode: 5,
-      isSpawnableCodeCandidate: 5,
+      isActionableCodeCandidate: 5,
       isImportant: 1,
       codeDependsOn: 1,
     });
@@ -187,16 +187,18 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
 
     assertEquals(Array.from(gr.rels), [
       "isCode",
-      "isSpawnableCodeCandidate",
+      "isActionableCodeCandidate",
+      "isDirectiveCandidate",
       "isCodePartialCandidate",
       "codeDependsOn",
     ]);
 
     assertEquals(gr.relCounts, {
       isCode: 5,
-      isSpawnableCodeCandidate: 4,
+      isActionableCodeCandidate: 4,
       isCodePartialCandidate: 1,
       codeDependsOn: 1,
+      isDirectiveCandidate: 1,
     });
   });
 
@@ -210,13 +212,13 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     assertEquals(Array.from(gr.rels), [
       "isImportant",
       "isCode",
-      "isSpawnableCodeCandidate",
+      "isActionableCodeCandidate",
     ]);
 
     assertEquals(gr.relCounts, {
       isImportant: 1,
       isCode: 18,
-      isSpawnableCodeCandidate: 3,
+      isActionableCodeCandidate: 18,
     });
   });
 
@@ -229,13 +231,13 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
 
     assertEquals(Array.from(gr.rels), [
       "isCode",
-      "isSpawnableCodeCandidate",
+      "isActionableCodeCandidate",
       "isTask",
     ]);
 
     assertEquals(gr.relCounts, {
       isCode: 6,
-      isSpawnableCodeCandidate: 6,
+      isActionableCodeCandidate: 6,
       isTask: 6,
     });
   });

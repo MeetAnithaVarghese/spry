@@ -2,16 +2,21 @@ import {
   assert,
   assertArrayIncludes,
   assertEquals,
+  assertFalse,
+  assertNotStrictEquals,
   assertThrows,
-} from "jsr:@std/assert@1";
+} from "@std/assert";
 import { z } from "@zod/zod";
-
-import { getLanguageByIdOrAlias } from "./code.ts";
 import {
   extractAnnotationsFromText,
   scanComments,
   scanCommentsStream,
 } from "./code-comments.ts";
+import {
+  ensureLanguageByIdOrAlias,
+  getLanguageByIdOrAlias,
+  languageHandlers,
+} from "./code.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -410,4 +415,87 @@ fn main() { /* inline */ }`.trim();
   const cs = scanComments(src, rust);
   const blocks = cs.filter((c) => c.kind === "block");
   assert(blocks.length >= 2);
+});
+
+Deno.test("languageHandlers – registry behavior", async (t) => {
+  const registry = languageHandlers<[string], string>({
+    defaultHandler: (code) => `default:${code}`,
+  });
+
+  const ts = ensureLanguageByIdOrAlias("typescript");
+  const py = ensureLanguageByIdOrAlias("python");
+  const json = ensureLanguageByIdOrAlias("json");
+
+  await t.step("uses default handler when no language provided", () => {
+    const [handler] = registry.handlers(undefined);
+    const result = handler("code");
+    assertEquals(result, "default:code");
+  });
+
+  await t.step(
+    "uses default handler when no handlers registered for language",
+    () => {
+      const results = registry.runAll(json, "foo");
+      assertEquals(results, ["default:foo"]);
+      assertFalse(registry.hasHandlers(json));
+    },
+  );
+
+  await t.step("registers and invokes multiple handlers per language", () => {
+    const h1 = (code: string) => `ts1:${code}`;
+    const h2 = (code: string) => `ts2:${code}`;
+
+    registry.register(ts, h1);
+    registry.register(ts, h2);
+
+    assert(registry.hasHandlers(ts));
+
+    const results = registry.runAll(ts, "abc");
+    assertEquals(results, ["ts1:abc", "ts2:abc"]);
+
+    const hs = registry.handlers(ts);
+    assertEquals(hs.length, 2);
+  });
+
+  await t.step("avoids duplicate registrations of the same handler", () => {
+    const h = (code: string) => `ts-dup:${code}`;
+
+    // First registration
+    registry.register(ts, h);
+    // Second registration should be ignored
+    registry.register(ts, h);
+
+    const hs = registry.handlers(ts);
+    const count = hs.filter((fn) => fn === h).length;
+    assertEquals(count, 1);
+  });
+
+  await t.step(
+    "registers handlers for aliases and snapshot exposes alias keys",
+    () => {
+      const hPy = (code: string) => `py:${code}`;
+      registry.register(py, hPy);
+
+      const snap = registry.snapshot();
+      // python has alias "py" from preload
+      assert(snap.has("python"));
+      assert(snap.has("py"));
+
+      const results = registry.runAll(py, "spam");
+      assertEquals(results, ["py:spam"]);
+    },
+  );
+
+  await t.step("handlers() returns a shallow copy, not internal array", () => {
+    const before = registry.handlers(ts);
+    const copy = registry.handlers(ts);
+
+    // Different array instances
+    assertNotStrictEquals(before, copy);
+
+    // Mutating the returned array must not affect internal storage
+    copy.pop();
+    const after = registry.handlers(ts);
+    assertEquals(after.length, before.length);
+  });
 });
