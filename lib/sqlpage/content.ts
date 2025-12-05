@@ -3,7 +3,11 @@ import {
   PlaybookCodeCell,
 } from "../markdown/notebook/mod.ts";
 import { isAsyncIterator } from "../universal/collectable.ts";
-import { hexOfUint8, literal } from "../universal/sql-text.ts";
+import {
+  hexOfUint8,
+  hexOfUint8Postgres,
+  literal,
+} from "../universal/sql-text.ts";
 import { safeJsonStringify } from "../universal/tmpl-literal-aide.ts";
 import { SqlPageProvenance } from "./playbook.ts";
 import { PageRoute, RouteSupplier } from "./route.ts";
@@ -12,7 +16,7 @@ export type SqlPagePath =
   & {
     readonly path: string;
     readonly sql: string; // usually '${path}'
-    readonly absURL: () => string; // usually (sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '${path}')
+    readonly absURL: () => string; // usually (COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || '${path}')
     readonly homePath: () => string; // usually ('${path}' || '/index.sql')
     readonly isRoute: boolean;
   }
@@ -32,7 +36,7 @@ export function sqlPagePath(candidate: string | PageRoute): SqlPagePath {
     typeof candidate === "string" ? candidate : candidate.path,
   );
   const absURL = () =>
-    `(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || ${sql})`;
+    `(COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || ${sql})`;
   const homePath = () => `(${sql} || '/index.sql')`;
 
   if (typeof candidate === "string") {
@@ -206,6 +210,11 @@ export async function* normalizeSPC(
   }
 }
 
+export enum SqlPageFilesUpsertDialect {
+  SQLite = "sqlite",
+  PostgreSQL = "postgres",
+}
+
 /**
  * Build DML statements to upsert files into a SQLPage virtual-files table.
  * dialect "sqlite":
@@ -222,11 +231,14 @@ export async function* normalizeSPC(
 export async function sqlPageFilesUpsertDML(
   spcStream: SqlPageContentStream,
   opts: {
-    dialect: "sqlite";
+    dialect: SqlPageFilesUpsertDialect;
     includeSqlPageFilesTable?: boolean;
   },
 ) {
-  if (opts.dialect !== "sqlite") {
+  if (
+    opts.dialect !== SqlPageFilesUpsertDialect.SQLite &&
+    opts.dialect !== SqlPageFilesUpsertDialect.PostgreSQL
+  ) {
     throw new Error(`Unsupported dialect: ${opts.dialect}`);
   }
 
@@ -235,7 +247,11 @@ export async function sqlPageFilesUpsertDML(
     s: string | Uint8Array | ReadableStream<Uint8Array>,
   ): Promise<string> => {
     if (typeof s === "string") return `'${esc(s)}'`;
-    if (s instanceof Uint8Array) return hexOfUint8(s);
+    if (s instanceof Uint8Array) {
+      return opts.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+        ? hexOfUint8Postgres(s)
+        : hexOfUint8(s);
+    }
 
     const reader = s.getReader();
     const chunks: Uint8Array[] = [];
@@ -250,7 +266,9 @@ export async function sqlPageFilesUpsertDML(
       bytes.set(c, offset);
       offset += c.length;
     }
-    return hexOfUint8(bytes);
+    return opts.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+      ? hexOfUint8Postgres(bytes)
+      : hexOfUint8(bytes);
   };
 
   const list = await Array.fromAsync(normalizeSPC(spcStream));
@@ -268,7 +286,12 @@ export async function sqlPageFilesUpsertDML(
       .map(async (f) => {
         const pathLit = `'${esc(f.path)}'`;
         const bodyLit = await quoted(f.contents);
-        return `INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (${pathLit}, ${bodyLit}, CURRENT_TIMESTAMP) ` +
+        return `INSERT INTO sqlpage_files (path, contents, last_modified) VALUES (${pathLit}, ${
+          (opts.dialect === SqlPageFilesUpsertDialect.PostgreSQL &&
+              typeof f.contents === "string")
+            ? `convert_to(${bodyLit}, 'UTF8')`
+            : bodyLit
+        }, CURRENT_TIMESTAMP) ` +
           `ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP ` +
           `WHERE sqlpage_files.contents <> excluded.contents;`;
       }),
@@ -276,7 +299,9 @@ export async function sqlPageFilesUpsertDML(
 
   return [
     opts.includeSqlPageFilesTable
-      ? `CREATE TABLE IF NOT EXISTS "sqlpage_files" ("path" VARCHAR PRIMARY KEY NOT NULL, "contents" TEXT NOT NULL, "last_modified" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);`
+      ? `CREATE TABLE IF NOT EXISTS "sqlpage_files" ("path" VARCHAR PRIMARY KEY NOT NULL, "contents" ${
+        opts.dialect === SqlPageFilesUpsertDialect.PostgreSQL ? "BYTEA" : "TEXT"
+      } NOT NULL, "last_modified" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);`
       : "-- sqlpage_files DDL not requested",
     ...headSql,
     ...upserts,

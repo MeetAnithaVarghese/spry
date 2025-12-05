@@ -1,16 +1,13 @@
 import { z } from "jsr:@zod/zod@4";
 import {
-  CodeCell,
   fbPartialCandidate,
   fbPartialsCollection,
-  Issue,
   mdFencedBlockPartialSchema,
   notebooks,
   Playbook,
   PlaybookCodeCell,
   playbooks,
   pseudoCellsGenerator,
-  Source,
 } from "../markdown/notebook/mod.ts";
 import {
   AnnotationCatalog,
@@ -22,6 +19,7 @@ import {
   languageSpecSchema,
 } from "../universal/code.ts";
 import { Task } from "../universal/task.ts";
+import { CodeCell, Issue, Source } from "../markdown/governedmd.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -86,7 +84,7 @@ export function isAnnotationsSupplier<Anns extends Record<string, unknown>>(
   return "annotations" in o && "annsCatalog" in o ? true : false;
 }
 
-/** Schema for typed TaskDirective from `Cell.info?` property */
+/** Schema for typed TaskDirective from `Cell.pi?` property */
 export const taskDirectiveSchema = z.discriminatedUnion("nature", [
   z.object({
     nature: z.literal("TASK"),
@@ -164,12 +162,12 @@ export function partialsInspector<
   I extends Issue<Provenance> = Issue<Provenance>,
 >(): TaskDirectiveInspector<Provenance, Frontmatter, CellAttrs, I> {
   return ({ cell, registerIssue }) => {
-    if (!cell.parsedInfo) return false;
-    const pi = cell.parsedInfo;
+    if (!cell.parsedPI) return false;
+    const pi = cell.parsedPI;
     if (pi && pi.firstToken?.toLocaleUpperCase() == "PARTIAL") {
       const fbc = {
         nature: "PARTIAL",
-        partial: fbPartialCandidate(cell.parsedInfo, cell.source, cell.attrs, {
+        partial: fbPartialCandidate(cell.parsedPI, cell.source, cell.attrs, {
           registerIssue,
         }),
       };
@@ -178,7 +176,7 @@ export function partialsInspector<
         return parsed.data;
       } else {
         registerIssue(
-          `Zod error parsing task directive '${cell.info}': ${
+          `Zod error parsing task directive '${cell.pi}': ${
             z.prettifyError(parsed.error)
           }`,
           parsed.error,
@@ -213,8 +211,8 @@ export function spawnableTDI<
   return ({ cell }) => {
     const language = isValidLanguage(cell);
     if (!language) return false;
-    if (!cell.info) return false;
-    const pi = cell.parsedInfo;
+    if (!cell.pi) return false;
+    const pi = cell.parsedPI;
     if (!pi || !pi.firstToken) return false;
     return {
       nature: "TASK",
@@ -228,6 +226,51 @@ export function spawnableTDI<
           ? [pi.flags.dep]
           : pi.flags.dep)
         : undefined,
+    };
+  };
+}
+
+// use this as a "catch all" when "unknown" cells just mean "any content"
+export function anyNamedContentTDI<
+  Provenance,
+  Frontmatter extends Record<string, unknown> = Record<string, unknown>,
+  CellAttrs extends Record<string, unknown> = Record<string, unknown>,
+  I extends Issue<Provenance> = Issue<Provenance>,
+>(
+  langIfNotRegistered: (
+    cell: PlaybookCodeCell<Provenance, CellAttrs>,
+  ) => LanguageSpec = (cell) => ({
+    id: cell.language,
+    extensions: [
+      cell.language.startsWith(".") ? cell.language : "." + cell.language,
+    ],
+    comment: { line: [], block: [] },
+  }),
+): TaskDirectiveInspector<Provenance, Frontmatter, CellAttrs, I> {
+  return ({ cell }) => {
+    const language =
+      languageRegistry.values().find((lang) =>
+        lang.id == cell.language ||
+        lang.aliases?.find((a) => a == cell.language)
+      ) ?? langIfNotRegistered(cell);
+    if (!language) return false;
+    const pi = cell.parsedPI;
+    if (!pi || !pi.firstToken) return false;
+    return {
+      nature: "CONTENT",
+      identity: pi.firstToken,
+      source: cell.source,
+      language,
+      deps: pi
+        ? "dep" in pi.flags
+          ? (typeof pi.flags.dep === "boolean"
+            ? undefined
+            : typeof pi.flags.dep === "string"
+            ? [pi.flags.dep]
+            : pi.flags.dep)
+          : undefined
+        : undefined,
+      content: {},
     };
   };
 }
@@ -274,6 +317,7 @@ export class TaskDirectives<
   readonly issues: I[] = [];
   readonly tasks: TaskCell<Provenance>[] = [];
   readonly partialDirectives: PartialCell<Provenance>[] = [];
+  readonly taskDepsCache = new Map<string, string[]>();
 
   constructor(
     readonly partials: ReturnType<typeof fbPartialsCollection>,
@@ -307,6 +351,196 @@ export class TaskDirectives<
 
   registerIssue(issue: I) {
     this.issues.push(issue);
+  }
+
+  /**
+   * Find tasks that should be *implicitly* injected as dependencies of `taskId`
+   * based on other tasks' `--injected-dep` flags, and report invalid regexes.
+   *
+   * Behavior:
+   *
+   * - Any task may declare `--injected-dep`. The value can be:
+   *   - boolean true  → means ["*"] (match all taskIds)
+   *   - string        → treated as [that string]
+   *   - string[]      → used as-is
+   *
+   * - Each string is treated as a regular expression source. We compile all of them
+   *   once and cache them in `t.parsedPI.flags[".injected-dep-cache"]` as `RegExp[]`.
+   *
+   * - Special case: "*" means "match everything", implemented as `/.*\/`.
+   *
+   * - If ANY compiled regex for task `t` matches the given `taskId`, then that task’s
+   *   `parsedPI.firstToken` (the task's own name/id) will be considered an injected
+   *   dependency. It will be added to the returned `injected` list unless it is already
+   *   present in `taskDeps` or already added.
+   *
+   * Reliability:
+   *
+   * - The only error we surface is regex compilation failure. If a pattern cannot be
+   *   compiled, it is skipped and recorded in `errors` as `{ taskId, regEx }`.
+   *
+   * - No exceptions propagate. Bad inputs are ignored safely.
+   *
+   * Assumptions:
+   *
+   * - `this.tasks` exists and is an array of task-like objects.
+   * - Each task that participates has `parsedPI.firstToken` (string task name) and
+   *   `parsedPI.flags` (an object).
+   *
+   * @param taskId The task identifier we are resolving deps for.
+   *
+   * @param taskDeps Existing, explicit dependencies for this task. Used only for de-duping.
+   *
+   * @example
+   * ```ts
+   * const { injected, errors } = this.injectedDeps("build", ["clean"]);
+   * // injected could be ["lint","compile"]
+   * // errors could be [{ taskId: "weirdTask", regEx: "(" }]
+   * ```
+   */
+  injectedDeps(
+    taskId: string,
+    taskDeps: string[] = [],
+  ) {
+    const injected: string[] = [];
+    const errors: { taskId: string; regEx: string }[] = [];
+
+    // normalize taskDeps just in case caller passed something weird
+    const safeTaskDeps = Array.isArray(taskDeps) ? taskDeps : [];
+
+    for (const t of this.tasks) {
+      if (!t || typeof t !== "object") continue;
+
+      const parsedPI = t.parsedPI;
+      if (!parsedPI || typeof parsedPI !== "object") continue;
+
+      const flags = parsedPI.flags;
+      if (!flags || typeof flags !== "object") continue;
+
+      if (!("injected-dep" in flags)) continue;
+
+      // Normalize `--injected-dep` forms into an array of string patterns
+      const diFlag = flags["injected-dep"];
+      let di: string[] = [];
+
+      if (typeof diFlag === "boolean") {
+        if (diFlag === true) {
+          di = ["*"];
+        }
+      } else if (typeof diFlag === "string") {
+        di = [diFlag];
+      } else if (Array.isArray(diFlag)) {
+        di = diFlag.filter((x) => typeof x === "string");
+      }
+
+      if (di.length === 0) continue;
+
+      // Compile/cache regexes if not already done
+      if (!Array.isArray(flags[".injected-dep-cache"])) {
+        const compiledList: RegExp[] = [];
+
+        for (const expr of di) {
+          const source = expr === "*" ? ".*" : expr;
+
+          try {
+            compiledList.push(new RegExp(source));
+          } catch {
+            // Record invalid regex source
+            errors.push({
+              taskId:
+                typeof parsedPI.firstToken === "string" && parsedPI.firstToken
+                  ? parsedPI.firstToken
+                  : "(unknown-task)",
+              regEx: expr,
+            });
+            // skip adding invalid one
+          }
+        }
+
+        // deno-lint-ignore no-explicit-any
+        (flags as any)[".injected-dep-cache"] = compiledList;
+      }
+
+      // deno-lint-ignore no-explicit-any
+      const cached = (flags as any)[".injected-dep-cache"] as RegExp[];
+
+      if (!Array.isArray(cached) || cached.length === 0) {
+        // nothing valid compiled, move on
+        continue;
+      }
+
+      // Check whether ANY of the compiled regexes matches the requested taskId
+      let matches = false;
+      for (const re of cached) {
+        if (re instanceof RegExp && re.test(taskId)) {
+          matches = true;
+          break;
+        }
+      }
+
+      if (!matches) continue;
+
+      // Inject this task's firstToken (the task name)
+      const depName = parsedPI.firstToken;
+      if (
+        typeof depName === "string" &&
+        depName.length > 0 &&
+        !safeTaskDeps.includes(depName) &&
+        !injected.includes(depName)
+      ) {
+        injected.push(depName);
+      }
+    }
+
+    return { injected, errors };
+  }
+
+  /**
+   * Returns a merged list of explicit and injected dependencies for a given task.
+   *
+   * This is a lightweight wrapper around {@link injectedDeps} that merges
+   * the explicitly declared `taskDeps` (if any) with automatically injected
+   * dependencies discovered via `--injected-dep` flags on other tasks.
+   *
+   * Results are cached per `taskId` in the provided `cellDepsCache` map.
+   *
+   * @param taskId The task identifier to resolve dependencies for.
+   *
+   * @param taskDeps Optional list of explicitly declared dependencies for this task.
+   *
+   * @param cellDepsCache Cache map used to store and retrieve previously resolved dependency lists.
+   *
+   * @returns A unique, ordered list of merged dependencies for the given `taskId`.
+   *
+   * @example
+   * ```ts
+   * const cache = new Map<string, string[]>();
+   * const deps = this.cellDeps("build", ["clean"], cache);
+   * // => ["clean", "compile", "lint"]
+   * ```
+   */
+  taskDeps(
+    taskId: string,
+    taskDeps: string[] | undefined,
+    cellDepsCache?: Map<string, string[]>,
+  ) {
+    // Return cached value if available
+    if (cellDepsCache) {
+      const cached = cellDepsCache.get(taskId);
+      if (cached) return cached;
+    }
+
+    // Compute injected dependencies
+    const { injected } = this.injectedDeps(taskId, taskDeps ?? []);
+
+    // Merge explicit + injected dependencies, ensuring uniqueness and order
+    const merged = Array.from(
+      new Set([...injected, ...(taskDeps ?? [])]),
+    );
+
+    // Cache and return result
+    cellDepsCache?.set(taskId, merged);
+    return merged;
   }
 
   /**
@@ -389,7 +623,8 @@ export class TaskDirectives<
             (cell as Any).taskDirective = td;
             const task = cell as unknown as Task;
             task.taskId = () => td.identity;
-            task.taskDeps = () => td.deps;
+            task.taskDeps = () =>
+              this.taskDeps(td.identity, td.deps, this.taskDepsCache);
             if (isTaskDirectiveSupplier(cell)) {
               this.tasks.push(cell as TaskCell<Provenance>);
             } else {

@@ -1,3 +1,5 @@
+import { ensureTrailingNewline } from "./text-utils.ts";
+
 /**
  * Ensures a `.gitignore` file exists and adds one or more entries if missing.
  * Returns which entries were added and which were already present.
@@ -19,10 +21,11 @@ export async function gitignore(
 ): Promise<{ added: string[]; preserved: string[] }> {
   const lines = Array.isArray(entries) ? entries : [entries];
   let existing: string[] = [];
+  let fileContent = "";
 
   try {
-    const content = await Deno.readTextFile(path);
-    existing = content.split("\n").map((l) => l.trim()).filter(Boolean);
+    fileContent = await Deno.readTextFile(path);
+    existing = fileContent.split("\n").map((l) => l.trim()).filter(Boolean);
   } catch (err) {
     if (err instanceof Deno.errors.NotFound) {
       await Deno.writeTextFile(path, "");
@@ -43,7 +46,13 @@ export async function gitignore(
   }
 
   if (added.length > 0) {
-    await Deno.writeTextFile(path, added.join("\n") + "\n", { append: true });
+    // Ensure file ends with newline before appending to prevent concatenation
+    const needsLeadingNewline = fileContent.length > 0 &&
+      !fileContent.endsWith("\n");
+    const contentToAppend = ensureTrailingNewline(
+      (needsLeadingNewline ? "\n" : "") + added.join("\n"),
+    );
+    await Deno.writeTextFile(path, contentToAppend, { append: true });
   }
 
   return { added, preserved };

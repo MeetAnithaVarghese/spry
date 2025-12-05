@@ -22,9 +22,9 @@ markdown cell that starts at the thematic break delimiter.
 
 ## Section A — Patients
 
-This section introduces a SQL example with attributes and info in the fence
-meta. The heading must start a new markdown cell and the heading itself should
-be included in that cell.
+This section introduces a SQL example with attributes and PI in the fence meta.
+The heading must start a new markdown cell and the heading itself should be
+included in that cell.
 
 ```sql INFO MORE_INFO { id: 1, name: 'patients', dryRun: true }
 SELECT id, given_name, family_name

@@ -1,5 +1,5 @@
 // lib/universal/zod-aide.ts
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 
 /**
  * Convert a JSON string (subset of JSON Schema) into a Zod schema.
@@ -52,7 +52,7 @@ function applyNullability<T extends z.ZodTypeAny>(
   return schema;
 }
 
-function build(s: JS): z.ZodTypeAny {
+export function build(s: JS): z.ZodTypeAny {
   // --- const / enum -------------------------------------------------------
   if ("const" in s) {
     const value = (s as { const: unknown }).const;

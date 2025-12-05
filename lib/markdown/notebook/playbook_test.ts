@@ -8,7 +8,8 @@ import {
   safeSourceText,
   SourceRelativeTo,
 } from "../../universal/content-acquisition.ts";
-import { Issue, type Notebook, notebooks } from "./notebook.ts";
+import { Issue, Notebook } from "../governedmd.ts";
+import { notebooks } from "./notebook.ts";
 import { Playbook, PlaybookCodeCell, playbooks } from "./playbook.ts";
 
 async function loadFixture(): Promise<string> {

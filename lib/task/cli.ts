@@ -9,27 +9,18 @@ import {
 } from "jsr:@std/fmt@^1/colors";
 import { relative } from "jsr:@std/path@^1";
 import { ColumnDef, ListerBuilder } from "../universal/lister-tabular-tui.ts";
-import {
-  errorOnlyShellEventBus,
-  shell,
-  verboseInfoShellEventBus,
-} from "../universal/shell.ts";
-import {
-  errorOnlyTaskEventBus,
-  executeDAG,
-  ok,
-  Task,
-  TaskExecutionPlan,
-  TaskExecutorBuilder,
-  verboseInfoTaskEventBus,
-} from "../universal/task.ts";
-import { matchTaskNature, TaskCell } from "./cell.ts";
+import { TaskCell } from "./cell.ts";
 
 export type LsTaskRow = {
   name: string;
-  notebook: string;
+  provenance: string;
   language: string;
   descr: string;
+  flags: {
+    isContent: boolean;
+    isInterpolatable: boolean;
+    isCapturable: boolean;
+  };
   deps?: string;
   error?: unknown;
 };
@@ -75,7 +66,7 @@ export async function ls<Provenance>(tasks: TaskCell<Provenance>[]) {
     ColumnDef<Row, Row["language"]>
   > {
     return {
-      header: "Language",
+      header: "Lang",
       format: (v) =>
         v === "head_sql"
           ? green(v)
@@ -87,60 +78,58 @@ export async function ls<Provenance>(tasks: TaskCell<Provenance>[]) {
     };
   }
 
+  function lsFlagsField<Row extends LsTaskRow>():
+    | Partial<ColumnDef<Row, Row["flags"]>>
+    | undefined {
+    return {
+      header: "Flags",
+      defaultColor: gray,
+      // deno-fmt-ignore
+      format: (v) =>
+          `${brightYellow(v.isContent ? " " : "T")} ${brightYellow(v.isInterpolatable ? "I" : " ")} ${yellow(v.isCapturable ? "C" : " ")}`,
+    };
+  }
+
   const tasksList = tasks.map((t) => {
     return {
       name: t.taskId(),
-      notebook: String(t.provenance),
+      provenance: `${String(t.provenance)}:${t.startLine}`,
       language: t.language,
       deps: (t.taskDeps?.() ?? []).join(", "),
-      descr: (String(t.parsedInfo?.flags["descr"]) ?? "").replace(
+      descr: (String(t.parsedPI?.flags["descr"]) ?? "").replace(
         "undefined",
         "",
       ),
+      flags: {
+        isContent: t.taskDirective.nature === "CONTENT",
+        isCapturable: t.parsedPI?.hasEitherFlagOfType("capture", "C")
+          ? true
+          : false,
+        isInterpolatable: t.parsedPI?.hasEitherFlagOfType("interpolate", "I")
+          ? true
+          : false,
+      },
     } satisfies LsTaskRow;
   });
 
   await new ListerBuilder<LsTaskRow>()
-    .declareColumns("name", "notebook", "language", "deps", "descr", "error")
+    .declareColumns(
+      "name",
+      "provenance",
+      "language",
+      "deps",
+      "descr",
+      "error",
+      "flags",
+    )
     .from(tasksList)
     .field("name", "name", lsTaskIdField())
+    .field("flags", "flags", lsFlagsField())
     .field("language", "language", lsLanguageField())
-    .field("deps", "deps")
-    .field("descr", "descr")
+    .field("deps", "deps", { header: "Deps" })
+    .field("descr", "descr", { header: "Description" })
     .field("error", "error", { header: "Err" })
-    .field("notebook", "notebook", lsColorPathField("Notebook"))
-    .sortBy("name").sortDir("asc")
+    .field("provenance", "provenance", lsColorPathField("Provenance"))
     .build()
     .ls(true);
-}
-
-export async function executeTasks<T extends Task>(
-  plan: TaskExecutionPlan<T>,
-  verbose?: false | Parameters<typeof verboseInfoShellEventBus>[0]["style"],
-  summarize?: boolean,
-) {
-  type Context = { runId: string };
-
-  const sh = shell({
-    bus: verbose
-      ? verboseInfoShellEventBus({ style: verbose })
-      : errorOnlyShellEventBus({ style: verbose ? verbose : "rich" }),
-  });
-
-  const exec = new TaskExecutorBuilder<Task, Context>()
-    .handle(matchTaskNature("TASK"), async (cell, ctx) => {
-      await sh.auto(cell.source);
-      return ok(ctx);
-    })
-    .build();
-
-  const summary = await executeDAG(plan, exec, {
-    eventBus: verbose
-      ? verboseInfoTaskEventBus<T, Context>({ style: verbose })
-      : errorOnlyTaskEventBus<T, Context>({
-        style: verbose ? verbose : "rich",
-      }),
-  });
-  if (summarize) console.dir({ summary });
-  return summary;
 }

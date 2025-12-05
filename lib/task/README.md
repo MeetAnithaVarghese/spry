@@ -339,7 +339,8 @@ spry show lint
 - Each block is represented as a **`NotebookCodeCell`**, which contains:
 
   - `language`: the code fence label (e.g., `bash`, `spry`, `deno-task`).
-  - `info`: optional trailing info string after the language.
+  - `pi`: optional trailing processing instructions (`PI`) string after the
+    language.
   - `source`: the raw code inside the fence.
   - `attrs`: key/value pairs parsed from attributes (if any).
   - `startLine` and `endLine`: for provenance and diagnostics.
@@ -392,7 +393,7 @@ Each inspector returns a typed **`TaskDirective`**, which encodes:
   - `source`: the code.
   - `task.strategy`: execution strategy (`Cliffy.Command`, `Deno.Command`, or
     `Deno.Task`).
-  - `deps`: dependencies (from `info` flags, e.g. `--dep=a,b,c`).
+  - `deps`: dependencies (from `pi` flags, e.g. `--dep=a,b,c`).
 - For `"PARTIAL"`:
 
   - Partial metadata and content for later composition.

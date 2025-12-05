@@ -85,7 +85,7 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
         kind: "code",
         language: "import",
         source: "sql **/*.sql",
-        parsedInfo: { flags: { base: tmp } },
+        parsedPI: { flags: { base: tmp } },
       } as any;
 
       const pb = mkPB();
@@ -98,8 +98,8 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
 
       assertEquals(c.kind, "code");
       assertEquals(c.language, "sql");
-      assertMatch(c.parsedInfo.firstToken, /migrations\/init\.sql$/);
-      assertEquals(c.parsedInfo.flags["is-binary"], undefined);
+      assertMatch(c.parsedPI.firstToken, /migrations\/init\.sql$/);
+      assertEquals(c.parsedPI.flags["is-binary"], undefined);
       assertEquals(c.source.trim(), "CREATE TABLE t(x INT);");
       assertEquals(c.sourceElaboration.isRefToBinary, false);
       assertMatch(String(c.sourceElaboration.importedFrom), /init\.sql$/);
@@ -113,7 +113,7 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
         kind: "code",
         language: "import",
         source: "utf8 assets/**/*.png",
-        parsedInfo: { flags: { base: tmp } },
+        parsedPI: { flags: { base: tmp } },
       } as any;
 
       const pb = mkPB();
@@ -125,7 +125,7 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
       const c = out[0];
 
       assertEquals(c.language, "utf8");
-      assertEquals(c.parsedInfo.flags["is-binary"], true);
+      assertEquals(c.parsedPI.flags["is-binary"], true);
 
       // For binary, source is JSON.stringify(directive)
       assert(typeof c.source === "string");
@@ -145,7 +145,7 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
         kind: "code",
         language: "import",
         source: `json ${remoteUrl}`,
-        parsedInfo: { flags: { base: remoteBase } },
+        parsedPI: { flags: { base: remoteBase } },
       } as any;
 
       const pb = mkPB();
@@ -156,9 +156,9 @@ Deno.test("liveIncludes: expands import cell into materialized code cells", asyn
       const c = out[0];
 
       assertEquals(c.language, "json");
-      assertEquals(c.parsedInfo.flags["is-binary"], undefined);
+      assertEquals(c.parsedPI.flags["is-binary"], undefined);
       // firstToken is the **relative path** from base for remote
-      assertEquals(c.parsedInfo.firstToken, "conf/demo.json");
+      assertEquals(c.parsedPI.firstToken, "conf/demo.json");
       assertEquals(c.source, "REMOTE_JSON");
       assertEquals(c.sourceElaboration.isRefToBinary, false);
       assertEquals(c.sourceElaboration.importedFrom, remoteUrl);

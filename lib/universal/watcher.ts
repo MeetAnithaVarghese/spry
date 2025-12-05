@@ -1,4 +1,4 @@
-import { debounce } from "jsr:@std/async@1/debounce";
+import { debounce } from "@std/async";
 import { eventBus } from "./event-bus.ts";
 
 const isLocalPath = (p: string) => !/^([a-z]+:)?\/\//i.test(p);

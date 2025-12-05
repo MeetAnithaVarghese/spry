@@ -1,4 +1,5 @@
 import { Command, EnumType } from "jsr:@cliffy/command@1.0.0-rc.8";
+import { CompletionsCommand } from "jsr:@cliffy/command@1.0.0-rc.8/completions";
 import { HelpCommand } from "jsr:@cliffy/command@1.0.0-rc.8/help";
 import {
   bold,
@@ -19,7 +20,11 @@ import {
   relative,
 } from "jsr:@std/path@^1";
 import { MarkdownDoc } from "../markdown/fluent-doc.ts";
+import { compileCqlMini } from "../markdown/notebook/cql.ts";
 import * as taskCLI from "../task/cli.ts";
+import { execTasksState, gitignorableOnCapture } from "../task/execute.ts";
+import { markdownShellEventBus } from "../task/mdbus.ts";
+import { executeTasks, TaskCell, TaskExecContext } from "../task/mod.ts";
 import { collectAsyncGenerated } from "../universal/collectable.ts";
 import { SourceRelativeTo } from "../universal/content-acquisition.ts";
 import { doctor } from "../universal/doctor.ts";
@@ -27,18 +32,37 @@ import { eventBus } from "../universal/event-bus.ts";
 import { gitignore } from "../universal/gitignore.ts";
 import { ColumnDef, ListerBuilder } from "../universal/lister-tabular-tui.ts";
 import { TreeLister } from "../universal/lister-tree-tui.ts";
-import { executionPlan, executionSubplan } from "../universal/task.ts";
+import {
+  errorOnlyShellEventBus,
+  verboseInfoShellEventBus,
+} from "../universal/shell.ts";
+import {
+  executionPlanVisuals,
+  ExecutionPlanVisualStyle,
+} from "../universal/task-visuals.ts";
+import {
+  errorOnlyTaskEventBus,
+  executionPlan,
+  executionSubplan,
+  Task,
+  verboseInfoTaskEventBus,
+} from "../universal/task.ts";
 import { dedentIfFirstLineBlank } from "../universal/tmpl-literal-aide.ts";
 import { computeSemVerSync } from "../universal/version.ts";
 import { SidecarOpts, watcher, WatcherEvents } from "../universal/watcher.ts";
 import { sqlPageConf } from "./conf.ts";
 import {
+  isSqlPageContent,
   normalizeSPC,
   SqlPageContent,
+  SqlPageFilesUpsertDialect,
   sqlPageFilesUpsertDML,
 } from "./content.ts";
 import { SqlPagePlaybook, sqlPagePlaybookState } from "./playbook.ts";
 import { isRouteSupplier } from "./route.ts";
+
+// deno-lint-ignore no-explicit-any
+type Any = any;
 
 export type LsCommandRow = SqlPageContent & {
   name: string;
@@ -54,6 +78,49 @@ export type LsCommandRow = SqlPageContent & {
   };
   error?: unknown;
 };
+
+export enum VerboseStyle {
+  Plain = "plain",
+  Rich = "rich",
+  Markdown = "markdown",
+}
+
+export function informationalEventBuses<T extends Task, Context>(
+  verbose?: VerboseStyle,
+) {
+  if (!verbose) {
+    return {
+      shellEventBus: errorOnlyShellEventBus({ style: "rich" }),
+      tasksEventBus: errorOnlyTaskEventBus<T, Context>({ style: "rich" }),
+    };
+  }
+
+  switch (verbose) {
+    case VerboseStyle.Plain:
+      return {
+        shellEventBus: verboseInfoShellEventBus({ style: "plain" }),
+        tasksEventBus: verboseInfoTaskEventBus<T, Context>({ style: "plain" }),
+      };
+
+    case VerboseStyle.Rich:
+      return {
+        shellEventBus: verboseInfoShellEventBus({ style: "rich" }),
+        tasksEventBus: verboseInfoTaskEventBus<T, Context>({ style: "rich" }),
+      };
+
+    case VerboseStyle.Markdown: {
+      const md = new MarkdownDoc();
+      const mdSEB = markdownShellEventBus({ md });
+      return {
+        mdSEB,
+        shellEventBus: mdSEB.bus,
+        tasksEventBus: undefined, // TODO: add tasks to markdown
+        md,
+        emit: () => console.log(md.write()),
+      };
+    }
+  }
+}
 
 const flagsFrom = (spc: SqlPageContent) => {
   switch (spc.kind) {
@@ -126,6 +193,7 @@ export async function projectPaths(projectHome = Deno.cwd()) {
 
   const absPathToSpryTsLocal = join(projectHome, "spry.ts");
   const absPathToSpryfileLocal = join(projectHome, "Spryfile.md");
+  const absPathToImportMapLocal = join(projectHome, "import_map.json");
 
   let importSpecifierForSpry: string;
   let importSpecifierForSpryLatest: string;
@@ -179,6 +247,7 @@ export async function projectPaths(projectHome = Deno.cwd()) {
     projectHome,
     absPathToSpryTsLocal,
     absPathToSpryfileLocal,
+    absPathToImportMapLocal,
     importSpecifierForSpry,
     importSpecifierForSpryLatest,
     isRemote,
@@ -200,23 +269,55 @@ export class CLI<Project> {
 
   async init(
     projectHome = Deno.cwd(),
-    init?: { dbName: string; force?: boolean },
+    init?: {
+      force?: boolean;
+      dialect?: SqlPageFilesUpsertDialect;
+    },
   ) {
     const {
       absPathToSpryTsLocal,
       absPathToSpryfileLocal,
+      absPathToImportMapLocal,
       importSpecifierForSpryLatest,
+      isRemote,
+      cliModuleUrl,
     } = await this.projectPaths(projectHome);
 
     // spry.ts template (imports CLI from remote/local depending on our own location)
     const spryTs = (importSpec = importSpecifierForSpryLatest) =>
       dedentIfFirstLineBlank(`
-      #!/usr/bin/env -S deno run -A --node-modules-dir=auto
+      #!/usr/bin/env -S deno run -A --import-map=import_map.json
       // Use \`deno run -A --watch\` in the shebang if you're contributing / developing Spry itself.
 
       import { CLI } from "${importSpec}";
 
       CLI.instance().run();`);
+
+    // Copy import_map.json from repository root or remote URL to project directory
+    const copyImportMap = async (
+      source: string,
+      targetPath: string,
+    ): Promise<void> => {
+      let content: string;
+      if (source.startsWith("http://") || source.startsWith("https://")) {
+        // Fetch from remote URL
+        const response = await fetch(source);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch ${source}: ${response.status} ${response.statusText}`,
+          );
+        }
+        content = await response.text();
+      } else {
+        // Read from local file
+        content = await Deno.readTextFile(source);
+      }
+      const parsed = JSON.parse(content);
+      await Deno.writeTextFile(
+        targetPath,
+        JSON.stringify(parsed, null, 2) + "\n",
+      );
+    };
 
     const exists = async (path: string) =>
       await Deno.stat(path).catch(() => false);
@@ -227,6 +328,10 @@ export class CLI<Project> {
       if (await exists(absPathToSpryTsLocal)) {
         await Deno.remove(absPathToSpryTsLocal);
         removed.push(relativeToCWD(absPathToSpryTsLocal));
+      }
+      if (await exists(absPathToImportMapLocal)) {
+        await Deno.remove(absPathToImportMapLocal);
+        removed.push(relativeToCWD(absPathToImportMapLocal));
       }
     }
 
@@ -241,23 +346,116 @@ export class CLI<Project> {
       ignored.push(relativeToCWD(absPathToSpryTsLocal));
     }
 
+    // Copy import_map.json from repository root (local) or remote URL
+    if (!await exists(absPathToImportMapLocal)) {
+      try {
+        if (isRemote) {
+          // Fetch from remote URL
+          const remoteUrl =
+            "https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/import_map.json";
+          await copyImportMap(remoteUrl, absPathToImportMapLocal);
+          created.push(relativeToCWD(absPathToImportMapLocal));
+        } else {
+          // Copy from local repository root
+          const cliFsPath = fromFileUrl(cliModuleUrl);
+          const repoRoot = dirname(dirname(dirname(cliFsPath))); // Go up from lib/sqlpage/cli.ts to root
+          const sourceImportMapPath = join(repoRoot, "import_map.json");
+
+          await copyImportMap(sourceImportMapPath, absPathToImportMapLocal);
+          created.push(relativeToCWD(absPathToImportMapLocal));
+        }
+      } catch (err) {
+        console.warn(
+          `⚠️  Failed to copy import_map.json: ${(err as Error).message}`,
+        );
+      }
+    } else {
+      ignored.push(relativeToCWD(absPathToImportMapLocal));
+    }
+
     const webRoot = "dev-src.auto";
     if (!await exists(absPathToSpryfileLocal)) {
       const sfMD = new MarkdownDoc();
-      sfMD.frontMatterOnce({
+      const frontMatter = {
         "sqlpage-conf": {
           allow_exec: true,
-          port: 9227,
-          database_url: `sqlite://${init?.dbName ?? "sqlpage.db"}?mode=rwc`,
+          port: "${env.PORT}",
+          database_url: "${env.SPRY_DB}",
           web_root: `./${webRoot}`,
+          ...(init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+            ? { listen_on: "0.0.0.0:${env.PORT}" }
+            : {}),
         },
-      });
+      };
+      sfMD.frontMatterOnceWithQuotes(frontMatter);
       sfMD.h1("Sample Spryfile.md");
+      sfMD.title(2, "Environment variables and .envrc");
+      sfMD.p(
+        "Recommended practice is to keep these values in a local, directory-scoped environment file. If you use direnv (recommended), create a file named `.envrc` in this directory.",
+      );
+      sfMD.p("POSIX-style example (bash/zsh):");
+      sfMD.codeTag(
+        `envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"`,
+      )`${
+        init?.dialect === SqlPageFilesUpsertDialect.SQLite
+          ? `export DB_NAME="sqlpage.db"\n`
+          : ``
+      }export SPRY_DB=${
+        init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+          ? `"postgresql://<username>:<password>@<host>:<port>/<database>"`
+          : `"sqlite://$DB_NAME?mode=rwc"`
+      }\nexport PORT=9227`;
+      sfMD.p(
+        "Then run `direnv allow` in this project directory to load the `.envrc` into your shell environment. direnv will evaluate `.envrc` only after you explicitly allow it.",
+      );
+      sfMD.title(2, "SQLPage Dev / Watch mode");
+      sfMD.p(
+        "While you're developing, Spry's `dev-src.auto` generator should be used:",
+      );
+      sfMD.codeTag(
+        `bash prepare-sqlpage-dev --descr "Generate the dev-src.auto directory to work in ${init?.dialect} dev mode"`,
+      )`./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json`;
+      sfMD.codeTag(
+        `bash clean --descr "Clean up the project directory's generated artifacts"`,
+      )`rm -rf dev-src.auto`;
+      sfMD.p(
+        "In development mode, here’s the `--watch` convenience you can use so that\nwhenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,\nwhich is then picked up automatically by the SQLPage server:",
+      );
+      sfMD.codeTag(
+        `bash`,
+      )`./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage`;
+      sfMD.ul(
+        "--watch` turns on watching all `--md` files passed in (defaults to `Spryfile.md`)",
+      );
+      sfMD.ul("--with-sqlpage` starts and stops SQLPage after each build");
+      sfMD.p(
+        "Restarting SQLPage after each re-generation of dev-src.auto is **not**\nnecessary, so you can also use `--watch` without `--with-sqlpage` in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow.",
+      );
+      sfMD.p("If you're running SQLPage in another terminal window, use:");
+      sfMD.codeTag(
+        `bash`,
+      )`./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch`;
+      sfMD.title(2, "SQLPage single database deployment mode");
+      sfMD.p(
+        "After development is complete, the `dev-src.auto` can be removed and single-database deployment can be used:",
+      );
+      sfMD.codeTag(
+        `bash deploy --descr "Generate sqlpage_files table upsert SQL and push them to ${init?.dialect}"`,
+      )`rm -rf dev-src.auto\n./spry.ts spc --package ${
+        init?.dialect ? `--dialect ${init?.dialect}` : ``
+      } --conf sqlpage/sqlpage.json | ${
+        init?.dialect === "postgres" ? `psql` : `sqlite3`
+      } ${init?.dialect === "postgres" ? "$SPRY_DB" : "$DB_NAME"}`;
+      sfMD.title(2, "Start the SQLPage server");
+      sfMD.codeTag(
+        `bash`,
+      )`sqlpage`;
+
       sfMD.p("You can create fenced cells for `bash`, `sql`, etc. here.");
       sfMD.p("TODO: add examples with `doctor`, `prepare-db`, etc.");
       sfMD.codeTag(
-        "bash",
-      )`# name this section prepare-db and put in your db prep code`;
+        `sql index.sql { route: { caption: "Home" } }`,
+      )`select 'card' as component,\n'Spry' as title,\n1 as columns;\nselect 'Use Markdown to Code, Build, and Orchestrate Intelligence'  as title,\n'https://sprymd.org' as link,\n'Spry turns Markdown into a programmable medium. Every fenced block, directive, and section executes, verifies, and composes reproducible workflows. From SQL pipelines to AI context graphs, Spry unifies your code, data, and documentation into one living system of record.' as description;`;
       await Deno.writeTextFile(absPathToSpryfileLocal, sfMD.write());
       created.push(relativeToCWD(absPathToSpryfileLocal));
     } else {
@@ -333,7 +531,7 @@ export class CLI<Project> {
       md: string[];
       srcRelTo: SourceRelativeTo;
       conf?: boolean;
-      info?: boolean;
+      pi?: boolean;
       infoAttrs?: boolean;
       tree?: boolean;
     },
@@ -395,7 +593,7 @@ export class CLI<Project> {
         .byPath({ pathKey: "path", separator: "/" })
         .treeOn("name");
       await tree.ls(true);
-    } else if (opts.info || opts.infoAttrs) {
+    } else if (opts.pi || opts.infoAttrs) {
       const pc = await this.spn.populateContent({
         mdSources: opts.md,
         srcRelTo: opts.srcRelTo,
@@ -405,7 +603,7 @@ export class CLI<Project> {
         {
           line: number;
           language: string;
-          info: string;
+          pi: string;
           virtual: string;
           binary: string;
           notebook: string;
@@ -414,7 +612,7 @@ export class CLI<Project> {
         .declareColumns(
           "line",
           "language",
-          "info",
+          "pi",
           "virtual",
           "binary",
           "notebook",
@@ -423,7 +621,7 @@ export class CLI<Project> {
           pc.state.directives.tasks.map((cell) => ({
             line: cell.startLine ?? -1,
             language: cell.language ?? "?",
-            info: cell.info ?? "?",
+            pi: cell.pi ?? "?",
             virtual: cell.isVirtual ? "V" : " ",
             binary: cell.sourceElaboration?.isRefToBinary ? "B" : " ",
             notebook: cell.provenance ?? "",
@@ -433,7 +631,7 @@ export class CLI<Project> {
         .field("language", "language", { header: "Lang" })
         .field("virtual", "virtual", { header: "V" })
         .field("binary", "binary", { header: "B" })
-        .field("info", "info", { header: "Cell Info" })
+        .field("pi", "pi", { header: "Cell PI" })
         .field("notebook", "notebook", this.lsColorPathField("Notebook"))
         .build()
         .ls(true);
@@ -577,9 +775,17 @@ export class CLI<Project> {
     await run(opts.watch);
   }
 
+  executableTasksFilter() {
+    return (t: TaskCell<string>) =>
+      t.taskDirective.nature === "TASK" ||
+      (t.taskDirective.nature === "CONTENT" &&
+        isSqlPageContent(t.taskDirective.content) == false);
+  }
+
   command(name = "spry.ts") {
-    // Enum type with enum.
     const srcRelTo = new EnumType(SourceRelativeTo);
+    const dialect = new EnumType(SqlPageFilesUpsertDialect);
+    const verboseStyle = new EnumType(VerboseStyle);
     const mdOpt = [
       "-m, --md <mdPath:string>",
       "Use the given Markdown source(s), multiple allowed",
@@ -596,39 +802,55 @@ export class CLI<Project> {
         default: SourceRelativeTo.LocalFs,
       },
     ] as const;
+    const verboseOpt = [
+      "--verbose <style:verboseStyle>",
+      "Emit information messages verbosely",
+    ] as const;
 
     return new Command()
       .name(name)
+      .type("dialect", dialect)
       .version(() => computeSemVerSync(import.meta.url))
       .description(
         "SQLPage Markdown Notebook: emit SQL package, write sqlpage.json, or materialize filesystem.",
       )
       .command("help", new HelpCommand().global())
+      .command("completions", new CompletionsCommand())
       .command(
         "init",
-        "Setup Spryfile.md and spry.ts for local dev environment",
-      )
-      .option("--db-name <file>", "name of SQLite database", {
-        default: "sqlpage.db",
-      })
-      .option("--force", "Remove existing and recreate from latest tag", {
-        default: false,
-      })
-      .action(async (opts) => {
-        const { created, removed, ignored, gitignore: gi } = await this.init(
-          Deno.cwd(),
-          opts,
-        );
-        removed.forEach((r) => console.warn(`❌ Removed ${r}`));
-        created.forEach((c) => console.info(`📄 Created ${c}`));
-        ignored.forEach((i) => console.info(`🆗 Preserved ${i}`));
+        new Command()
+          .description(
+            "Setup Spryfile.md and spry.ts for local dev environment",
+          )
+          .type("dialect", dialect)
+          /* .option("--db-name <file>", "name of SQLite database", {
+            default: "sqlpage.db",
+          }) */
+          .option("--force", "Remove existing and recreate from latest tag", {
+            default: false,
+          })
+          .option(
+            "-d, --dialect <dialect:dialect>",
+            "SQL dialect for package generation (sqlite or postgres)",
+            { default: SqlPageFilesUpsertDialect.SQLite },
+          )
+          .action(async (opts) => {
+            const { created, removed, ignored, gitignore: gi } = await this
+              .init(
+                Deno.cwd(),
+                opts,
+              );
+            removed.forEach((r) => console.warn(`❌ Removed ${r}`));
+            created.forEach((c) => console.info(`📄 Created ${c}`));
+            ignored.forEach((i) => console.info(`🆗 Preserved ${i}`));
 
-        const { added, preserved } = gi;
-        added.forEach((c) => console.info(`📄 Added ${c} to .gitignore`));
-        preserved.forEach((p) =>
-          console.info(`🆗 Preserved ${p} in .gitignore`)
-        );
-      })
+            const { added, preserved } = gi;
+            added.forEach((c) => console.info(`📄 Added ${c} to .gitignore`));
+            preserved.forEach((p) =>
+              console.info(`🆗 Preserved ${p} in .gitignore`)
+            );
+          }),
+      )
       .command("doctor", "Show dependencies and their availability")
       .action(async () => {
         const diags = doctor(["deno --version", "sqlpage --version"]);
@@ -640,12 +862,18 @@ export class CLI<Project> {
         new Command() // Emit SQL package (sqlite) to stdout; accepts md path
           .description("SQLPage Content (spc) CLI")
           .type("sourceRelTo", srcRelTo)
+          .type("dialect", dialect)
           .option(...mdOpt)
           .option(...srcRelToOpt)
           .option(
             "-p, --package",
-            "Emit SQL package (sqlite) to stdout from the given markdown path.",
+            "Emit SQL package to stdout from the given markdown path",
             { conflicts: ["fs"] },
+          )
+          .option(
+            "-d, --dialect <dialect:dialect>",
+            "SQL dialect for package generation (sqlite or postgres)",
+            { default: SqlPageFilesUpsertDialect.SQLite },
           )
           // Materialize files to a target directory
           .option(
@@ -707,7 +935,9 @@ export class CLI<Project> {
                     state: sqlPagePlaybookState(),
                   }),
                   {
-                    dialect: "sqlite",
+                    dialect: opts.dialect
+                      ? opts.dialect
+                      : SqlPageFilesUpsertDialect.SQLite,
                     includeSqlPageFilesTable: true,
                   },
                 )
@@ -756,11 +986,11 @@ export class CLI<Project> {
           .option(...mdOpt)
           .option(...srcRelToOpt)
           .option(
-            "-i, --info",
+            "-i, --pi",
             "Show just the cell names and INFO lines for each cell",
           )
           .option(
-            "-I, --info-attrs",
+            "-I, --pi-attrs",
             "Show just the cell names and INFO and attributes for each cell",
           )
           .option("-t, --tree", "Show as tree")
@@ -792,10 +1022,21 @@ export class CLI<Project> {
             "Spry Task CLI (execute a specific cell and dependencies)",
           )
           .type("sourceRelTo", srcRelTo)
+          .type("verboseStyle", verboseStyle)
           .arguments("<taskId>")
+          .complete("taskId", async () => {
+            const pp = await this.spn.populateContent({
+              mdSources: ["Spryfile.md"],
+              srcRelTo: SourceRelativeTo.LocalFs,
+              state: sqlPagePlaybookState(),
+            });
+            return pp.state.directives.tasks.filter(
+              this.executableTasksFilter(),
+            ).map((t) => t.taskDirective.identity);
+          })
           .option(...mdOpt)
           .option(...srcRelToOpt)
-          .option("--verbose", "Emit information messages")
+          .option(...verboseOpt)
           .option("--summarize", "Emit summary after execution in JSON")
           .action(async (opts, taskId) => {
             const pp = await this.spn.populateContent({
@@ -803,14 +1044,22 @@ export class CLI<Project> {
               srcRelTo: opts.srcRelTo,
               state: sqlPagePlaybookState(),
             });
-            const tasks = pp.state.directives.tasks.filter((t) =>
-              t.taskDirective.nature === "TASK"
+            const tasks = pp.state.directives.tasks.filter(
+              this.executableTasksFilter(),
             );
             if (tasks.find((t) => t.taskId() == taskId)) {
-              const runbook = await taskCLI.executeTasks(
+              const ieb = informationalEventBuses<
+                TaskCell<string>,
+                TaskExecContext
+              >(opts?.verbose);
+              const runbook = await executeTasks(
                 executionSubplan(executionPlan(tasks), [taskId]),
-                opts.verbose ? "rich" : false,
+                execTasksState(pp.state.directives, {
+                  onCapture: gitignorableOnCapture,
+                }),
+                { shellBus: ieb.shellEventBus, tasksBus: ieb.tasksEventBus },
               );
+              if (ieb.emit) ieb.emit();
               if (opts.summarize) {
                 console.log(runbook);
               }
@@ -818,13 +1067,17 @@ export class CLI<Project> {
               console.warn(`Task '${taskId}' not found.`);
             }
           })
-          .command("ls", "List SQLPage file entries")
+          .command("ls", "List task cells")
           .type("sourceRelTo", srcRelTo)
           .option(...mdOpt)
           .option(...srcRelToOpt)
           .option(
-            "-c, --content",
-            "List CONTENT cells in addition to executables",
+            "-a, --all",
+            "List all cells in addition to executables",
+          )
+          .option(
+            "-s, --select <cql:string>",
+            "Use Cell Query Language (CQL) to select cells to list",
           )
           .action(async (opts) => {
             const pp = await this.spn.populateContent({
@@ -832,39 +1085,69 @@ export class CLI<Project> {
               srcRelTo: opts.srcRelTo,
               state: sqlPagePlaybookState(),
             });
-            taskCLI.ls(
-              opts.content
-                ? pp.state.directives.tasks
-                : pp.state.directives.tasks.filter((t) =>
-                  t.taskDirective.nature === "TASK"
-                ),
-            );
+            if (opts.select) {
+              const filterCQL = compileCqlMini<TaskCell<string>>(opts.select);
+              taskCLI.ls(filterCQL(pp.state.directives.tasks));
+            } else {
+              taskCLI.ls(
+                opts.all
+                  ? pp.state.directives.tasks
+                  : pp.state.directives.tasks.filter(
+                    this.executableTasksFilter(),
+                  ),
+              );
+            }
           }),
       ).command(
         "runbook",
         new Command() // Emit SQL package (sqlite) to stdout; accepts md path
           .description("Spry Runbook CLI (execute all cells in DAG order)")
           .type("sourceRelTo", srcRelTo)
+          .type("verboseStyle", verboseStyle)
+          .type("visualStyle", new EnumType(ExecutionPlanVisualStyle))
           .option(...mdOpt)
           .option(...srcRelToOpt)
-          .option("--verbose", "Emit information messages verbosely")
+          .option(...verboseOpt)
           .option("--summarize", "Emit summary after execution in JSON")
+          .option(
+            "-s, --select <cql:string>",
+            "Use Cell Query Language (CQL) to select cells to run as part of runbook",
+          )
+          .option("--visualize <style:visualStyle>", "Visualize the DAG")
           .action(async (opts) => {
             const pp = await this.spn.populateContent({
               mdSources: opts.md.map((f) => String(f)),
               srcRelTo: opts.srcRelTo,
               state: sqlPagePlaybookState(),
             });
-            const runbook = await taskCLI.executeTasks(
-              executionPlan(
-                pp.state.directives.tasks.filter((t) =>
-                  t.taskDirective.nature === "TASK"
-                ),
-              ),
-              opts.verbose ? "rich" : false,
-            );
-            if (opts.summarize) {
-              console.log(runbook);
+            let plan: ReturnType<typeof executionPlan>;
+            if (opts.select) {
+              const filterCQL = compileCqlMini<TaskCell<string>>(opts.select);
+              plan = executionPlan(filterCQL(pp.state.directives.tasks));
+            } else {
+              plan = executionPlan(
+                pp.state.directives.tasks.filter(this.executableTasksFilter()),
+              );
+            }
+            if (opts?.visualize) {
+              const epv = executionPlanVisuals(plan);
+              console.log(epv.visualText(opts.visualize));
+            } else {
+              const ieb = informationalEventBuses<
+                TaskCell<string>,
+                TaskExecContext
+              >(opts?.verbose);
+              const runbook = await executeTasks(
+                plan,
+                execTasksState(pp.state.directives, {
+                  onCapture: gitignorableOnCapture,
+                }),
+                { shellBus: ieb.shellEventBus, tasksBus: ieb.tasksEventBus },
+              );
+              if (ieb.emit) ieb.emit();
+              if (opts.summarize) {
+                console.log(runbook);
+              }
             }
           })
           .command("ls", "List SQLPage file runbook entries")
@@ -878,9 +1161,7 @@ export class CLI<Project> {
               state: sqlPagePlaybookState(),
             });
             taskCLI.ls(
-              pp.state.directives.tasks.filter((t) =>
-                t.taskDirective.nature === "TASK"
-              ),
+              pp.state.directives.tasks.filter(this.executableTasksFilter()),
             );
           }),
       );

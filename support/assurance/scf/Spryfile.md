@@ -1,9 +1,9 @@
 ---
 sqlpage-conf:
-  database_url: "sqlite://scf-2025.3.sqlite.db?mode=rwc"
+  database_url: ${env.SPRY_DB}
   web_root: "./dev-src.auto"
   allow_exec: true
-  port: 9227
+  port: ${env.PORT}
 ---
 
 # Secure Controls Framework (SCF) SQLPage Application
@@ -28,6 +28,66 @@ script.
 rm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`
 cat prepare.duckdb.sql | duckdb ":memory:"  # DuckDB processes in memory but creates SQLite DB
 ```
+
+## Environment variables and .envrc
+
+This project reads configuration from environment variables. Two variables you
+will commonly set in development are:
+
+- `SPRY_DB` — the database connection URL used by SQLPage and Spry. Example
+  value used here: `sqlite://scf-2025.3.sqlite.db?mode=rwc`
+  - Scheme: `sqlite://` followed by a path (relative or absolute) to the SQLite
+    file.
+  - Query `mode=rwc` tells SQLite/DuckDB to open the file for read/write and
+    create it if missing.
+  - If you prefer a path under a `data/` directory, set e.g.
+    `sqlite://./data/scf-2025.3.sqlite.db?mode=rwc`.
+
+- `PORT` — the TCP port the local SQLPage server or other local web component
+  should listen on (example: `9227`).
+
+Recommended practice is to keep these values in a local, directory-scoped
+environment file. If you use direnv (recommended), create a file named `.envrc`
+in this directory.
+
+POSIX-style example (bash/zsh):
+
+```envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
+export SPRY_DB="sqlite://scf-2025.3.sqlite.db?mode=rwc"
+export PORT=9227
+```
+
+Then run `direnv allow` in this project directory to load the `.envrc` into your
+shell environment. direnv will evaluate `.envrc` only after you explicitly allow
+it.
+
+## Security and repository hygiene
+
+- Never commit secrets or production credentials into `.envrc`. Treat `.envrc`
+  like a local-only file.
+- Add `.envrc` to your local `.gitignore` if you keep secrets there.
+  Alternatively commit a `.envrc.example` or `.envrc.sample` with safe,
+  non-secret defaults to document expected variables.
+- The SQLite file (e.g. `scf-2025.3.sqlite.db`) is a binary database file — you
+  will usually not check this into version control. Add that filename or the
+  `data/` directory to `.gitignore` as well.
+
+Why these variables matter here
+
+- The YAML header at the top of this `Spryfile.md` reads
+  `database_url: ${env.SPRY_DB}` and `port: ${env.PORT}` — Spry and the SQLPage
+  tooling will substitute those environment values when building or serving the
+  site.
+- If `SPRY_DB` is not set, the tooling may fail to find the database or fall
+  back to defaults; explicitly setting it ensures predictable, repeatable dev
+  runs.
+
+Quick troubleshooting
+
+- If the server does not start on the expected port, verify `echo $PORT` (or
+  `echo $SPRY_DB`) in your shell to confirm values are loaded.
+- If direnv appears not to load `.envrc`, re-run `direnv allow` and ensure your
+  shell config contains the direnv hook.
 
 ## SQLPage Dev / Watch mode
 
@@ -69,7 +129,7 @@ If you're running SQLPage in another terminal window, use:
 After development is complete, the `dev-src.auto` can be removed and
 single-database deployment can be used:
 
-```bash deploy --descr "Generate sqlpage_files table upsert SQL and push them to SQLite"
+```bash deploy -C --descr "Generate sqlpage_files table upsert SQL and push them to SQLite"
 rm -rf dev-src.auto
 ./spry.ts spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db
 ```
@@ -103,8 +163,8 @@ Spry but make it easier to trace where _partial_ injections are occurring.
 SELECT 'shell' AS component,
        'Secure Controls Framework (SCF) Explorer' AS title,
        NULL AS icon,
-       'https://www.surveilr.com/assets/brand/content-assembler.ico' AS favicon,
-       'https://www.surveilr.com/assets/brand/compliance-explorer.png' AS image,
+       '/assets/brand/content-assembler.ico' AS favicon,
+       '/assets/brand/compliance-explorer.png' AS image,
        'fluid' AS layout,
        true AS fixed_top_menu,
        'index.sql' AS link,
@@ -112,6 +172,10 @@ SELECT 'shell' AS component,
 
 SET resource_json = sqlpage.read_file_as_text('spry.d/auto/resource/${path}.auto.json');
 SET page_title  = json_extract($resource_json, '$.route.caption');
+SET page_path = json_extract($resource_json, '$.route.path');
+
+${ctx.breadcrumbs()}
+
 -- END: PARTIAL global-layout.sql
 -- this is the `${cell.info}` cell on line ${cell.startLine}
 ```

@@ -9,17 +9,19 @@ import {
   yellow,
 } from "jsr:@std/fmt@1/colors";
 import { eventBus } from "./event-bus.ts";
+import { indent } from "./tmpl-literal-aide.ts";
 
-/** Events the shell factory can emit */
-export type ShellBusEvents = {
-  "spawn:start": {
+type WithBaggage<Baggage, T> = T & { baggage?: Baggage };
+
+export type ShellBusEvents<Baggage = unknown> = {
+  "spawn:start": WithBaggage<Baggage, {
     cmd: string;
     args: string[];
     cwd?: string;
     env?: Record<string, string>;
     hasStdin: boolean;
-  };
-  "spawn:done": {
+  }>;
+  "spawn:done": WithBaggage<Baggage, {
     cmd: string;
     args: string[];
     code: number;
@@ -27,15 +29,15 @@ export type ShellBusEvents = {
     stdout: Uint8Array;
     stderr: Uint8Array;
     durationMs: number;
-  };
-  "spawn:error": {
+  }>;
+  "spawn:error": WithBaggage<Baggage, {
     cmd: string;
     args: string[];
     error: unknown;
-  };
+  }>;
 
-  "task:line:start": { index: number; line: string };
-  "task:line:done": {
+  "task:line:start": WithBaggage<Baggage, { index: number; line: string }>;
+  "task:line:done": WithBaggage<Baggage, {
     index: number;
     line: string;
     code: number;
@@ -43,40 +45,44 @@ export type ShellBusEvents = {
     stdout: Uint8Array;
     stderr: Uint8Array;
     durationMs: number;
-  };
+  }>;
 
-  "shebang:tempfile": { path: string };
-  "shebang:cleanup": { path: string; ok: boolean; error?: unknown };
+  "shebang:tempfile": WithBaggage<Baggage, { path: string; script: string }>;
+  "shebang:cleanup": WithBaggage<
+    Baggage,
+    { path: string; ok: boolean; error?: unknown }
+  >;
 
-  "auto:mode": { mode: "shebang" | "eval" };
+  "auto:mode": WithBaggage<Baggage, { mode: "shebang" | "eval" }>;
 };
 
-type ShellKey = keyof ShellBusEvents & string;
-type MaybeArgs<K extends ShellKey> = ShellBusEvents[K] extends void ? []
-  : [ShellBusEvents[K]];
-
-export function shell(init?: {
+export function shell<Baggage = unknown>(init?: {
   cwd?: string;
   env?: Record<string, string | undefined>;
   tmpDir?: string;
   /** Optional, strongly-typed event bus for shell lifecycle */
-  bus?: ReturnType<typeof eventBus<ShellBusEvents>>;
+  bus?: ReturnType<typeof eventBus<ShellBusEvents<Baggage>>>;
 }) {
   const cwd = init?.cwd;
   const env = init?.env;
   const tmpDir = init?.tmpDir;
   const bus = init?.bus;
 
+  type Events = ShellBusEvents<Baggage>;
+  type ShellKey = keyof Events & string;
+  type MaybeArgs<K extends ShellKey> = Events[K] extends void ? []
+    : [Events[K]];
+
   type RunResult = {
     code: number;
     success: boolean;
     stdout: Uint8Array;
     stderr: Uint8Array;
+    baggage?: Baggage;
   };
 
   const emit = <K extends ShellKey>(type: K, ...detail: MaybeArgs<K>): void => {
     if (!bus) return;
-    // Reinterpret `bus.emit` with a compatible generic signature and call it.
     (bus.emit as <T extends ShellKey>(t: T, ...d: MaybeArgs<T>) => boolean)(
       type,
       ...detail,
@@ -98,6 +104,7 @@ export function shell(init?: {
     cmd: string,
     args: readonly string[],
     stdin?: Uint8Array,
+    baggage?: Baggage,
   ): Promise<RunResult> => {
     const argsArr = [...args];
     emit("spawn:start", {
@@ -106,6 +113,7 @@ export function shell(init?: {
       cwd,
       env: cleanEnv(env),
       hasStdin: !!(stdin && stdin.length),
+      baggage,
     });
 
     const started = performance.now();
@@ -138,8 +146,9 @@ export function shell(init?: {
             stdout,
             stderr,
             durationMs,
+            baggage,
           });
-          return { code, success, stdout, stderr };
+          return { code, success, stdout, stderr, baggage };
         } finally {
           try {
             child.kill();
@@ -158,11 +167,12 @@ export function shell(init?: {
           stdout,
           stderr,
           durationMs,
+          baggage,
         });
-        return { code, success, stdout, stderr };
+        return { code, success, stdout, stderr, baggage };
       }
     } catch (error) {
-      emit("spawn:error", { cmd, args: argsArr, error });
+      emit("spawn:error", { cmd, args: argsArr, error, baggage });
       throw error;
     }
   };
@@ -206,23 +216,31 @@ export function shell(init?: {
     return out;
   };
 
-  const spawnArgv = (argv: readonly string[], stdin?: Uint8Array) => {
+  const spawnArgv = (
+    argv: readonly string[],
+    stdin?: Uint8Array,
+    baggage?: Baggage,
+  ) => {
     if (!argv.length) {
       return Promise.resolve<RunResult>({
         code: 0,
         success: true,
         stdout: new Uint8Array(),
         stderr: new Uint8Array(),
+        baggage,
       });
     }
     const [cmd, ...args] = argv;
-    return run(cmd, args, stdin);
+    return run(cmd, args, stdin, baggage);
   };
 
-  const spawnText = (line: string, stdin?: Uint8Array) =>
-    spawnArgv(splitArgvLine(line), stdin);
+  const spawnText = (line: string, stdin?: Uint8Array, baggage?: Baggage) =>
+    spawnArgv(splitArgvLine(line), stdin, baggage);
 
-  const denoTaskEval = async (program: string) => {
+  const denoTaskEval = async (
+    program: string,
+    baggage?: Baggage,
+  ) => {
     const lines = program.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
     const results: Array<
       {
@@ -232,9 +250,13 @@ export function shell(init?: {
     > = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      emit("task:line:start", { index: i, line });
+      emit("task:line:start", { index: i, line, baggage });
       const started = performance.now();
-      const r = await spawnArgv(["deno", "task", "--eval", line]);
+      const r = await spawnArgv(
+        ["deno", "task", "--eval", line],
+        undefined,
+        baggage,
+      );
       const durationMs = performance.now() - started;
       emit("task:line:done", {
         index: i,
@@ -244,41 +266,66 @@ export function shell(init?: {
         stdout: r.stdout,
         stderr: r.stderr,
         durationMs,
+        baggage,
       });
       results.push({ index: i, line, ...r });
     }
     return results;
   };
 
-  const spawnShebang = async (script: string, stdin?: Uint8Array) => {
+  const spawnShebang = async (
+    script: string,
+    stdin?: Uint8Array,
+    baggage?: Baggage,
+  ) => {
     const file = await Deno.makeTempFile({
       dir: tmpDir,
       prefix: "shell-",
     });
-    emit("shebang:tempfile", { path: file });
+    emit("shebang:tempfile", { path: file, script, baggage });
     try {
       await Deno.writeTextFile(file, script);
       await Deno.chmod(file, 0o755);
-      const res = await spawnArgv([file], stdin);
+      const res = await spawnArgv([file], stdin, baggage);
       return res;
     } finally {
       try {
         await Deno.remove(file);
-        emit("shebang:cleanup", { path: file, ok: true });
+        emit("shebang:cleanup", { path: file, ok: true, baggage });
       } catch (error) {
-        emit("shebang:cleanup", { path: file, ok: false, error });
+        emit("shebang:cleanup", { path: file, ok: false, error, baggage });
       }
     }
   };
 
-  const auto = (source: string, stdin?: Uint8Array) => {
+  const auto = <B extends Baggage = Baggage>(
+    source: string,
+    stdin?: Uint8Array,
+    baggage?: B,
+  ) => {
     const first = source.split(/\r?\n/, 1)[0] ?? "";
     if (first.startsWith("#!")) {
-      emit("auto:mode", { mode: "shebang" });
-      return spawnShebang(source, stdin);
+      emit("auto:mode", { mode: "shebang", baggage });
+      return spawnShebang(source, stdin, baggage);
     } else {
-      emit("auto:mode", { mode: "eval" });
-      return denoTaskEval(source);
+      emit("auto:mode", { mode: "eval", baggage });
+      return denoTaskEval(source, baggage);
+    }
+  };
+
+  const strategy = (source: string) => {
+    const linesOfCode = source.split(/\r?\n/, 1);
+    const first = linesOfCode[0] ?? "";
+    if (first.startsWith("#!")) {
+      return { engine: "shebang" as const, label: first, linesOfCode };
+    } else {
+      return {
+        engine: "deno-task" as const,
+        label: `${linesOfCode.length} Deno task${
+          linesOfCode.length > 1 ? "s" : ""
+        }`,
+        linesOfCode,
+      };
     }
   };
 
@@ -289,6 +336,7 @@ export function shell(init?: {
     denoTaskEval,
     auto,
     splitArgvLine,
+    strategy,
   };
 }
 
@@ -300,9 +348,18 @@ export function shell(init?: {
  *
  * Pass the returned `bus` into `shell({ bus })`.
  */
-export function verboseInfoShellEventBus(init: { style: "plain" | "rich" }) {
+export function verboseInfoShellEventBus<Baggage = unknown>(
+  init: {
+    readonly style: "plain" | "rich";
+    readonly emitStdOut?: (
+      event: ShellBusEvents<Baggage>["spawn:done"],
+    ) => boolean;
+  },
+) {
   const fancy = init.style === "rich";
-  const bus = eventBus<ShellBusEvents>();
+  const bus = eventBus<ShellBusEvents<Baggage>>();
+  const te = new TextDecoder();
+  const { emitStdOut } = init;
 
   const E = {
     rocket: "🚀",
@@ -363,13 +420,27 @@ export function verboseInfoShellEventBus(init: { style: "plain" | "rich" }) {
     console.info(line);
   });
 
-  bus.on("spawn:done", ({ cmd, args, code, success, durationMs }) => {
-    const line =
-      `${c.tag("[spawn]")} ${em.done(c.cmd(cmd), success)} ${fmtArgs(args)} ` +
-      (success ? c.ok(`code=${code}`) : c.err(`code=${code}`)) +
-      em.timer(durationMs);
-    console.info(line);
-  });
+  bus.on(
+    "spawn:done",
+    (ev) => {
+      const { cmd, args, code, success, durationMs, stdout, stderr } = ev;
+      if (!emitStdOut || emitStdOut(ev)) {
+        console.info(
+          `${c.tag("[spawn]")} ${em.done(c.cmd(cmd), success)} ${
+            fmtArgs(args)
+          } ` +
+            (success ? c.ok(`code=${code}`) : c.err(`code=${code}`)) +
+            em.timer(durationMs),
+        );
+      }
+      if (stdout.length > 0) {
+        console.info(dim(indent(te.decode(stdout))));
+      }
+      if (stderr.length > 0) {
+        console.info(red(indent(te.decode(stderr))));
+      }
+    },
+  );
 
   bus.on("spawn:error", ({ cmd, args, error }) => {
     const line =
@@ -383,13 +454,19 @@ export function verboseInfoShellEventBus(init: { style: "plain" | "rich" }) {
     console.info(msg);
   });
 
-  bus.on("task:line:done", ({ index, line, code, success, durationMs }) => {
-    const msg = `${c.tag("[task]")} ${em.done(`L${index}`, success)} ` +
-      (success ? c.ok(`code=${code}`) : c.err(`code=${code}`)) +
-      ` ${c.gray(line)}` +
-      em.timer(durationMs);
-    console.info(msg);
-  });
+  bus.on(
+    "task:line:done",
+    ({ index, line, code, success, durationMs }) => {
+      console.info(
+        `${c.tag("[task]")} ${em.done(`L${index}`, success)} ` +
+          (success ? c.ok(`code=${code}`) : c.err(`code=${code}`)) +
+          ` ${c.gray(line)}` +
+          em.timer(durationMs),
+      );
+      // we don't emit stdout and stderr because spawn:done will already
+      // have been called for deno tasks
+    },
+  );
 
   bus.on("shebang:tempfile", ({ path }) => {
     console.info(`${c.tag("[shebang]")} ${em.page("temp")} ${c.path(path)}`);
@@ -430,9 +507,18 @@ export function verboseInfoShellEventBus(init: { style: "plain" | "rich" }) {
  * await sh.spawnText("deno run missing.ts");
  * ```
  */
-export function errorOnlyShellEventBus(init: { style: "plain" | "rich" }) {
+export function errorOnlyShellEventBus<Baggage = unknown>(
+  init: {
+    readonly style: "plain" | "rich";
+    readonly "shebang:tempfile"?: boolean;
+    readonly emitStdOut?: (
+      event: ShellBusEvents<Baggage>["spawn:done"],
+    ) => boolean;
+  },
+) {
   const fancy = init.style === "rich";
-  const bus = eventBus<ShellBusEvents>();
+  const bus = eventBus<ShellBusEvents<Baggage>>();
+  const { emitStdOut } = init;
 
   const E = {
     cross: "❌",
@@ -463,6 +549,13 @@ export function errorOnlyShellEventBus(init: { style: "plain" | "rich" }) {
   }
 
   // ---- listeners ----
+
+  if (init["shebang:tempfile"]) {
+    bus.on("shebang:tempfile", ({ path, script }) => {
+      console.log({ where: "shebang:tempfile", path, script });
+    });
+  }
+
   bus.on("spawn:error", ({ cmd, args, error }) => {
     console.error(
       `${c.tag("[spawn]")} ${em.boom(c.cmd(cmd))} ${args.join(" ")} → ${
@@ -471,27 +564,34 @@ export function errorOnlyShellEventBus(init: { style: "plain" | "rich" }) {
     );
   });
 
-  bus.on("spawn:done", ({ cmd, args, code, success, stderr }) => {
-    if (!success) {
-      console.error(
-        `${c.tag("[spawn]")} ${em.fail(c.cmd(cmd))} ${args.join(" ")} ${
-          c.err(`(code=${code})`)
-        }`,
-      );
-      const msg = decode(stderr);
-      if (msg) console.error(c.err(msg));
-    }
-  });
+  bus.on(
+    "spawn:done",
+    (ev) => {
+      const { cmd, args, code, success, stderr, stdout } = ev;
+      if (!emitStdOut || emitStdOut(ev)) {
+        console.info(decode(stdout));
+      }
+      if (!success) {
+        console.error(
+          `${c.tag("[spawn]")} ${em.fail(c.cmd(cmd))} ${args.join(" ")} ${
+            c.err(`(code=${code})`)
+          }`,
+        );
+        const msg = decode(stderr);
+        if (msg) console.error(c.err(msg));
+      }
+    },
+  );
 
-  bus.on("task:line:done", ({ index, line, code, success, stderr }) => {
+  bus.on("task:line:done", ({ index, line, code, success }) => {
+    // we don't emit stdout and stderr because spawn:done will already
+    // have been called for deno tasks
     if (!success) {
       console.error(
         `${c.tag("[task]")} ${em.fail(`L${index}`)} ${
           c.err(`(code=${code})`)
         } ${c.faint(line)}`,
       );
-      const msg = decode(stderr);
-      if (msg) console.error(c.err(msg));
     }
   });
 

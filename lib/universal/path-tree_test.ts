@@ -4,7 +4,7 @@ import {
   assertEquals,
   assertMatch,
   assertStringIncludes,
-} from "jsr:@std/assert@1";
+} from "@std/assert";
 import { pathTree, pathTreeSerializers } from "./path-tree.ts";
 
 type Node = { path: string; caption: string };

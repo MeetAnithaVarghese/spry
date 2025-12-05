@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "jsr:@std/assert@^1";
+import { assert, assertEquals } from "@std/assert";
 
 // Import the factory under test
 import { eventBus } from "./event-bus.ts";

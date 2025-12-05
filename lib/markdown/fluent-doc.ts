@@ -31,6 +31,7 @@
  * ```
  */
 import { stringify as yamlStringify } from "jsr:@std/yaml@1";
+import { stringifyYamlWithQuotes } from "../universal/text-utils.ts";
 
 export type Eol = "\n" | "\r\n";
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -109,6 +110,19 @@ export class MarkdownDoc {
   raw(...lines: string[]) {
     this.pushTo(this.current, ...lines);
     return this;
+  }
+
+  /** Emit YAML front matter at the top (uses `@std/yaml`). */
+  frontMatterWithQuotes(data: FrontMatter) {
+    const yaml = stringifyYamlWithQuotes(yamlStringify(data).trimEnd());
+    return this.raw("---", yaml, "---", "");
+  }
+
+  /** Emit front matter once; additional calls are no-ops. */
+  frontMatterOnceWithQuotes(data: FrontMatter) {
+    if (this.doc.frontMatterEmitted) return this;
+    this.doc.frontMatterEmitted = true;
+    return this.frontMatterWithQuotes(data);
   }
 
   /** Emit YAML front matter at the top (uses `@std/yaml`). */

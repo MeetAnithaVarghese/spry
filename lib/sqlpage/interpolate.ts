@@ -10,17 +10,167 @@ import {
 import { dedentIfFirstLineBlank } from "../universal/tmpl-literal-aide.ts";
 import { SqlPagePath } from "./content.ts";
 
+/**
+ * Build an unquoted SQLPage template fragment that evaluates to an absolute URL.
+ *
+ * The returned string is an expression (not wrapped in quotes) which uses the
+ * `SQLPAGE_SITE_PREFIX` environment variable when present, falling back to the
+ * provided `path` expression otherwise. Because the fragment is intentionally
+ * unquoted it can be embedded directly into SQLPage templates or SQL snippets
+ * where the template engine will evaluate the expression.
+ *
+ * @param path - A fallback path expression to use when `SQLPAGE_SITE_PREFIX` is
+ *               not defined. Provide a plain expression (not pre-quoted).
+ * @returns A string containing a SQLPage expression that yields the absolute
+ *          URL as an unquoted template fragment.
+ *
+ * Security note:
+ * The function performs direct string interpolation of the provided `path` into
+ * the returned template fragment. Callers must ensure `path` is a safe
+ * expression (or properly escaped) to avoid SQL/template injection.
+ */
 export const absUrlUnquoted = (path: string) =>
-  `(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || ${path})`;
+  `(COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || ${path})`;
 
+/**
+ * Build a quoted SQLPage template fragment that resolves to an absolute URL string.
+ *
+ * The returned string is an expression that yields a single-quoted URL value
+ * when evaluated by the template engine. It prefers the `SQLPAGE_SITE_PREFIX`
+ * environment variable when present and falls back to the provided literal
+ * `path` otherwise. Use this helper when you need a SQL string literal (quoted)
+ * representing the absolute URL.
+ *
+ * @param path - A fallback path literal (e.g. `/foo/bar`). This value is
+ *               inserted as a single-quoted SQL string; if `path` is derived
+ *               from user input callers should escape single quotes by
+ *               doubling them to avoid breaking the surrounding SQL.
+ * @returns A string containing a SQLPage expression that yields the quoted
+ *          absolute URL when evaluated.
+ *
+ * Security note:
+ * Because the `path` is interpolated into a quoted literal, ensure any
+ * dynamic content is safely escaped (single quotes doubled) prior to calling
+ * this function to avoid injection risks.
+ */
 export const absUrlQuoted = (path: string) =>
-  `(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '${path}')`;
+  `(COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || '${path}')`;
 
+/**
+ * Returns a SQLPage template expression that URL-encodes an absolute site-prefixed path.
+ *
+ * The produced string is a template fragment that calls `sqlpage.url_encode` on the value of the
+ * `SQLPAGE_SITE_PREFIX` environment variable, falling back to the provided `path` if the variable
+ * is not set. The expression is intentionally unquoted so it can be embedded directly into
+ * SQLPage templates or SQL snippets where the template engine will evaluate and encode it.
+ *
+ * @param path - Fallback path expression used when `SQLPAGE_SITE_PREFIX` is not defined. Provide a
+ *   path fragment (relative or absolute) as a plain string expression (not pre-quoted).
+ * @returns A string containing a SQLPage expression that, when evaluated, yields the URL-encoded
+ *   absolute URL. The returned string is an unquoted template fragment.
+ */
 export const absUrlUnquotedEncoded = (path: string) =>
-  `sqlpage.url_encode(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || ${path})`;
+  `sqlpage.url_encode(COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || ${path})`;
 
+/**
+ * Generates a SQL expression that constructs an absolute URL by combining the site prefix with a given path.
+ * The result is URL-encoded and quoted for use in SQL queries.
+ *
+ * @param path - The relative path to be appended to the site prefix
+ * @returns A SQL expression string that concatenates the SQLPAGE_SITE_PREFIX environment variable with the provided path,
+ *          and wraps it in a URL encoding function
+ */
 export const absUrlQuotedEncoded = (path: string) =>
-  `sqlpage.url_encode(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || '${path}')`;
+  `sqlpage.url_encode(COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || '${path}')`;
+
+/**
+ * Build a multiline SQL string that produces breadcrumb data for a navigation UI.
+ *
+ * The generated SQL reads breadcrumb data from the auto-generated breadcrumbs.auto.json file
+ * instead of querying database tables. The SQL includes multiple statements:
+ *  - A selector that identifies the component as 'breadcrumb'.
+ *  - A row for the root "Home" breadcrumb.
+ *  - Extraction of breadcrumb trail from the JSON file for the given activePath.
+ *  - A final SELECT that appends the current page as the last breadcrumb entry (unless the activePath is '/').
+ *
+ * Titles are derived from the route's caption or computed from the node basename by removing
+ * the ".sql" suffix, replacing '-' and '_' with spaces, and converting to title case.
+ * Links use the node's path.
+ *
+ * @param activePath - The path of the currently active node (used to look up breadcrumbs in the JSON file
+ *   and as the link value for the final breadcrumb). This value is interpolated into the returned SQL.
+ * @param title - The display title for the final breadcrumb entry. This value is interpolated into the returned SQL.
+ *
+ * @returns A string containing the composed SQL statements that, when executed, yield the breadcrumb component
+ *   and ordered breadcrumb rows.
+ *
+ * Security note:
+ * The function performs direct string interpolation of the provided parameters into SQL. To prevent SQL injection,
+ * callers must ensure inputs are properly sanitized or use safe parameter binding before executing the returned SQL.
+ */
+export function breadcrumbs(
+  activePath = "$page_path",
+  title = "$page_title",
+): string {
+  const escapeSQL = (str: string) => str.replace(/'/g, "''");
+  const escapedPath = escapeSQL(activePath);
+  const escapedTitle = escapeSQL(title);
+
+  const baseQuery = `
+    -- Read breadcrumbs from auto-generated JSON file
+    SET breadcrumbs_json = sqlpage.read_file_as_text('spry.d/auto/route/breadcrumbs.auto.json');
+
+    SELECT 'breadcrumb' AS component;
+
+    -- Home breadcrumb
+    SELECT
+      'Home' as title,
+      '/' as link;
+
+    -- Extract breadcrumb trail for the current path
+    WITH breadcrumb_trail AS (
+      SELECT
+        value AS breadcrumb_item,
+        key AS idx
+      FROM json_each(json_extract($breadcrumbs_json, '$.' || ${escapedPath}))
+    ),
+    breadcrumb_nodes AS (
+      SELECT
+        idx,
+        json_extract(breadcrumb_item, '$.node.path') AS path,
+        json_extract(breadcrumb_item, '$.node.basename') AS basename,
+        json_extract(breadcrumb_item, '$.node.payloads[0].caption') AS caption,
+        json_extract(breadcrumb_item, '$.node.payloads[0].abbreviatedCaption') AS abbreviated_caption
+      FROM breadcrumb_trail
+    )
+    SELECT
+      COALESCE(
+        abbreviated_caption,
+        caption,
+        REPLACE(
+            REPLACE(
+              REPLACE(basename, '.sql', ''),
+              '-', ' '
+            ),
+            '_', ' '
+          )        
+      ) AS title,
+      CASE
+        WHEN path LIKE '%.sql' THEN path
+        ELSE path || '/index.sql'
+      END AS link
+    FROM breadcrumb_nodes
+    ORDER BY CAST(idx AS INTEGER);
+
+    -- Current page breadcrumb (only if not root)
+    SELECT
+      ${escapedTitle} as title,
+      '#' as link
+    WHERE LOWER(${escapedTitle}) <> 'home';
+  `;
+
+  return baseQuery;
+}
 
 /**
  * Generates SQL pagination logic including initialization, debugging variables,
@@ -181,20 +331,20 @@ export const pagination = (
  * --------------
  * markdownLinkFactory(init?: { base?: SQLFrag | false })
  *  - `base`: left **unencoded** and prefixed to all `mdLink()` results
- *     • `undefined` → defaults to `sqlpage.environment_variable('SQLPAGE_SITE_PREFIX')`
+ *     • `undefined` → defaults to `COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '')`
  *     • `false`     → no base (use only encoded URL parts)
  *     • `SQLFrag`   → a custom base expression (verbatim)
  *
  * Usage examples (see unit tests for more)
  * ----------------------------------------
  * ```ts
- * const md = markdownLinkFactory(); // default base = env('SQLPAGE_SITE_PREFIX')
+ * const md = markdownLinkFactory(); // default base = COALESCE(env('SQLPAGE_SITE_PREFIX'), '')
  *
  * // Basic: label is an identifier; URL = literal + identifier (only id encoded)
  * const label = md.cat`${"name"}`;           // → name
  * const url   = md.cat`/p/${"id"}`;          // → ('/p/' || id)
  * md.mdLink(label, url);
- * // → ('[' || name || '](' || sqlpage.environment_variable('SQLPAGE_SITE_PREFIX')
+ * // → ('[' || name || '](' || COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '')
  * //    || '/p/' || sqlpage.url_encode(id) || ')')
  *
  * // Custom base for all links built by this factory
@@ -223,7 +373,7 @@ export function markdownLinkFactory(
   const defaultBase = init?.base === false
     ? ""
     : init?.base === undefined
-    ? "sqlpage.environment_variable('SQLPAGE_SITE_PREFIX')"
+    ? "COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '')"
     : fragToSql(init.base);
 
   // Split top-level a || b || c (respects quotes & parentheses)
@@ -326,59 +476,6 @@ export function markdownLinkFactory(
     getBase: () => defaultBase,
   };
 }
-//   breadcrumbsSQL(
-//     activePath: string,
-//     ...additional: ({ title: string; titleExpr?: never; link?: string } | {
-//       title?: never;
-//       titleExpr: string;
-//       link?: string;
-//     })[]
-//   ) {
-//     return ws.unindentWhitespace(`
-//         SELECT 'breadcrumb' as component;
-//         WITH RECURSIVE breadcrumbs AS (
-//             SELECT
-//                 COALESCE(abbreviated_caption, caption) AS title,
-//                 COALESCE(url, path) AS link,
-//                 parent_path, 0 AS level,
-//                 namespace
-//             FROM sqlpage_aide_navigation
-//             WHERE namespace = 'prime' AND path='${activePath.replaceAll("'", "''")}'
-//             UNION ALL
-//             SELECT
-//                 COALESCE(nav.abbreviated_caption, nav.caption) AS title,
-//                 COALESCE(nav.url, nav.path) AS link,
-//                 nav.parent_path, b.level + 1, nav.namespace
-//             FROM sqlpage_aide_navigation nav
-//             INNER JOIN breadcrumbs b ON nav.namespace = b.namespace AND nav.path = b.parent_path
-//         )
-//         SELECT title ,
-//         ${this.absoluteURL("/")}||link as link
-//         FROM breadcrumbs ORDER BY level DESC;`) +
-//       (additional.length
-//         ? (additional.map((crumb) => `\nSELECT ${crumb.title ? `'${crumb.title}'` : crumb.titleExpr} AS title, '${crumb.link ?? "#"}' AS link;`))
-//         : "");
-//   }
-
-//   /**
-//    * Assume caller's method name contains "path/path/file.sql" format, reflect
-//    * the method name in the call stack and assume that's the path then compute
-//    * the breadcrumbs.
-//    * @param additional any additional crumbs to append
-//    * @returns the SQL for active breadcrumbs
-//    */
-//   activeBreadcrumbsSQL(
-//     ...additional: ({ title: string; titleExpr?: never; link?: string } | {
-//       title?: never;
-//       titleExpr: string;
-//       link?: string;
-//     })[]
-//   ) {
-//     return this.breadcrumbsSQL(
-//       this.sqlPagePathComponents(3)?.path ?? "/",
-//       ...additional,
-//     );
-//   }
 
 /**
  * Assume caller's method name contains "path/path/file.sql" format, reflect

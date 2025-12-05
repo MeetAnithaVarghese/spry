@@ -131,8 +131,8 @@ import {
   Issue,
   MarkdownCell,
   Notebook,
-  remarkProcessor,
-} from "./notebook.ts";
+} from "../governedmd.ts";
+import { remarkProcessor } from "./notebook.ts";
 
 /** Instructions delimiter configuration */
 export type InstructionsDelimiter =

@@ -1,7 +1,7 @@
 import { globToRegExp, isGlob, normalize } from "jsr:@std/path@^1";
 import { z, ZodType } from "jsr:@zod/zod@4";
 import { jsonToZod } from "../../universal/zod-aide.ts";
-import { parsedTextFlags } from "./notebook.ts";
+import { parsedProcessingInstructions } from "./notebook.ts";
 
 /** Render function for partials */
 type InjectContentFn = (
@@ -46,9 +46,9 @@ export const mdFencedBlockPartialSchema = z.object({
 export type FencedBlockPartial = z.infer<typeof mdFencedBlockPartialSchema>;
 
 /**
- * Build a (possibly injectable) Partial from the fenced block’s `info` and `content`.
+ * Build a (possibly injectable) Partial from the fenced block’s `PI` and `content`.
  *
- * Flags parsed from `info` (via parsedTextComponents):
+ * Flags parsed from `PI` (via parsedTextComponents):
  *   --inject <glob>   (repeatable; optional – if absent, the partial is "plain")
  *   --prepend         (optional; if neither --prepend/--append given, default "prepend")
  *   --append          (optional; --prepend + --append => "both")
@@ -60,7 +60,7 @@ export type FencedBlockPartial = z.infer<typeof mdFencedBlockPartialSchema>;
  *   fbPartial("plain_partial", "no injection flags => plain partial");
  */
 export function fbPartialCandidate(
-  pi: ReturnType<typeof parsedTextFlags>,
+  pi: ReturnType<typeof parsedProcessingInstructions>,
   source: string,
   zodSchemaSpec?: Record<string, unknown>,
   init?: {

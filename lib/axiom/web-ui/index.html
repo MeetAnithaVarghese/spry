@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spry Axiom Graphs Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="./index.css" />
+
+    <!-- highlight.js (syntax highlighter) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    ></script>
+
+    <!-- GitHub-style Markdown typography for Spry Content -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown-light.css"
+    />
+  </head>
+
+  <body>
+    <header>
+      <h1>Spry Axiom Graphs Explorer</h1>
+      <div id="header-controls">
+        <label for="document-select">Document:</label>
+        <select id="document-select"></select>
+      </div>
+    </header>
+
+    <main id="layout-grid">
+      <!-- Left: documents + relationships -->
+      <aside id="sidebar-panel">
+        <section id="documents-panel">
+          <h2>Documents</h2>
+          <ul id="document-list"></ul>
+        </section>
+
+        <section id="relationships-panel">
+          <h2>Relationships</h2>
+          <div id="relationship-mode-hint">
+            Hierarchical view for structural relationships; table view for
+            others.
+          </div>
+          <ul id="relationship-list"></ul>
+        </section>
+      </aside>
+
+      <!-- Center: relationship view (tree or table) -->
+      <section id="relationship-view-panel">
+        <div id="relationship-view-header">
+          <div>
+            <h2 id="relationship-title"></h2>
+            <div id="relationship-meta"></div>
+          </div>
+
+          <!-- Controls that only apply in hierarchical mode -->
+          <div id="relationship-controls">
+            <div id="node-type-filter"></div>
+
+            <label class="toggle-checkbox">
+              <input type="checkbox" id="relationship-pills-toggle" />
+              Relationships
+            </label>
+          </div>
+        </div>
+
+        <!-- Hierarchical tree view -->
+        <div id="hierarchy-view">
+          <ul id="hierarchy-root" class="tree-root"></ul>
+        </div>
+
+        <!-- Edge table view (non-hierarchical rels) -->
+        <div id="edge-table-view">
+          <table id="edge-table">
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Draggable resizer between center and right -->
+      <div id="center-right-resizer" aria-hidden="true"></div>
+
+      <!-- Right: node details + Spry Content tabs -->
+      <aside id="details-panel">
+        <!-- Tabs -->
+        <div id="node-tabs" class="node-tabs">
+          <button
+            type="button"
+            class="node-tab-button active"
+            data-tab="properties"
+          >
+            Spry Properties
+          </button>
+          <button type="button" class="node-tab-button" data-tab="content">
+            Spry Content
+          </button>
+        </div>
+
+        <!-- Panes wrapper -->
+        <div id="node-panes-wrapper">
+          <!-- Node Properties pane -->
+          <div id="node-properties-pane" class="node-pane">
+            <section id="node-details" class="node-section">
+              <h2 class="node-section-title">Axiom Node Properties</h2>
+              <table id="node-properties-table">
+                <tbody>
+                  <tr>
+                    <th>Node id</th>
+                    <td id="node-id"></td>
+                  </tr>
+                  <tr>
+                    <th>Node type</th>
+                    <td id="node-type"></td>
+                  </tr>
+                  <tr>
+                    <th>Label</th>
+                    <td id="node-label"></td>
+                  </tr>
+                  <tr>
+                    <th>Relationships</th>
+                    <td id="node-rels"></td>
+                  </tr>
+                  <tr>
+                    <th>Path</th>
+                    <td id="node-path"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="node-mdast" class="node-section">
+              <h2 class="node-section-title">mdast node (JSON)</h2>
+              <div class="node-section-body">
+                <pre
+                  id="node-mdast-json"
+                  class="code-block"
+                >
+<code class="language-json"></code>
+                </pre>
+              </div>
+            </section>
+
+            <section id="node-source" class="node-section">
+              <h2 class="node-section-title">Source code / text</h2>
+              <div id="node-code-header" class="code-header"></div>
+              <div class="node-section-body">
+                <pre
+                  id="node-source-code"
+                  class="code-block"
+                >
+<code class="language-plaintext"></code>
+                </pre>
+              </div>
+            </section>
+          </div>
+
+          <!-- Spry Content pane (Markdown rendered as HTML) -->
+          <div id="spry-content-pane" class="node-pane" hidden>
+            <section id="spry-content-section" class="node-section">
+              <div class="spry-content-header">
+                <h2 class="node-section-title">Spry Content</h2>
+                <label
+                  class="toggle-checkbox spry-content-toggle"
+                  title="Render the entire document instead of just the selected section"
+                >
+                  <input type="checkbox" id="spry-content-show-full" />
+                  Show entire document
+                </label>
+              </div>
+
+              <div
+                id="spry-content-html"
+                class="markdown-body spry-content-root"
+              >
+                <!-- Rendered HTML goes here -->
+              </div>
+            </section>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <span id="footer-left">© <span id="footer-year">2025</span></span>
+      <span id="footer-right">
+        Spry Programmable Markdown · <span id="footer-version">0.1.0</span>
+      </span>
+    </footer>
+
+    <!-- Remark pipeline for Spry Content rendering (Markdown → HTML) -->
+    <script type="module">
+      import { remark } from "https://esm.sh/remark@15?bundle";
+      import remarkHtml from "https://esm.sh/remark-html@16?bundle";
+      import remarkGfm from "https://esm.sh/remark-gfm@4?bundle";
+
+      const processor = remark().use(remarkGfm).use(remarkHtml);
+
+      // Expose a simple global function used by index.js
+      window.SpryRenderMarkdown = async function (markdown) {
+        const file = await processor.process(markdown || "");
+        return String(file);
+      };
+    </script>
+
+    <!-- App -->
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

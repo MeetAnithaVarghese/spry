@@ -6,8 +6,9 @@ import {
   lazyUrlBytesReader,
   relativeUrlAsFsPath,
 } from "../../universal/content-acquisition.ts";
-import { CodeCell, Issue, parsedTextFlags } from "./notebook.ts";
+import { parsedProcessingInstructions } from "./notebook.ts";
 import { Playbook, PlaybookCell } from "./playbook.ts";
+import { CodeCell, Issue } from "../governedmd.ts";
 
 export function isVirtualDirective<
   Provenance,
@@ -151,7 +152,7 @@ export function pseudoCellsGenerator<
    *
    * - Honors `--base` (or `--baseDir`) flags on the source cell
    * - Emits `utf8` cells as **binary references** (with metadata) and others as text
-   * - Fills `parsedInfo` with relative/URL-derived first token and flags:
+   * - Fills `parsedPI` with relative/URL-derived first token and flags:
    *   - `"is-binary"`: boolean hint for downstream emitters
    *   - `import`: original absolute path or URL
    *
@@ -163,8 +164,8 @@ export function pseudoCellsGenerator<
     cell: Extract<PlaybookCell<Provenance, CellAttrs>, { kind: "code" }>,
     pb: Playbook<Provenance, Frontmatter, CellAttrs, I>,
   ) {
-    const suppliedBase = cell.parsedInfo?.flags["base"] ??
-      cell.parsedInfo?.flags["baseDir"];
+    const suppliedBase = cell.parsedPI?.flags["base"] ??
+      cell.parsedPI?.flags["baseDir"];
     let base: string | string[];
     if (!suppliedBase) {
       base = Deno.cwd();
@@ -181,7 +182,7 @@ export function pseudoCellsGenerator<
       const { language, kind } = gd;
       const isBinaryHint = language === "utf8";
 
-      let info: (typeof cell)["info"];
+      let pi: (typeof cell)["pi"];
       let source: (typeof cell)["source"];
       let sourceElaboration: (typeof cell)["sourceElaboration"];
       switch (kind) {
@@ -189,7 +190,7 @@ export function pseudoCellsGenerator<
           {
             const firstToken = relative(gd.baseDir, gd.we.path);
             // deno-fmt-ignore
-            info = `${firstToken} --import ${gd.we.path}${isBinaryHint ? " --is-binary" : ""} ${gd.restParts.join(" ")}`.trim();
+            pi = `${firstToken} --import ${gd.we.path}${isBinaryHint ? " --is-binary" : ""} ${gd.restParts.join(" ")}`.trim();
             source = isBinaryHint ? JSON.stringify(gd) : await gd.asText();
             sourceElaboration = isBinaryHint
               ? {
@@ -210,7 +211,7 @@ export function pseudoCellsGenerator<
           {
             const firstToken = relativeUrlAsFsPath(gd.base, gd.url);
             // deno-fmt-ignore
-            info = `${firstToken} --import ${gd.url}${isBinaryHint ? " --is-binary" : ""} ${gd.restParts.join(" ")}`.trim();
+            pi = `${firstToken} --import ${gd.url}${isBinaryHint ? " --is-binary" : ""} ${gd.restParts.join(" ")}`.trim();
             source = isBinaryHint ? JSON.stringify(gd) : await gd.asText();
             sourceElaboration = isBinaryHint
               ? {
@@ -234,8 +235,8 @@ export function pseudoCellsGenerator<
         attrs: {} as CellAttrs,
         provenance: pb.notebook.provenance,
         source,
-        info,
-        parsedInfo: parsedTextFlags(info),
+        pi: pi,
+        parsedPI: parsedProcessingInstructions(pi),
         sourceElaboration,
         isVirtual: true,
         suppliedBase,

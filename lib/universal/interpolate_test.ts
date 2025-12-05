@@ -1,4 +1,4 @@
-import { assertEquals, assertMatch, assertRejects } from "jsr:@std/assert@^1";
+import { assertEquals, assertMatch, assertRejects } from "@std/assert";
 import { unsafeInterpolator } from "./interpolate.ts";
 
 /**

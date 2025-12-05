@@ -75,7 +75,7 @@
  * - [ ] If your delimiter isn’t "/", did you set `pathDelim`?
  * - [ ] If a file appears to be “missing” in breadcrumbs, remember we show containers, not the file itself.
  */
-import { z } from "jsr:@zod/zod@^4";
+import { z } from "@zod/zod";
 
 // deno-lint-ignore no-explicit-any
 type Any = any; // internal convenience only

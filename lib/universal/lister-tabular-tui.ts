@@ -1,11 +1,4 @@
-import {
-  bold,
-  cyan,
-  gray,
-  green,
-  magenta,
-  yellow,
-} from "jsr:@std/fmt@1/colors";
+import { bold, cyan, gray, green, magenta, yellow } from "@std/fmt/colors";
 
 /* ------------------------------------------------------------------------------------------------
  * Public helpers & shared types
@@ -35,7 +28,7 @@ function stripAnsi(s: string): string {
   return s.replace(/\x1B\[[0-9;]*m/g, "");
 }
 
-type Colorize = (s: string) => string;
+type Colorize<T, V> = (s: string, row: T) => string;
 
 /* ------------------------------------------------------------------------------------------------
  * Column definitions
@@ -54,8 +47,8 @@ export type ColumnDef<T, V> = {
   // Optional comparator for sortBy safety (esp. non-primitives)
   compare?: (a: V, b: V) => number;
   // Coloring
-  defaultColor?: Colorize;
-  rules?: Array<{ when: (val: V, row: T) => boolean; color: Colorize }>;
+  defaultColor?: Colorize<T, V>;
+  rules?: Array<{ when: (val: V, row: T) => boolean; color: Colorize<T, V> }>;
 };
 
 function defaultStringify<V>(v: V): string {
@@ -225,7 +218,7 @@ function colorizeCell<T, V>(
   row: T,
   def: ColumnDef<T, V>,
 ): string {
-  let paint: Colorize | undefined = def.defaultColor;
+  let paint: Colorize<T, V> | undefined = def.defaultColor;
   if (def.rules && def.rules.length) {
     for (const rule of def.rules) {
       if (rule.when(val, row)) {
@@ -234,7 +227,7 @@ function colorizeCell<T, V>(
       }
     }
   }
-  return paint ? paint(text) : text;
+  return paint ? paint(text, row) : text;
 }
 
 function joinCompact(cols: string[]): string {
@@ -362,7 +355,7 @@ export class ListerBuilder<
       compare: cfg.compare,
       defaultColor: cfg.defaultColor,
       rules: cfg.rules as
-        | Array<{ when: (val: V, row: T) => boolean; color: Colorize }>
+        | Array<{ when: (val: V, row: T) => boolean; color: Colorize<T, V> }>
         | undefined,
     };
     this.add(def as unknown as ColumnDef<T, unknown>);

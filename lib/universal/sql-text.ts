@@ -98,6 +98,13 @@ export const hexOfUint8 = (bytes: Uint8Array): string =>
     .join("") +
   "'";
 
+export const hexOfUint8Postgres = (bytes: Uint8Array): string =>
+  "E'\\\\x" +
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("") +
+  "'";
+
 /**
  * Convert a single JS value into a SQL literal string.
  *

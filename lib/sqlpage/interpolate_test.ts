@@ -1,18 +1,18 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { sqlCat, sqlRaw } from "../universal/sql-text.ts";
-import { markdownLinkFactory } from "./interpolate.ts";
+import { breadcrumbs, markdownLinkFactory } from "./interpolate.ts";
 
 Deno.test("markdownLinkFactory — basics", async (t) => {
   await t.step(
     "default base: base unencoded; ONLY non-literal url parts encoded",
     () => {
-      const md = markdownLinkFactory({ url_encode: "sqlpage" }); // base = SQLPAGE_SITE_PREFIX (unencoded)
+      const md = markdownLinkFactory({ url_encode: "sqlpage" }); // base = COALESCE(SQLPAGE_SITE_PREFIX, '') (unencoded)
       const text = sqlCat`${"label"}`; // → label
       const url = sqlCat`/details?id=${"id"}`; // → ('/details?id=' || id)
 
       const got = md.link(text, url);
       const expect = "('[' || label || '](' || " +
-        "sqlpage.environment_variable('SQLPAGE_SITE_PREFIX') || " +
+        "COALESCE(sqlpage.environment_variable('SQLPAGE_SITE_PREFIX'), '') || " +
         "'/details?id=' || sqlpage.url_encode(id) || ')')";
 
       assertEquals(got, expect);
@@ -104,4 +104,95 @@ Deno.test("markdownLinkFactory — basics", async (t) => {
       "'/p?id=' || sqlpage.url_encode(pid) || '&d=' || sqlpage.url_encode(dept) || ')')";
     assertEquals(got, expect);
   });
+});
+
+Deno.test("breadcrumbs — JSON-based breadcrumbs", async (t) => {
+  await t.step("generates SQL that reads from breadcrumbs.auto.json", () => {
+    const sql = breadcrumbs("scf/controls.sql", "Controls Library");
+
+    // Should read from JSON file first (SET statement before SELECT)
+    assertStringIncludes(
+      sql,
+      "SET breadcrumbs_json = sqlpage.read_file_as_text('spry.d/auto/route/breadcrumbs.auto.json')",
+    );
+
+    // Should include breadcrumb component
+    assertStringIncludes(sql, "SELECT 'breadcrumb' AS component");
+
+    // Should include Home breadcrumb
+    assertStringIncludes(sql, "'Home' as title");
+    assertStringIncludes(sql, "'/' as link");
+
+    // Should extract breadcrumb trail using json_each with concatenated path
+    assertStringIncludes(
+      sql,
+      "json_each(json_extract($breadcrumbs_json, '$.' || scf/controls.sql))",
+    );
+
+    // Should include current page breadcrumb with title (no quotes around variable)
+    assertStringIncludes(sql, "Controls Library as title");
+
+    // Current page should have '#' as link
+    assertStringIncludes(sql, "'#' as link");
+
+    // Should filter out 'home' title (case-insensitive)
+    assertStringIncludes(sql, "WHERE LOWER(Controls Library) <> 'home'");
+  });
+
+  await t.step("escapes SQL special characters in path and title", () => {
+    const sql = breadcrumbs("path/with'quote.sql", "Title with 'quotes'");
+
+    // Single quotes should be escaped (doubled)
+    assertStringIncludes(sql, "path/with''quote.sql");
+    assertStringIncludes(sql, "Title with ''quotes''");
+  });
+
+  await t.step("filters out 'Home' title in current page breadcrumb", () => {
+    const sql = breadcrumbs("/", "Home");
+
+    // Should have WHERE clause to exclude 'home' (case-insensitive)
+    assertStringIncludes(sql, "WHERE LOWER(Home) <> 'home'");
+
+    // This means "Home" title will be filtered out
+  });
+
+  await t.step(
+    "current page breadcrumb uses '#' as link instead of actual path",
+    () => {
+      const sql = breadcrumbs("some/path.sql", "Page Title");
+
+      // Current page should use '#' as link (not the actual path)
+      assertStringIncludes(sql, "'#' as link");
+
+      // Should not include url_encode in the current page breadcrumb section
+      const currentPageSection = sql.split("-- Current page breadcrumb")[1];
+      assertEquals(currentPageSection?.includes("sqlpage.url_encode"), false);
+    },
+  );
+
+  await t.step(
+    "uses COALESCE for title priority: abbreviated > caption > computed",
+    () => {
+      const sql = breadcrumbs("some/path.sql", "Page Title");
+
+      // Should prioritize abbreviated_caption, then caption, then computed from basename
+      assertStringIncludes(sql, "COALESCE");
+      assertStringIncludes(sql, "abbreviated_caption");
+      assertStringIncludes(sql, "caption");
+      assertStringIncludes(sql, "REPLACE(basename, '.sql', '')");
+    },
+  );
+
+  await t.step(
+    "JSON path uses concatenation instead of string interpolation",
+    () => {
+      const sql = breadcrumbs("test/page.sql", "Test Page");
+
+      // Should use '$.' || path instead of '$."path"'
+      assertStringIncludes(sql, "'$.' || test/page.sql");
+
+      // Should not have quotes around the path in JSON extract
+      assertEquals(sql.includes('$."test/page.sql"'), false);
+    },
+  );
 });

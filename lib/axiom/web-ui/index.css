@@ -1,0 +1,638 @@
+/* Basic reset / layout */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111827;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header / footer */
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+#header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#header-controls label {
+  font-size: 0.9rem;
+}
+
+#document-select {
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+}
+
+footer {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Main layout grid */
+
+main#layout-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* Left | Center (resizable) | Gutter | Right (fills remaining space) */
+  grid-template-columns: 260px var(--center-width, 1fr) 6px minmax(260px, 1fr);
+  column-gap: 0;
+  background-color: #f9fafb;
+}
+
+/* Sidebar (left) */
+
+#sidebar-panel {
+  border-right: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  overflow: auto;
+  background-color: #fdfdfd;
+}
+
+#sidebar-panel section {
+  margin-bottom: 1rem;
+}
+
+#sidebar-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+/* Documents list */
+
+#document-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.document-item {
+  margin-bottom: 0.25rem;
+}
+
+.document-button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background-color: #f3f4f6;
+  color: #111827;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.document-item.selected .document-button {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Relationships list */
+
+#relationships-panel #relationship-mode-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+#relationship-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.relationship-item {
+  margin-bottom: 0.25rem;
+}
+
+.relationship-button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.4rem;
+  border: none;
+  background-color: #e5e7eb;
+  color: #111827;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.relationship-item.selected .relationship-button {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.relationship-button .rel-name {
+  font-weight: 500;
+}
+
+.relationship-button .rel-count {
+  font-size: 0.75rem;
+}
+
+/* Center relationship panel */
+
+#relationship-view-panel {
+  padding: 0.75rem;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background-color: #ffffff;
+}
+
+/* Tree + table views should each be able to occupy full remaining height */
+#hierarchy-view,
+#edge-table-view {
+  flex: 1 1 auto;
+  min-height: 0; /* allow them to shrink inside flex container */
+  overflow: auto; /* scroll inside these panes */
+}
+
+#relationship-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex: 0 0 auto;
+}
+
+#relationship-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+#relationship-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+#relationship-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.toggle-checkbox {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Node type filter chips */
+
+#node-type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+}
+
+#node-type-filter > span:first-child {
+  margin-right: 0.25rem;
+}
+
+.node-type-chip {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  padding: 0.1rem 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.node-type-chip.selected {
+  background-color: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.node-type-chip input[type="checkbox"] {
+  margin: 0;
+}
+
+/* Hierarchy tree */
+
+#hierarchy-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  margin-bottom: 0.5rem;
+}
+
+.tree-root {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.tree-node {
+  margin: 0.1rem 0;
+}
+
+.tree-node-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.2rem;
+}
+
+.tree-node.selected > .tree-node-header {
+  background-color: #dbeafe;
+}
+
+.tree-node-toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+  width: 1.2rem;
+}
+
+.tree-node-label {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.tree-level-0 .tree-node-header {
+  font-weight: 600;
+}
+
+.tree-children {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0.1rem 0;
+}
+
+/* Relationship pills on tree nodes */
+
+.tree-node-badges {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.rel-badge {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+/* Category-based classes */
+.rel-badge-structural {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.rel-badge-frontmatter {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.rel-badge-dependency {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.rel-badge-task {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.rel-badge-important {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.rel-badge-role {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.rel-badge-other {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Edge table view */
+
+#edge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#edge-table th,
+#edge-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.25rem 0.35rem;
+  text-align: left;
+}
+
+.node-link {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.node-link.selected {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Resizer */
+
+#center-right-resizer {
+  cursor: col-resize;
+  background-color: #e5e7eb;
+}
+
+/* Right details panel */
+
+#details-panel {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background-color: #ffffff;
+}
+
+/* Tabs */
+
+.node-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+.node-tab-button {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: #4b5563;
+}
+
+.node-tab-button.active {
+  border-bottom-color: #2563eb;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Panes wrapper fills right pane */
+
+#node-panes-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.node-pane[hidden] {
+  display: none;
+}
+
+/* Node sections */
+
+.node-section {
+  margin-bottom: 1rem;
+}
+
+.node-section-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.node-section-body {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  background-color: #f9fafb;
+  overflow: auto;
+}
+
+/* Node properties table */
+
+#node-properties-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#node-properties-table th,
+#node-properties-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.2rem 0.35rem;
+}
+
+#node-properties-table th {
+  width: 30%;
+  text-align: left;
+  color: #6b7280;
+}
+
+/* Code blocks */
+
+.code-block {
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.code-block code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+/* Code header line above source */
+
+#node-code-header {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  white-space: pre;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background-color: #fefefe;
+}
+
+#node-source .node-section-body {
+  border-radius: 0 0 0.25rem 0.25rem;
+  border-top: none;
+}
+
+#node-code-header .code-header {
+  font-family: inherit;
+}
+
+#node-code-header .lang {
+  font-weight: 600;
+  color: #000000;
+}
+
+#node-code-header .meta {
+  font-weight: 400;
+  color: #2563eb;
+}
+
+/* Spry Content / Markdown */
+
+#spry-content-pane {
+  padding: 0.25rem 0;
+}
+
+#spry-content-html.markdown-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0.5rem 0 1.75rem;
+  font-size: 0.9rem;
+}
+
+.spry-content-empty,
+.spry-content-loading,
+.spry-content-error {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.spry-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.spry-content-toggle {
+  font-size: 0.8rem;
+}
+
+/* Selected section highlight in Spry Content */
+
+#spry-selected-node,
+.spry-node-selected {
+  background: linear-gradient(
+    to right,
+    rgba(255, 243, 205, 0.95),
+    rgba(255, 243, 205, 0.1)
+  );
+  padding: 0.1rem 0.2rem;
+  border-radius: 0.2rem;
+}
+
+.spry-section-selected {
+  scroll-margin-top: 8px;
+}
+
+/* Scrollbars */
+
+#sidebar-panel,
+#relationship-view-panel,
+#hierarchy-view,
+#edge-table-view,
+#details-panel,
+.node-pane,
+.node-section-body {
+  scrollbar-width: thin;
+}
+
+/* Responsive */
+
+@media (max-width: 1024px) {
+  main#layout-grid {
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "sidebar center"
+      "sidebar right";
+  }
+
+  #sidebar-panel {
+    grid-area: sidebar;
+  }
+
+  #relationship-view-panel {
+    grid-area: center;
+  }
+
+  #center-right-resizer {
+    display: none;
+  }
+
+  #details-panel {
+    grid-area: right;
+  }
+}

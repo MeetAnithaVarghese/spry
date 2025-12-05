@@ -47,7 +47,7 @@
  * ```
  */
 
-import { z } from "jsr:@zod/zod@4";
+import { z } from "@zod/zod";
 import { eventBus } from "./event-bus.ts";
 
 /* ────────────────────────────────────────────────────────────────────────── */

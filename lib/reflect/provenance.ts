@@ -9,7 +9,7 @@
  *   instead of a brittle string.
  * - Prefer **V8 structured frames** (`Error.prepareStackTrace`) when available; fall back to
  *   parsing `Error.stack` as a string.
- * - **Never throw**: when info can’t be determined, a `reason` field is set.
+ * - **Never throw**: when PI can’t be determined, a `reason` field is set.
  * - Works well in tests via an injectable **`stackProvider`**.
  *
  * ## Typical usage

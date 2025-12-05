@@ -1,5 +1,4 @@
-import { assert } from "jsr:@std/assert@1.0.6";
-import { assertEquals } from "jsr:@std/assert@^1";
+import { assert, assertEquals } from "@std/assert";
 import {
   block,
   ifElse,

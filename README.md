@@ -122,6 +122,22 @@ Spry parses each fenced code block in `Spryfile.md`, validates its directives,
 and materializes them as executable workflows — all type-safe via TypeScript and
 Zod.
 
+To access Spry scripts from a remote folder, you need to specify an import_map
+file along with the executable script. You can use the remote link as shown
+below:
+
+```bash
+deno run -A --import-map=https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/import_map.json https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/lib/runbook.ts help
+```
+
+Or download the import_map.json file first and then run the script using the
+local file:
+
+```bash
+curl -o import_map.json https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/import_map.json
+deno run -A --import-map=import_map.json https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/lib/runbook.ts help
+```
+
 ### Next Steps
 
 - Explore [`Spryfile.md`](support/assurance/scf/Spryfile.md) to understand how
