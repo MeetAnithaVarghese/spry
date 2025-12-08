@@ -164,7 +164,7 @@ levels.
 
 @id TC-CLASSIFY-0001
 
-```yaml HFM
+```yaml HFM --not-directive --descr "Don't treat as a directive"
 doc-classify:
   role: case
 requirementID: REQ-CLASSIFY-001

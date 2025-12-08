@@ -17,6 +17,7 @@ import { z } from "@zod/zod";
 import type { Node, Root, RootContent } from "types/mdast";
 import type { Plugin } from "unified";
 import type { VFile } from "vfile";
+import { safeInterpolate } from "../../interpolate/safe.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -61,6 +62,14 @@ export interface DocumentFrontmatterOptions<FM extends Dict = Dict> {
   readonly schema?: z.ZodType<FM, Any, Any>;
   // If true, remove the YAML block from tree.children after parsing
   readonly removeYamlNode?: boolean;
+  // after loading frontmatter and before assignign to doc, interpolate
+  readonly interpolate?:
+    | true
+    | (<Context>() => {
+      contextKeyName: "project" | string;
+      context: Context;
+      locals: Record<string, unknown>;
+    });
 }
 
 function isObject(value: unknown): value is Dict {
@@ -70,80 +79,91 @@ function isObject(value: unknown): value is Dict {
 /**
  * Plugin implementation.
  */
-export const documentFrontmatter: Plugin<
-  [DocumentFrontmatterOptions?],
-  Root
-> = function documentFrontmatterPlugin(options?: DocumentFrontmatterOptions) {
-  return function transform(tree: Root, file?: VFile): void {
-    const yamlIndex = tree.children.findIndex(
-      (n): n is Extract<RootContent, { type: "yaml" }> => n.type === "yaml",
-    );
+export const documentFrontmatter: Plugin<[DocumentFrontmatterOptions?], Root> =
+  function documentFrontmatterPlugin(options?: DocumentFrontmatterOptions) {
+    return function transform(tree: Root, file?: VFile): void {
+      const yamlIndex = tree.children.findIndex(
+        (n): n is Extract<RootContent, { type: "yaml" }> => n.type === "yaml",
+      );
 
-    if (yamlIndex < 0) return;
+      if (yamlIndex < 0) return;
 
-    const yamlNode = tree.children[yamlIndex] as Extract<
-      RootContent,
-      { type: "yaml" }
-    >;
+      const yamlNode = tree.children[yamlIndex] as Extract<
+        RootContent,
+        { type: "yaml" }
+      >;
 
-    const raw = typeof yamlNode.value === "string" ? yamlNode.value : "";
-    let yamlErr: Error | undefined;
-    let parsedYaml: unknown = {};
+      let rawFM = typeof yamlNode.value === "string" ? yamlNode.value : "";
+      if (rawFM && rawFM.length > 0 && options?.interpolate) {
+        if (typeof options.interpolate === "boolean") {
+          rawFM = safeInterpolate(rawFM, { env: Deno.env.toObject() });
+        } else {
+          const iu = options.interpolate();
+          rawFM = safeInterpolate(rawFM, {
+            [iu.contextKeyName]: iu.context, // fully custom, can be anything passed from project init location
+            env: Deno.env.toObject(),
+            ...iu.locals,
+          });
+        }
+      }
 
-    try {
-      parsedYaml = YAMLparse(raw);
-      if (!isObject(parsedYaml)) {
+      let yamlErr: Error | undefined;
+      let parsedYaml: unknown = {};
+
+      try {
+        parsedYaml = YAMLparse(rawFM);
+        if (!isObject(parsedYaml)) {
+          parsedYaml = {};
+        }
+      } catch (err) {
+        yamlErr = err instanceof Error ? err : new Error(String(err));
         parsedYaml = {};
       }
-    } catch (err) {
-      yamlErr = err instanceof Error ? err : new Error(String(err));
-      parsedYaml = {};
-    }
 
-    type FM = Dict;
+      type FM = Dict;
 
-    let fm: FM = parsedYaml as FM;
+      let fm: FM = parsedYaml as FM;
 
-    const schema = options?.schema as z.ZodType<FM> | undefined;
+      const schema = options?.schema as z.ZodType<FM> | undefined;
 
-    // This will always be defined when a schema is supplied (even if it fails)
-    let zodParseResult: z.ZodSafeParseResult<FM> | undefined;
+      // This will always be defined when a schema is supplied (even if it fails)
+      let zodParseResult: z.ZodSafeParseResult<FM> | undefined;
 
-    if (schema) {
-      const result = schema.safeParse(parsedYaml);
-      zodParseResult = result;
-      if (result.success) {
-        fm = result.data as FM;
+      if (schema) {
+        const result = schema.safeParse(parsedYaml);
+        zodParseResult = result;
+        if (result.success) {
+          fm = result.data as FM;
+        }
       }
-    }
 
-    const parsedFM: ParsedFrontmatter<FM> = {
-      fm,
-      ...(yamlErr ? { yamlErr } : null),
-      ...(schema ? { zodParseResult } : null),
+      const parsedFM: ParsedFrontmatter<FM> = {
+        fm,
+        ...(yamlErr ? { yamlErr } : null),
+        ...(schema ? { zodParseResult } : null),
+      };
+
+      // Attach to yaml node
+      const nodeData = (yamlNode.data ??= {} as Dict);
+      (nodeData as Any).parsedFM = parsedFM;
+
+      docFrontmatterDataBag.attach(tree, {
+        node: yamlNode as YamlWithParsedFrontmatter<FM>,
+        parsed: parsedFM,
+      });
+
+      // Also expose plain fm via VFile for ecosystem compatibility
+      if (file) {
+        const fdata = (file.data ??= {} as Dict);
+        // just the fm object, not the full parsedFM
+        (fdata as Any).frontmatter = fm;
+      }
+
+      // Optionally remove the YAML node itself from the AST
+      if (options?.removeYamlNode) {
+        tree.children.splice(yamlIndex, 1);
+      }
     };
-
-    // Attach to yaml node
-    const nodeData = (yamlNode.data ??= {} as Dict);
-    (nodeData as Any).parsedFM = parsedFM;
-
-    docFrontmatterDataBag.attach(tree, {
-      node: yamlNode as YamlWithParsedFrontmatter<FM>,
-      parsed: parsedFM,
-    });
-
-    // Also expose plain fm via VFile for ecosystem compatibility
-    if (file) {
-      const fdata = (file.data ??= {} as Dict);
-      // just the fm object, not the full parsedFM
-      (fdata as Any).frontmatter = fm;
-    }
-
-    // Optionally remove the YAML node itself from the AST
-    if (options?.removeYamlNode) {
-      tree.children.splice(yamlIndex, 1);
-    }
   };
-};
 
 export default documentFrontmatter;

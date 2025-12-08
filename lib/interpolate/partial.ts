@@ -155,11 +155,16 @@ export interface PartialContentInit<Locals> {
  *
  * @template Locals shape of the `locals` object accepted by this partial
  */
-export interface PartialContent<Locals = Record<string, unknown>> {
+export interface PartialContent<
+  Locals = Record<string, unknown>,
+  Provenance = unknown,
+> {
   /** Unique name for this fragment. */
   readonly identity: string;
   /** Original text content of the fragment. */
   readonly source: string;
+  /** Where the source came from (mdast node, etc.) */
+  readonly provenance: Provenance;
   /**
    * Optional Zod schema used to validate `locals`.
    * May have been provided directly or derived from `schemaSpec`.
@@ -329,11 +334,15 @@ function buildInjectionConfig(init: InjectionInit): InjectionConfig {
  * @param source raw text content of the fragment
  * @param init optional schema and injection configuration
  */
-export function partialContent<Locals = Record<string, unknown>>(
+export function partialContent<
+  Locals = Record<string, unknown>,
+  Provenance = unknown,
+>(
   identity: string,
   source: string,
+  provenance: Provenance,
   init: PartialContentInit<Locals> = {},
-): PartialContent<Locals> {
+): PartialContent<Locals, Provenance> {
   const { schema: providedSchema, schemaSpec, inject, strictArgs = true } =
     init;
 
@@ -439,6 +448,7 @@ export function partialContent<Locals = Record<string, unknown>>(
     schemaSpec: normalizedSpec,
     content,
     injection,
+    provenance,
   };
 }
 
@@ -448,11 +458,15 @@ export function partialContent<Locals = Record<string, unknown>>(
  *
  * @template Locals shape of the locals object
  */
-export function createPlainPartial<Locals = Record<string, unknown>>(
+export function createPlainPartial<
+  Locals = Record<string, unknown>,
+  Provenance = unknown,
+>(
   identity: string,
   source: string,
-): PartialContent<Locals> {
-  return partialContent<Locals>(identity, source);
+  provenance: Provenance,
+): PartialContent<Locals, Provenance> {
+  return partialContent<Locals, Provenance>(identity, source, provenance);
 }
 
 /**
@@ -460,12 +474,18 @@ export function createPlainPartial<Locals = Record<string, unknown>>(
  *
  * @template Locals shape of the locals object
  */
-export function createInjectablePartial<Locals = Record<string, unknown>>(
+export function createInjectablePartial<
+  Locals = Record<string, unknown>,
+  Provenance = unknown,
+>(
   identity: string,
   source: string,
+  provenance: Provenance,
   inject: InjectionInit,
-): PartialContent<Locals> {
-  return partialContent<Locals>(identity, source, { inject });
+): PartialContent<Locals, Provenance> {
+  return partialContent<Locals, Provenance>(identity, source, provenance, {
+    inject,
+  });
 }
 
 /**

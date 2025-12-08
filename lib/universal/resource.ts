@@ -180,12 +180,10 @@ export const tryParseHttpUrl = (path: string): URL | undefined => {
   }
 };
 
-export async function* createResourcesForProvenance<
+export function provenanceResource<
   P extends ResourceProvenance,
   S extends ResourceStrategy = ResourceStrategy,
->(
-  origProv: P,
-): AsyncGenerator<Resource<P, S>, void, unknown> {
+>(origProv: P) {
   // Ensure mimeType is set if we can infer it.
   const mime = origProv.mimeType ?? detectMimeFromPath(origProv.path);
   const prov =
@@ -273,7 +271,7 @@ export async function* createResourcesForProvenance<
     reader,
   };
 
-  yield resource;
+  return resource;
 }
 
 /**
@@ -356,13 +354,13 @@ export async function* strategies<
             ...prov,
             path: entry.path as ResourcePath,
           };
-          yield* createResourcesForProvenance<P, S>(childProv);
+          yield provenanceResource<P, S>(childProv);
         }
         continue;
       }
     }
 
-    yield* createResourcesForProvenance<P, S>(prov);
+    yield provenanceResource<P, S>(prov);
   }
 }
 

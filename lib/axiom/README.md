@@ -77,6 +77,8 @@ Axiom is built for:
 
 ## How Spry Processing Works
 
+See [Spry Nodes Taxonomy](taxonomy.md).
+
 ### unist → the universal syntax tree
 
 - What it is: A generic tree model for representing any structured text.

@@ -335,6 +335,7 @@ Deno.test("unsafeInterpFactory", async (t) => {
       >(
         "greet",
         "Hello ${name}! extra=${safeJsonStringify(extra)}",
+        undefined,
       );
 
       partials.register(greet);

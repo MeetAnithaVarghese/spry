@@ -34,8 +34,8 @@ import {
 
 export type ImportPlaceholder = {
   readonly isImportPlaceholder: true;
-  readonly provenance: CodeImportSpecProvenance;
-  readonly isBinaryHint: boolean;
+  readonly importSpecProvenance: CodeImportSpecProvenance;
+  readonly isImportSpecBinaryHint: boolean;
 };
 
 export function isImportPlaceholder(

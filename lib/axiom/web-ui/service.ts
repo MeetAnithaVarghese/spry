@@ -49,9 +49,9 @@ export async function serve(args: {
     : watchCandidates;
 
   watchTargets.push(
-    ...["index.html", "index.css", "index.js"].map((f) =>
-      fromFileUrl(new URL(`./${f}`, import.meta.url))
-    ),
+    ...["index.html", "index.css", "index.js"].filter((f) =>
+      !(new URL(`./${f}`, import.meta.url).protocol.startsWith("http"))
+    ).map((f) => fromFileUrl(new URL(`./${f}`, import.meta.url))),
   );
 
   // Live-reload clients via Server-Sent Events

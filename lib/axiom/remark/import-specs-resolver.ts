@@ -27,6 +27,7 @@ import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
 import { safeInterpolate } from "../../interpolate/safe.ts";
 import { relativeUrlAsFsPath } from "../../universal/content-acquisition.ts";
+import { onlyDirectiveCandidateRegEx } from "../../universal/directive.ts";
 import {
   flexibleTextSchema,
   instructionsFromText,
@@ -264,13 +265,25 @@ export function* prepareCodeNodes(specs: CodeImport) {
       lineNumInRawInstructions: pathLine,
     } = provenance;
     const rest = sd.provenance.ir.pi.args.slice(2);
+    const directives: string[] = [];
     let meta: string[];
 
+    // if a directive like PARTIAL or HEAD is found, put at the start of line
+    if (rest.length > 0 && onlyDirectiveCandidateRegEx.test(rest[0])) {
+      directives.push(rest.shift()!);
+    }
+
     if (strategy.target === "local-fs") {
-      meta = [relative(base, path), "--import", path, ...rest];
+      meta = [...directives, relative(base, path), "--import", path, ...rest];
     } else {
       const url = strategy.url?.toString() ?? path;
-      meta = [relativeUrlAsFsPath(base, url), "--import", url, ...rest];
+      meta = [
+        ...directives,
+        relativeUrlAsFsPath(base, url),
+        "--import",
+        url,
+        ...rest,
+      ];
     }
 
     const position = specs.position
@@ -289,8 +302,8 @@ export function* prepareCodeNodes(specs: CodeImport) {
       value: `import placeholder: ${specs.lang} ${specs.meta}`,
       // Optional position mapping approximate to spec line:
       position: position ? { start: position, end: position } : undefined,
-      provenance,
-      isBinaryHint: language === "utf8" ||
+      importSpecProvenance: provenance,
+      isImportSpecBinaryHint: language === "utf8" ||
         (provenance.ppiq.getFlag("is-binary", "binary", "bin") ?? false),
     };
 
@@ -353,7 +366,7 @@ function defaultIsSpecBlock(code: Code) {
  *       • importable: per-line provenance records
  *
  * Downstream plugin:
- *   The companion plugin `insertCodeImportNodes` (from code-insert.ts)
+ *   The companion plugin `insertImportPlaceholders` (from import-placeholders-generator.ts)
  *   consumes `importSpecs` and actually generates + inserts new nodes.
  */
 export const resolveImportSpecs: Plugin<[CodeImportOptions?], Root> = (

@@ -12,6 +12,7 @@
     "@zod/zod": "jsr:@zod/zod@4",
     "json5": "npm:json5@^2",
     "@david/dax": "jsr:@david/dax@0.44.0",
+    "@gabriel/ts-pattern": "jsr:@gabriel/ts-pattern^5",
     "@cliffy/command": "jsr:@cliffy/command@1.0.0-rc.8",
     "@cliffy/command/completions": "jsr:@cliffy/command@1.0.0-rc.8/completions",
     "@cliffy/command/help": "jsr:@cliffy/command@1.0.0-rc.8/help",

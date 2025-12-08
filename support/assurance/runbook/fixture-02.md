@@ -10,6 +10,10 @@ echo "task-2 successful"
 echo "this is the newLocal in test-partial: ${newLocal}"
 ```
 
+```bash PARTIAL --not-directive --descr "Ignore PARTIAL as a directive"
+echo "the name of this task is PARTIAL because --not-directive was passed"
+```
+
 The `-I` (or `--interpolate` will allow the task to be interpolated by Spry)
 
 ```bash task-3 -I --descr "Another demo task"
@@ -23,7 +27,7 @@ ${await partial("test-partial", { newLocal: "passed from task-3"})}
 
 ```bash task-4 --interpolate --descr "Another demo task"
 #!/usr/bin/env -S cat
-echo "task: ${SELF.task.identity}"
+echo "task: ${SELF.task.spawnableIdentity}"
 
 # partial 1 (error): ${await partial("non-existent")}
 

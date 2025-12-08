@@ -41,30 +41,30 @@ import {
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 
-import { type PartialCollection } from "../../interpolate/partial.ts";
-import {
-  unsafeInterpFactory,
-  UnsafeInterpolationResult,
-} from "../../interpolate/unsafe.ts";
 import {
   captureFactory,
   CaptureSpec,
   gitignorableOnCapture,
 } from "../../interpolate/capture.ts";
+import { type PartialCollection } from "../../interpolate/partial.ts";
+import {
+  unsafeInterpFactory,
+  UnsafeInterpolationResult,
+} from "../../interpolate/unsafe.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { shell } from "../../universal/shell.ts";
 import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../../universal/task-visuals.ts";
-import { runbooksFromFiles, RunnableTask } from "../projection/runbook.ts";
+import { ExecutableTask, playbooksFromFiles } from "../projection/playbook.ts";
 import * as axiomCLI from "./cli.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
 
 export function executeTasksFactory<
-  T extends RunnableTask,
+  T extends ExecutableTask,
   Context extends { readonly runId: string },
   FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
 >(
@@ -77,7 +77,7 @@ export function executeTasksFactory<
   const td = new TextDecoder();
 
   const cf = captureFactory<
-    RunnableTask,
+    ExecutableTask,
     {
       readonly interpResult: UnsafeInterpolationResult;
       readonly execResult?: Awaited<
@@ -86,7 +86,7 @@ export function executeTasksFactory<
     }
   >({
     isCapturable: (task) =>
-      task.args.capture.length ? task.args.capture : false,
+      task.spawnableArgs.capture.length ? task.spawnableArgs.capture : false,
     prepareCaptured: (op) => {
       const text = () => {
         if (op.execResult) {
@@ -114,15 +114,23 @@ export function executeTasksFactory<
   const sh = shell({ bus: opts?.shellBus });
   const { interpolateUnsafely } = unsafeInterp;
 
+  const te = new TextEncoder();
   const execute = async (plan: TaskExecutionPlan<T>) =>
     await executeDAG(plan, async (task, ctx) => {
       const interpResult = await interpolateUnsafely({
         task,
         source: task.value,
-        interpolate: task.args.interpolate,
+        interpolate: task.spawnableArgs.interpolate,
       });
       if (interpResult.status) {
-        const execResult = await sh.auto(interpResult.source, undefined, task);
+        const execResult = task.captureOnly
+          ? { // could be "env", "envrc" or other "output-only" tasks
+            code: 0,
+            success: true,
+            stdout: te.encode(interpResult.source),
+            stderr: new Uint8Array(),
+          }
+          : await sh.auto(interpResult.source, undefined, task);
         await capture(task, { interpResult, execResult });
         return ok(ctx);
       } else {
@@ -142,13 +150,18 @@ export type LsTaskRow = {
   code: Code;
   name: string;
   origin: string;
-  engine: ReturnType<ReturnType<typeof shell>["strategy"]>;
+  engine: ReturnType<ReturnType<typeof shell>["strategy"]> | {
+    engine: "capture-only";
+    label: "Capture Only";
+    linesOfCode: string[];
+  };
   descr: string;
   deps?: string;
   flags: {
     isInterpolated: boolean;
     isSilent: boolean;
     isCaptured: CaptureSpec | false;
+    isCaptureOnly: boolean;
     isGitIgnored: boolean;
     hasIssues: boolean;
   };
@@ -207,6 +220,8 @@ function lsCmdEngineField<Row extends LsTaskRow>(): Partial<
           return green(v.label);
         case "deno-task":
           return cyan(v.label);
+        case "capture-only":
+          return gray(v.label);
       }
     },
   };
@@ -218,11 +233,11 @@ export enum VerboseStyle {
   Markdown = "markdown",
 }
 
-export function informationalEventBuses<T extends RunnableTask, Context>(
+export function informationalEventBuses<T extends ExecutableTask, Context>(
   verbose?: VerboseStyle,
 ) {
   const emitStdOut = (ev: ShellBusEvents<T>["spawn:done"]) =>
-    ev.baggage?.args.silent ? false : true;
+    ev.baggage?.spawnableArgs.silent ? false : true;
 
   if (!verbose) {
     return {
@@ -346,7 +361,7 @@ export class CLI {
       .option("--summarize", "Emit summary after execution in JSON")
       .action(
         async (opts, taskId, ...paths: string[]) => {
-          const { tasks, partials } = await runbooksFromFiles(
+          const { tasks, partials } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
           if (tasks.find((t) => t.taskId() == taskId)) {
@@ -392,15 +407,17 @@ export class CLI {
       .option("--visualize <style:visualStyle>", "Visualize the DAG")
       .action(
         async (opts, ...paths: string[]) => {
-          const { tasks, partials } = await runbooksFromFiles(
+          const { tasks, partials } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
             {
               filter: opts.graph?.length
                 ? ((task) =>
-                  task.args.graphs?.some((g) => opts.graph!.includes(g))
+                  task.spawnableArgs.graphs?.some((g) =>
+                      opts.graph!.includes(g)
+                    )
                     ? true
                     : false)
-                : ((task) => task.args.graphs?.length ? false : true),
+                : ((task) => task.spawnableArgs.graphs?.length ? false : true),
             },
           );
           const plan = executionPlan(tasks);
@@ -448,21 +465,28 @@ export class CLI {
       .action(
         async (options, ...paths: string[]) => {
           const sh = shell();
-          const { tasks } = await runbooksFromFiles(
+          const { tasks } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
           const lsRows = tasks.map((task) => {
-            const { args } = task;
+            const { spawnableArgs: args } = task;
             return {
               code: task,
               name: task.taskId(),
               deps: task.taskDeps().join(", "),
               descr: args.description ?? "",
               origin: task.provenance.fileRef(task),
-              engine: sh.strategy(task.value),
+              engine: task.captureOnly
+                ? {
+                  engine: "capture-only",
+                  label: "Capture Only",
+                  linesOfCode: [],
+                }
+                : sh.strategy(task.value),
               flags: {
                 isInterpolated: args.interpolate ? true : false,
                 isCaptured: args.capture.length > 0 ? args.capture[0] : false,
+                isCaptureOnly: task.captureOnly ?? false,
                 isGitIgnored: args.capture[0]?.gitignore ? true : false,
                 isSilent: args.silent ?? false,
                 hasIssues: false,

@@ -270,23 +270,11 @@ export class CLI {
       )
       .arguments("[paths...:string]")
       .option("--dry-run", "Emit the shebang line without updating")
-      .option("--entrypoint", "The launcher to use", {
+      .option("--entrypoint <ep:string>", "The launcher to use", {
         default: "./cli.ts",
       })
-      .option("--entrypoint-arg", "The launcher's arguments to use", {
-        default: ["projection", "--pretty"],
-        collect: true,
-      })
       .action(
-        async (
-          options: {
-            envVarName: string;
-            entrypoint: string;
-            entrypointArg: string[];
-            dryRun?: boolean;
-          },
-          ...paths: string[]
-        ) => {
+        async (options, ...paths: string[]) => {
           const markdownPaths = resolveMarkdownPaths(
             paths,
             this.conf?.defaultFiles,
@@ -303,7 +291,7 @@ export class CLI {
 
           const sb = shebang({
             ...options,
-            entrypointArgs: options.entrypointArg,
+            entrypointArgs: ["projection", "--pretty"],
             resolver: import.meta.resolve,
           });
           await sb.emit(paths);

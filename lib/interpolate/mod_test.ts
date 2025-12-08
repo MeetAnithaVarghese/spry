@@ -13,6 +13,7 @@
 
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 
+import { type Captured, captureFactory, type CaptureSpec } from "./capture.ts";
 import {
   type PartialCollection,
   partialContent,
@@ -22,7 +23,6 @@ import {
   unsafeInterpFactory,
   type UnsafeInterpolationResult,
 } from "./unsafe.ts";
-import { type Captured, captureFactory, type CaptureSpec } from "./capture.ts";
 
 Deno.test("Spry Text Interpolation – end-to-end examples", async (t) => {
   // ---------------------------------------------------------------------------
@@ -38,6 +38,7 @@ Deno.test("Spry Text Interpolation – end-to-end examples", async (t) => {
       partialContent<FragmentLocals>(
         "hello",
         `echo "Hello \${name}!"`,
+        undefined,
         {
           schemaSpec: {
             name: { type: "string", required: true },
@@ -174,6 +175,7 @@ Deno.test("Spry Text Interpolation – end-to-end examples", async (t) => {
       partialContent<BodyLocals>(
         "body",
         "INNER-CONTENT",
+        undefined,
       ),
     );
 
@@ -181,6 +183,7 @@ Deno.test("Spry Text Interpolation – end-to-end examples", async (t) => {
       partialContent<BodyLocals>(
         "wrapper",
         "BEGIN-WRAP\n${content}\nEND-WRAP",
+        undefined,
         {
           inject: {
             globs: ["**/*.txt"],
