@@ -1,17 +1,17 @@
 import z from "@zod/zod";
+import { Code } from "types/mdast";
 import {
   CodeFrontmatter,
   codeFrontmatter,
 } from "../../axiom/mdast/code-frontmatter.ts";
-import { Directive } from "../../axiom/projection/directives.ts";
-import { Materializable } from "../../axiom/projection/playbook.ts";
+import { Directive, Materializable } from "../../axiom/projection/playbook.ts";
 import { isImportPlaceholder } from "../../axiom/remark/import-placeholders-generator.ts";
-import { PartialCollection } from "../../interpolate/partial.ts";
 import {
   ensureLanguageByIdOrAlias,
   languageHandlers,
 } from "../../universal/code.ts";
 import { isAsyncIterator } from "../../universal/collectable.ts";
+import { RenderResult } from "../../universal/render.ts";
 import {
   provenanceResource,
   ResourceProvenance,
@@ -97,8 +97,6 @@ export function sqlPagePathsFactory() {
   };
 }
 
-type InjectableMatch = PartialCollection["findInjectableForPath"];
-
 /** Common fields present on all SqlPageFile variants */
 type SqlPageFileBase = {
   /** Discriminator */
@@ -110,7 +108,7 @@ type SqlPageFileBase = {
   /** Optional timestamp (not used in DML; engine time is used) */
   readonly lastModified?: Date;
   /** The notebook/playbook cell this file originated from, if any */
-  readonly cell?: Materializable | Directive;
+  readonly cell?: Code | Materializable | Directive;
 };
 
 /** Minimal variant for static head/tail SQL files */
@@ -133,7 +131,7 @@ export type SqlPageFileUpsert =
     readonly isUnsafeInterpolatable?: boolean;
     isInterpolated?: boolean;
     readonly isInjectableCandidate?: boolean;
-    partialInjected?: InjectableMatch;
+    partialsInjected?: RenderResult["injectedTmpls"];
     error?: unknown;
   };
 
@@ -232,6 +230,33 @@ export async function sqlPageFilesUpsertDML(
   }
 
   const esc = (s: string) => s.replaceAll("'", "''");
+
+  const asText = async (
+    s: string | Uint8Array | ReadableStream<Uint8Array>,
+  ): Promise<string> => {
+    if (typeof s === "string") return s;
+    if (s instanceof Uint8Array) {
+      return new TextDecoder().decode(s);
+    }
+
+    // Treat as ReadableStream<Uint8Array>
+    const reader = s.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const totalLength = chunks.reduce((n, c) => n + c.length, 0);
+    const bytes = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const c of chunks) {
+      bytes.set(c, offset);
+      offset += c.length;
+    }
+    return new TextDecoder().decode(bytes);
+  };
+
   const quoted = async (
     s: string | Uint8Array | ReadableStream<Uint8Array>,
   ): Promise<string> => {
@@ -262,11 +287,16 @@ export async function sqlPageFilesUpsertDML(
 
   const list = await Array.fromAsync(normalizeSPC(spcStream));
 
-  const headSql = list.filter((e) => e.kind === "head_sql").map((spf) =>
-    spf.contents
+  const headSql = await Promise.all(
+    list
+      .filter((e) => e.kind === "head_sql")
+      .map((spf) => asText(spf.contents)),
   );
-  const tailSql = list.filter((e) => e.kind === "tail_sql").map((spf) =>
-    spf.contents
+
+  const tailSql = await Promise.all(
+    list
+      .filter((e) => e.kind === "tail_sql")
+      .map((spf) => asText(spf.contents)),
   );
 
   const upserts = await Promise.all(
@@ -376,7 +406,7 @@ export function contentSuppliers() {
   const contentsFromResource = async (rp: ResourceProvenance) => {
     let contents: SqlPageFileUpsert["contents"];
     let isBinary: SqlPageFileUpsert["isBinary"];
-    const resource = await provenanceResource(rp);
+    const resource = provenanceResource(rp);
     if (resource.strategy.encoding === "utf8-binary") {
       contents = await resource.stream();
       isBinary = contents;
@@ -387,12 +417,9 @@ export function contentSuppliers() {
     return { contents, isBinary };
   };
 
-  const contents = async (
-    materializable: Materializable,
-    codeFM: CodeFrontmatter | null,
-  ) => {
-    if (isImportPlaceholder(materializable)) {
-      return await contentsFromResource(materializable.importSpecProvenance);
+  const contents = async (code: Code, codeFM: CodeFrontmatter | null) => {
+    if (isImportPlaceholder(code)) {
+      return await contentsFromResource(code.importSpecProvenance);
     } else {
       if (
         codeFM?.pi && "import" in codeFM.pi.flags &&
@@ -400,7 +427,7 @@ export function contentSuppliers() {
       ) {
         return await contentsFromResource({ path: codeFM.pi.flags.import });
       } else {
-        return { contents: materializable.value, isBinary: false as const };
+        return { contents: code.value, isBinary: false as const };
       }
     }
   };
@@ -473,5 +500,5 @@ export function contentSuppliers() {
     }),
   );
 
-  return { ...langHandlers, sqlSPF, jsonSPF };
+  return { ...langHandlers, sqlSPF, jsonSPF, contents, contentsFromResource };
 }

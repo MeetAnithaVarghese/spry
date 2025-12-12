@@ -18,6 +18,14 @@ import { flexibleProjectionFromFiles } from "../projection/flexible.ts";
 /* Server + helpers                                                            */
 /* --------------------------------------------------------------------------- */
 
+async function readUrlText(url: URL | string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+  }
+  return res.text();
+}
+
 export async function serve(args: {
   host?: string;
   port?: number;
@@ -134,12 +142,10 @@ export async function serve(args: {
     }, 15000); // every 15s
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
+      const indexUrl = new URL("./index.html", import.meta.url);
+      const content = await readUrlText(indexUrl);
       return new Response(
-        injectReloadSnippet(
-          await Deno.readTextFile(
-            fromFileUrl(new URL("./index.html", import.meta.url)),
-          ),
-        ),
+        injectReloadSnippet(content),
         { headers: { "content-type": "text/html; charset=utf-8" } },
       );
     }
@@ -160,15 +166,14 @@ export async function serve(args: {
     }
 
     if (url.pathname === "/index.css" || url.pathname === "/index.js") {
-      const path = fromFileUrl(
-        new URL("." + url.pathname, import.meta.url),
-      );
-      const data = await Deno.readTextFile(path);
+      const assetUrl = new URL("." + url.pathname, import.meta.url);
+      const content = await readUrlText(assetUrl);
       const contentType = url.pathname.endsWith(".css")
         ? "text/css; charset=utf-8"
         : "text/javascript; charset=utf-8";
-
-      return new Response(data, { headers: { "content-type": contentType } });
+      return new Response(content, {
+        headers: { "content-type": contentType },
+      });
     }
 
     return new Response("Not found", { status: 404 });
@@ -260,7 +265,7 @@ export class CLI {
       .description(`Spry ontology controller`)
       .command("help", new HelpCommand())
       .command("completions", new CompletionsCommand())
-      .command("web-ui", this.docCommand());
+      .command("web-ui", this.webUiCommand());
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
@@ -286,8 +291,8 @@ export class CLI {
       );
   }
 
-  docCommand(cmdName = "web-ui") {
-    return this.baseCommand({ examplesCmd: cmdName })
+  webUiCommand(cmdName = "web-ui") {
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description(
         "Serve the markdown mdasts and Spry Ontology Graphs (SOGs)",
       )

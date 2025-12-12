@@ -609,3 +609,142 @@ export function errorOnlyShellEventBus<Baggage = unknown>(
 
   return bus;
 }
+
+/**
+ * Create a text-logging event bus for shell events.
+ *
+ * - style: "rich"  → includes emojis, no ANSI colors
+ * - style: "plain" → no emojis
+ *
+ * All log lines are appended to the returned `lines` array, which can be
+ * written to a file, persisted, or inspected in tests.
+ *
+ * Example:
+ *   const { bus, lines } = textInfoShellEventBus({ style: "rich" });
+ *   const sh = shell({ bus });
+ *   await sh.spawnText("echo hello");
+ *   // lines now contains concise textual logs
+ */
+export function textInfoShellEventBus<Baggage = unknown>(init: {
+  readonly style: "plain" | "rich";
+  readonly emitStdOut?: (
+    event: ShellBusEvents<Baggage>["spawn:done"],
+  ) => boolean;
+}) {
+  const fancy = init.style === "rich";
+  const bus = eventBus<ShellBusEvents<Baggage>>();
+  const te = new TextDecoder();
+  const { emitStdOut } = init;
+
+  const lines: string[] = [];
+
+  const E = {
+    rocket: "🚀",
+    check: "✅",
+    cross: "❌",
+    boom: "💥",
+    play: "▶️",
+    page: "📄",
+    broom: "🧹",
+    timer: "⏱️",
+    gear: "⚙️",
+  } as const;
+
+  const em = {
+    start: (s: string) => (fancy ? `${E.rocket} ${s}` : s),
+    done: (s: string, ok: boolean) =>
+      fancy ? `${ok ? E.check : E.cross} ${s}` : s,
+    error: (s: string) => (fancy ? `${E.boom} ${s}` : s),
+    play: (s: string) => (fancy ? `${E.play} ${s}` : s),
+    page: (s: string) => (fancy ? `${E.page} ${s}` : s),
+    broom: (s: string) => (fancy ? `${E.broom} ${s}` : s),
+    timer: (ms?: number) =>
+      ms === undefined
+        ? ""
+        : fancy
+        ? `${E.timer} ${Math.round(ms)}ms`
+        : `${Math.round(ms)}ms`,
+    gear: (s: string) => (fancy ? `${E.gear} ${s}` : s),
+  };
+
+  const tag = (s: string) => `[${s}]`;
+
+  const fmtArgs = (args: readonly string[]) =>
+    args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(" ");
+
+  // ---- listeners ----
+
+  bus.on("spawn:start", ({ cmd, args, cwd, hasStdin }) => {
+    const meta = [
+      cwd ? `cwd=${cwd}` : "",
+      hasStdin ? "stdin=piped" : "stdin=null",
+    ].filter(Boolean).join(" ");
+    lines.push(
+      `${tag("spawn")} ${em.start(cmd)} ${fmtArgs(args)}${
+        meta ? " " + meta : ""
+      }`,
+    );
+  });
+
+  bus.on("spawn:done", (ev) => {
+    const { cmd, args, code, success, durationMs, stdout, stderr } = ev;
+    const head =
+      `${tag("spawn")} ${em.done(cmd, success)} ${fmtArgs(args)} code=${code}` +
+      (durationMs != null ? ` ${em.timer(durationMs)}` : "");
+    lines.push(head);
+
+    if (emitStdOut?.(ev)) {
+      if (stdout.length > 0) {
+        lines.push(`${tag("stdout")} ${te.decode(stdout)}`);
+      }
+    }
+    if (stderr.length > 0) {
+      lines.push(`${tag("stderr")} ${te.decode(stderr)}`);
+    }
+  });
+
+  bus.on("spawn:error", ({ cmd, args, error }) => {
+    lines.push(
+      `${tag("spawn")} ${em.error(cmd)} ${fmtArgs(args)} error=${
+        String(error instanceof Error ? error.message : error)
+      }`,
+    );
+  });
+
+  bus.on("task:line:start", ({ index, line }) => {
+    lines.push(
+      `${tag("task")} ${em.play(`L${index}`)} ${line}`,
+    );
+  });
+
+  bus.on("task:line:done", ({ index, line, code, success, durationMs }) => {
+    lines.push(
+      `${tag("task")} ${
+        success ? "ok" : "fail"
+      } L${index} code=${code} ${line}${
+        durationMs != null ? ` ${em.timer(durationMs)}` : ""
+      }`,
+    );
+  });
+
+  bus.on("shebang:tempfile", ({ path }) => {
+    lines.push(
+      `${tag("shebang")} ${em.page("temp")} path=${path}`,
+    );
+  });
+
+  bus.on("shebang:cleanup", ({ path, ok, error }) => {
+    lines.push(
+      `${tag("shebang")} ${em.broom("cleanup")} path=${path} ${
+        ok ? "ok" : `error=${String(error ?? "unknown")}`
+      }`,
+    );
+  });
+
+  bus.on("auto:mode", ({ mode }) => {
+    const txt = mode === "shebang" ? "shebang" : "eval-lines";
+    lines.push(`${tag("auto")} ${em.gear(txt)}`);
+  });
+
+  return { bus, lines };
+}

@@ -1,4 +1,4 @@
-import { testingAsserts as ta } from "./deps-test.ts";
+import { assert, assertEquals, assertStrictEquals } from "@std/assert";
 import * as mod from "./reflect.ts";
 
 // converted to Deno Typescript from github.com/gustavoam-asdf/object-inspector
@@ -39,7 +39,7 @@ Deno.test("Basic type checker", async (ctx) => {
     const booleans = [true, false];
 
     nonBooleans.forEach((value) => {
-      ta.assertEquals(
+      assertEquals(
         mod.isBoolean(value),
         false,
         `${value?.toString()} must not be a boolean`,
@@ -47,7 +47,7 @@ Deno.test("Basic type checker", async (ctx) => {
     });
 
     booleans.forEach((value) => {
-      ta.assert(mod.isBoolean(value), `${value?.toString()} must be a boolean`);
+      assert(mod.isBoolean(value), `${value?.toString()} must be a boolean`);
     });
   });
 
@@ -67,10 +67,10 @@ Deno.test("Basic type checker", async (ctx) => {
     const nullValue = null;
 
     nonNulls.forEach((value) => {
-      ta.assert(!mod.isNull(value), `${value?.toString()} must not be a null`);
+      assert(!mod.isNull(value), `${value?.toString()} must not be a null`);
     });
 
-    ta.assert(mod.isNull(nullValue), `${nullValue} must be a null`);
+    assert(mod.isNull(nullValue), `${nullValue} must be a null`);
   });
 
   await ctx.step("isUndefined", () => {
@@ -90,13 +90,13 @@ Deno.test("Basic type checker", async (ctx) => {
     const undefinedValue = undefined;
 
     nonUndefineds.forEach((value) => {
-      ta.assert(
+      assert(
         !mod.isUndefined(value),
         `${value?.toString()} must not be a undefined`,
       );
     });
 
-    ta.assert(
+    assert(
       mod.isUndefined(undefinedValue),
       `${undefinedValue} must be a undefined`,
     );
@@ -118,14 +118,14 @@ Deno.test("Basic type checker", async (ctx) => {
     const numbers = [0, -2.5, Math.random()];
 
     nonNumbers.forEach((value) => {
-      ta.assert(
+      assert(
         !mod.isNumber(value),
         `${value?.toString()} must not be a number`,
       );
     });
 
     numbers.forEach((value) => {
-      ta.assert(mod.isNumber(value), `${value?.toString()} must be a number`);
+      assert(mod.isNumber(value), `${value?.toString()} must be a number`);
     });
   });
 
@@ -145,14 +145,14 @@ Deno.test("Basic type checker", async (ctx) => {
     const strings = ["", "foo", "asdfasdfasdf", JSON.stringify(Math.random())];
 
     nonStrings.forEach((value) => {
-      ta.assert(
+      assert(
         !mod.isString(value),
         `${value?.toString()} must not be a string`,
       );
     });
 
     strings.forEach((value) => {
-      ta.assert(mod.isString(value), `${value?.toString()} must be a string`);
+      assert(mod.isString(value), `${value?.toString()} must be a string`);
     });
   });
 
@@ -172,14 +172,14 @@ Deno.test("Basic type checker", async (ctx) => {
     const symbols = [Symbol(Math.random()), Symbol("12")];
 
     nonSymbols.forEach((value) => {
-      ta.assert(
+      assert(
         !mod.isSymbol(value),
         `${value?.toString()} must not be a symbol`,
       );
     });
 
     symbols.forEach((value) => {
-      ta.assert(mod.isSymbol(value), `${value?.toString()} must be a symbol`);
+      assert(mod.isSymbol(value), `${value?.toString()} must be a symbol`);
     });
   });
 
@@ -188,7 +188,7 @@ Deno.test("Basic type checker", async (ctx) => {
     const expected = true;
     const result = mod.isFunction(value);
 
-    ta.assertStrictEquals(result, expected);
+    assertStrictEquals(result, expected);
   });
 
   await ctx.step("object", () => {
@@ -196,7 +196,7 @@ Deno.test("Basic type checker", async (ctx) => {
     const expected = true;
     const result = mod.isObject(value);
 
-    ta.assertStrictEquals(result, expected);
+    assertStrictEquals(result, expected);
   });
 });
 
@@ -206,7 +206,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "boolean" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 
   await ctx.step("number", () => {
@@ -214,7 +214,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "number" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 
   await ctx.step("string", () => {
@@ -222,7 +222,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "string" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 
   await ctx.step("symbol", () => {
@@ -230,7 +230,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "symbol", description: "123" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 
   await ctx.step("null", () => {
@@ -238,7 +238,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "object" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 
   await ctx.step("undefined", () => {
@@ -246,7 +246,7 @@ Deno.test("Information on a primitive type variable", async (ctx) => {
     const expected = { value, type: "undefined" };
     const result = mod.reflect(value);
 
-    ta.assertEquals(result, expected);
+    assertEquals(result, expected);
   });
 });
 

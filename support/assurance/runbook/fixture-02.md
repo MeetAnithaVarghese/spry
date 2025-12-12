@@ -2,7 +2,7 @@
 echo "task-1 successful"
 ```
 
-```bash task-2 --dep task-3 --descr "Another demo task"
+```bash task-2 --dep task-3 -C --descr "Another demo task"
 echo "task-2 successful"
 ```
 
@@ -19,7 +19,7 @@ The `-I` (or `--interpolate` will allow the task to be interpolated by Spry)
 ```bash task-3 -I --descr "Another demo task"
 #!/usr/bin/env -S bash
 echo "task-3 successful"
-${await partial("test-partial", { newLocal: "passed from task-3"})}
+$!{await partial("test-partial", { newLocal: "passed from task-3"})}
 ```
 
 > The following is an example of how to see the output of an interpolation. Just
@@ -27,13 +27,20 @@ ${await partial("test-partial", { newLocal: "passed from task-3"})}
 
 ```bash task-4 --interpolate --descr "Another demo task"
 #!/usr/bin/env -S cat
-echo "task: ${SELF.task.spawnableIdentity}"
+# locals for unsafe use: $!{Object.keys(__l).join(", ")}
+# already capture/memoized: $!{Object.keys(captured).join(", ")}
+# keys available in current TASK: $!{Object.keys(TASK).join(", ")}
 
-# partial 1 (error): ${await partial("non-existent")}
+# this should resolve relative to CWD properly whether local or remote
+# relative file: $!{resolveRelPath("../qualityfolio/Qualityfolio.md")}
 
-# partial 2 (works): ${await partial("test-partial", { newLocal: "passed from task-4"})}
+echo "task: ${TASK.spawnableIdentity}"
 
-# partial 3 (error): ${await partial("test-partial", { mistypedNewLocal: "passed from task-4"})}
+# partial 1 (error): $!{await partial("non-existent")}
 
-${await partial("test-partial", { newLocal: "passed from task-4 with await"})}
+# partial 2 (works): $!{await partial("test-partial", { newLocal: "passed from task-4"})}
+
+# partial 3 (error): $!{await partial("test-partial", { mistypedNewLocal: "passed from task-4"})}
+
+$!{await partial("test-partial", { newLocal: "passed from task-4 with await"})}
 ```

@@ -47,7 +47,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const gr = graph(root);
 
     // when required, set to true to store stable "golden" versions
-    const generateGoldens = true;
+    const generateGoldens = false;
 
     // TODO: there's something unstable in the JSON (file paths, etc.) so fix it
     // await s.step(

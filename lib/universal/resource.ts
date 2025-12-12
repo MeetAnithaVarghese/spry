@@ -10,6 +10,7 @@
 
 import { expandGlob, expandGlobSync } from "@std/fs";
 import { contentType } from "@std/media-types";
+import { dirname, join } from "@std/path";
 
 /* -------------------------------------------------------------------------- */
 /*                               Core types                                   */
@@ -72,7 +73,8 @@ const isTextMime = (mime?: MimeType): boolean => {
     m === "application/json" ||
     m.endsWith("+json") ||
     m === "application/xml" ||
-    m.endsWith("+xml")
+    m.endsWith("+xml") ||
+    m === "application/sql"
   );
 };
 
@@ -121,6 +123,77 @@ const defaultLocalFetch = async <
   return new Response(data, {
     headers: { "content-type": mime },
   });
+};
+
+/**
+ * Shared loader factory for all Resource implementations (default and overrides).
+ */
+const makeLoaders = <
+  P extends ResourceProvenance,
+  S extends ResourceStrategy,
+>(
+  fetcher: FetchOverride<P, S>,
+  prov: P,
+  strat: S,
+): Pick<
+  Resource<P, S>,
+  "text" | "safeText" | "bytes" | "safeBytes" | "stream" | "reader"
+> => {
+  const text = async (): Promise<string> => {
+    const res = await fetcher(prov.path, undefined, prov, strat);
+    if (!res.ok) {
+      throw new Error(`Fetch ${res.status} for ${prov.path}`);
+    }
+    return await res.text();
+  };
+
+  const safeText = async (
+    defaultText?: string,
+  ): Promise<string | Error> => {
+    try {
+      return await text();
+    } catch (err) {
+      if (defaultText !== undefined) return defaultText;
+      return err instanceof Error ? err : new Error(String(err));
+    }
+  };
+
+  const bytes = async (): Promise<Uint8Array> => {
+    const res = await fetcher(prov.path, undefined, prov, strat);
+    if (!res.ok) {
+      throw new Error(`Fetch ${res.status} for ${prov.path}`);
+    }
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  };
+
+  const safeBytes = async (
+    defaultBytes?: Uint8Array,
+  ): Promise<Uint8Array | Error> => {
+    try {
+      return await bytes();
+    } catch (err) {
+      if (defaultBytes !== undefined) return defaultBytes;
+      return err instanceof Error ? err : new Error(String(err));
+    }
+  };
+
+  const stream = async (): Promise<ReadableStream<Uint8Array>> => {
+    const res = await fetcher(prov.path, undefined, prov, strat);
+    if (!res.ok) {
+      throw new Error(`Fetch ${res.status} for ${prov.path}`);
+    }
+    const body = res.body;
+    if (!body) {
+      throw new Error(`No body for ${prov.path}`);
+    }
+    return body;
+  };
+
+  const reader = async (): Promise<ReadableStreamDefaultReader<Uint8Array>> =>
+    (await stream()).getReader();
+
+  return { text, safeText, bytes, safeBytes, stream, reader };
 };
 
 /* -------------------------------------------------------------------------- */
@@ -180,102 +253,52 @@ export const tryParseHttpUrl = (path: string): URL | undefined => {
   }
 };
 
+const normalizeProvenance = <P extends ResourceProvenance>(
+  origProv: P,
+): P => {
+  const mime = origProv.mimeType ?? detectMimeFromPath(origProv.path);
+  if (mime && origProv.mimeType !== mime) {
+    return { ...origProv, mimeType: mime } as P;
+  }
+  return origProv;
+};
+
+const strategyFromProvenance = <P extends ResourceProvenance>(
+  prov: P,
+): ResourceStrategy => {
+  const normalized = normalizeProvenance(prov);
+  const url = tryParseHttpUrl(normalized.path);
+  const encoding = detectEncoding(normalized.mimeType);
+  const target: ResourceStrategy["target"] = url ? "remote-url" : "local-fs";
+  return { target, encoding, url };
+};
+
 export function provenanceResource<
   P extends ResourceProvenance,
   S extends ResourceStrategy = ResourceStrategy,
 >(origProv: P) {
-  // Ensure mimeType is set if we can infer it.
-  const mime = origProv.mimeType ?? detectMimeFromPath(origProv.path);
-  const prov =
-    (mime && !origProv.mimeType
-      ? { ...origProv, mimeType: mime }
-      : origProv) as P;
-
-  const url = tryParseHttpUrl(prov.path);
-  const target: ResourceStrategy["target"] = url ? "remote-url" : "local-fs";
-  const encoding = detectEncoding(prov.mimeType);
-  const baseStrategy: ResourceStrategy = { target, encoding, url };
+  const prov = normalizeProvenance(origProv);
+  const baseStrategy = strategyFromProvenance(prov);
   const strategy = baseStrategy as S;
 
-  const getFetcher = () =>
-    strategy.target === "remote-url"
-      ? defaultRemoteFetch<P, S>
-      : defaultLocalFetch<P, S>;
+  const fetcher: FetchOverride<P, S> = strategy.target === "remote-url"
+    ? defaultRemoteFetch<P, S>
+    : defaultLocalFetch<P, S>;
 
-  const text = async (): Promise<string> => {
-    const fetcher = getFetcher();
-    const res = await fetcher(prov.path, undefined, prov, strategy);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    return await res.text();
-  };
-
-  const safeText = async (
-    defaultText?: string,
-  ): Promise<string | Error> => {
-    try {
-      return await text();
-    } catch (err) {
-      if (defaultText !== undefined) return defaultText;
-      return err instanceof Error ? err : new Error(String(err));
-    }
-  };
-
-  const bytes = async (): Promise<Uint8Array> => {
-    const fetcher = getFetcher();
-    const res = await fetcher(prov.path, undefined, prov, strategy);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    const buf = await res.arrayBuffer();
-    return new Uint8Array(buf);
-  };
-
-  const safeBytes = async (
-    defaultBytes?: Uint8Array,
-  ): Promise<Uint8Array | Error> => {
-    try {
-      return await bytes();
-    } catch (err) {
-      if (defaultBytes) return defaultBytes;
-      return err instanceof Error ? err : new Error(String(err));
-    }
-  };
-
-  const stream = async (): Promise<ReadableStream<Uint8Array>> => {
-    const fetcher = getFetcher();
-    const res = await fetcher(prov.path, undefined, prov, strategy);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    const body = res.body;
-    if (!body) {
-      throw new Error(`No body for ${prov.path}`);
-    }
-    // Body is already a ReadableStream<Uint8Array> in web/Deno fetch.
-    return body;
-  };
-
-  const reader = async (): Promise<ReadableStreamDefaultReader<Uint8Array>> =>
-    (await stream()).getReader();
+  const loaders = makeLoaders<P, S>(fetcher, prov as P, strategy);
 
   const resource: Resource<P, S> = {
-    provenance: prov,
+    provenance: prov as P,
     strategy,
-    text,
-    safeText,
-    bytes,
-    safeBytes,
-    stream,
-    reader,
+    ...loaders,
   };
 
   return resource;
 }
 
 /**
- * Phase 2: assign strategies and attach basic loaders.
+ * Phase 2 (low-level): classify provenances and compute strategies,
+ * without attaching loaders.
  *
  * - Classifies each provenance as `remote-url` or `local-fs`.
  * - Detects MIME and encoding (`utf8-text` vs `utf8-binary`).
@@ -290,33 +313,33 @@ export function* strategyDecisions<
 ) {
   const isGlob = init?.isGlob;
 
-  for (const prov of provenances) {
-    const path = prov.path;
-    const url = tryParseHttpUrl(path);
-    const target: ResourceStrategy["target"] = url ? "remote-url" : "local-fs";
-    const encoding = detectEncoding(prov.mimeType);
-    const baseStrategy: ResourceStrategy = { target, encoding, url };
-    const strategy = baseStrategy as S;
+  for (const origProv of provenances) {
+    const baseProv = normalizeProvenance(origProv as P);
+    const path = baseProv.path;
+    const baseStrategy = strategyFromProvenance(baseProv) as S;
+    const url = (baseStrategy as ResourceStrategy).url;
 
     // Glob handling only for non-URLs.
     if (!url) {
-      const decision = !isGlob || isGlob(prov);
+      const decision = !isGlob || isGlob(baseProv);
       const treatAsGlob = decision === true ||
         (decision === "auto" && hasGlobChar(path));
 
       if (treatAsGlob) {
         for (const entry of expandGlobSync(path)) {
-          const childProv: P = {
-            ...prov,
+          const childProvRaw: P = {
+            ...baseProv,
             path: entry.path as ResourcePath,
           };
-          yield { provenance: childProv, strategy };
+          const childProv = normalizeProvenance(childProvRaw);
+          const childStrategy = strategyFromProvenance(childProv) as S;
+          yield { provenance: childProv, strategy: childStrategy };
         }
         continue;
       }
     }
 
-    yield { provenance: prov, strategy };
+    yield { provenance: baseProv, strategy: baseStrategy };
   }
 }
 
@@ -338,7 +361,8 @@ export async function* strategies<
 ): AsyncGenerator<Resource<P, S>, void, unknown> {
   const isGlob = init?.isGlob;
 
-  for await (const prov of provenances) {
+  for await (const origProv of provenances) {
+    const prov = normalizeProvenance(origProv as P);
     const path = prov.path;
     const url = tryParseHttpUrl(path);
 
@@ -350,10 +374,11 @@ export async function* strategies<
 
       if (treatAsGlob) {
         for await (const entry of expandGlob(path)) {
-          const childProv: P = {
+          const childProvRaw: P = {
             ...prov,
             path: entry.path as ResourcePath,
           };
+          const childProv = normalizeProvenance(childProvRaw);
           yield provenanceResource<P, S>(childProv);
         }
         continue;
@@ -411,62 +436,42 @@ const makeLoadersWithOverrides = <
     ? (init.onFetchRemoteURL ?? defaultRemoteFetch<P, S>)
     : (init.onFetchLocalFS ?? defaultLocalFetch<P, S>);
 
-  const text = async (): Promise<string> => {
-    const res = await fetcher(prov.path, undefined, prov, strat);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    return await res.text();
-  };
-
-  const safeText = async (
-    defaultText?: string,
-  ): Promise<string | Error> => {
-    try {
-      return await text();
-    } catch (err) {
-      if (defaultText !== undefined) return defaultText;
-      return err instanceof Error ? err : new Error(String(err));
-    }
-  };
-
-  const bytes = async (): Promise<Uint8Array> => {
-    const res = await fetcher(prov.path, undefined, prov, strat);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    const buf = await res.arrayBuffer();
-    return new Uint8Array(buf);
-  };
-
-  const safeBytes = async (
-    defaultBytes?: Uint8Array,
-  ): Promise<Uint8Array | Error> => {
-    try {
-      return await bytes();
-    } catch (err) {
-      if (defaultBytes) return defaultBytes;
-      return err instanceof Error ? err : new Error(String(err));
-    }
-  };
-
-  const stream = async (): Promise<ReadableStream<Uint8Array>> => {
-    const res = await fetcher(prov.path, undefined, prov, strat);
-    if (!res.ok) {
-      throw new Error(`Fetch ${res.status} for ${prov.path}`);
-    }
-    const body = res.body;
-    if (!body) {
-      throw new Error(`No body for ${prov.path}`);
-    }
-    return body;
-  };
-
-  const reader = async (): Promise<ReadableStreamDefaultReader<Uint8Array>> =>
-    (await stream()).getReader();
-
-  return { text, safeText, bytes, safeBytes, stream, reader };
+  return makeLoaders<P, S>(fetcher, prov, strat);
 };
+
+/**
+ * Apply ResourceInit (fetch overrides + plugins) to a single Resource.
+ *
+ * - If no init is provided, returns the base resource unchanged.
+ * - If overrides are provided, replaces text/bytes/stream/reader with new loaders.
+ * - If plugins are provided, runs them in order; last non-void result wins.
+ */
+export async function applyResourceInit<
+  P extends ResourceProvenance,
+  S extends ResourceStrategy,
+>(
+  base: Resource<P, S>,
+  init?: ResourceInit<P, S>,
+): Promise<Resource<P, S>> {
+  if (!init) return base;
+
+  const plugins = init.plugins ?? [];
+  const hasOverrides = !!init.onFetchRemoteURL || !!init.onFetchLocalFS;
+
+  let r: Resource<P, S> = base;
+
+  if (hasOverrides) {
+    const loaders = makeLoadersWithOverrides(r, init);
+    r = { ...r, ...loaders };
+  }
+
+  for (const plugin of plugins) {
+    const out = await plugin(r);
+    if (out) r = out;
+  }
+
+  return r;
+}
 
 /**
  * Phase 3: apply plugins and optional fetch overrides to Resources.
@@ -481,22 +486,8 @@ export async function* resources<
   src: Iterable<Resource<P, S>> | AsyncIterable<Resource<P, S>>,
   init?: ResourceInit<P, S>,
 ): AsyncGenerator<Resource<P, S>, void, unknown> {
-  const plugins = init?.plugins ?? [];
-  const hasOverrides = !!init?.onFetchRemoteURL || !!init?.onFetchLocalFS;
-
   for await (const base of src) {
-    let r: Resource<P, S> = base;
-
-    if (hasOverrides && init) {
-      const loaders = makeLoadersWithOverrides(r, init);
-      r = { ...r, ...loaders };
-    }
-
-    for (const plugin of plugins) {
-      const out = await plugin(r);
-      if (out) r = out;
-    }
-
+    const r = await applyResourceInit(base, init);
     yield r;
   }
 }
@@ -729,4 +720,275 @@ export function resourcesFactory<
 
     binaryResources: (res, options) => binaryResources<P, S>(res, options),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          relativeTo helper factory                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Factory to create new provenances and resources relative to a base Resource.
+ *
+ * - For local-fs resources, relative paths are resolved against dirname(base.path).
+ * - For remote-url resources, relative paths are resolved against the base URL.
+ */
+export function relativeTo<
+  P extends ResourceProvenance,
+  S extends ResourceStrategy,
+>(base: Resource<P, S>) {
+  const { provenance: baseProv, strategy: baseStrat } = base;
+
+  const baseIsRemote = baseStrat.target === "remote-url";
+  const baseUrl = baseIsRemote
+    ? (baseStrat.url ?? tryParseHttpUrl(baseProv.path))
+    : undefined;
+  const baseDir = baseIsRemote ? undefined : dirname(baseProv.path);
+
+  const path = (p: string): { provenance: P; strategy: S } => {
+    let resolvedPath: string;
+
+    if (baseIsRemote && baseUrl) {
+      resolvedPath = new URL(p, baseUrl).toString();
+    } else if (!baseIsRemote && baseDir) {
+      resolvedPath = join(baseDir, p);
+    } else {
+      resolvedPath = p;
+    }
+
+    const {
+      mimeType: _omitMime,
+      label: _omitLabel,
+      path: _omitPath,
+      ...rest
+    } = baseProv as P & {
+      mimeType?: MimeType;
+      label?: ResourceLabel;
+      path: string;
+    };
+
+    const provRaw = {
+      ...(rest as P),
+      path: resolvedPath,
+      label: resolvedPath,
+    } as P;
+
+    const provenance = normalizeProvenance(provRaw);
+    const strategy = strategyFromProvenance(provenance) as S;
+
+    return { provenance, strategy };
+  };
+
+  const resource = (p: string): Resource<P, S> => {
+    const { provenance } = path(p);
+    return provenanceResource<P, S>(provenance);
+  };
+
+  return { path, resource };
+}
+
+/* -------------------------------------------------------------------------- */
+/*               Single-call functional helpers (non-pipeline API)           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Create a Resource for a single path using default loaders
+ * (no plugins, no fetch overrides).
+ */
+export function resourceFromPath(
+  path: ResourcePath,
+): Resource<ResourceProvenance, ResourceStrategy> {
+  const iter = provenanceFromPaths([path])[Symbol.iterator]();
+  const first = iter.next();
+  if (first.done || !first.value) {
+    throw new Error(`No provenance for path: ${path}`);
+  }
+  const prov = first.value;
+  return provenanceResource<ResourceProvenance, ResourceStrategy>(prov);
+}
+
+/**
+ * Read UTF-8 text from a single path using default loaders.
+ * Throws on fetch/read errors.
+ */
+export async function readText(path: ResourcePath): Promise<string> {
+  const r = resourceFromPath(path);
+  return await r.text();
+}
+
+/**
+ * Read UTF-8 text from a single path using default loaders,
+ * returning a default if provided, or an Error on failure.
+ */
+export async function readSafeText(
+  path: ResourcePath,
+  defaultText?: string,
+): Promise<string | Error> {
+  const r = resourceFromPath(path);
+  return await r.safeText(defaultText);
+}
+
+/**
+ * Read binary bytes from a single path using default loaders.
+ * Throws on fetch/read errors.
+ */
+export async function readBytes(path: ResourcePath): Promise<Uint8Array> {
+  const r = resourceFromPath(path);
+  return await r.bytes();
+}
+
+/**
+ * Read binary bytes from a single path using default loaders,
+ * returning a default if provided, or an Error on failure.
+ */
+export async function readSafeBytes(
+  path: ResourcePath,
+  defaultBytes?: Uint8Array,
+): Promise<Uint8Array | Error> {
+  const r = resourceFromPath(path);
+  return await r.safeBytes(defaultBytes);
+}
+
+/* --------------------- Helpers that respect factory init ------------------ */
+
+// type aliases used below
+type BaseProv = ResourceProvenance;
+type BaseStrat = ResourceStrategy;
+type BaseInit = ResourcesFactoryInit<BaseProv, BaseStrat>;
+type BaseResource = Resource<BaseProv, BaseStrat>;
+
+/**
+ * Create a Resource for a single path using a ResourcesFactoryInit:
+ * respects fetch overrides, plugins, and glob rules.
+ *
+ * If globbing is enabled and expands to multiple files, the first
+ * resulting Resource is returned.
+ */
+export async function resourceFromPathWith(
+  path: ResourcePath,
+  init: BaseInit = {},
+): Promise<BaseResource> {
+  const rf = resourcesFactory<BaseProv, BaseStrat>(init);
+  const provs = provenanceFromPaths([path]);
+  const stratIter = rf.strategies(provs);
+
+  for await (const base of stratIter) {
+    // base has default loaders; apply overrides + plugins for this one
+    return await applyResourceInit(base, init);
+  }
+
+  throw new Error(`No resource produced for path: ${path}`);
+}
+
+/**
+ * Read UTF-8 text from a single path with overrides/plugins applied.
+ */
+export async function readTextWith(
+  path: ResourcePath,
+  init: BaseInit = {},
+): Promise<string> {
+  const r = await resourceFromPathWith(path, init);
+  return await r.text();
+}
+
+/**
+ * Read UTF-8 text from a single path with overrides/plugins applied,
+ * returning a default if provided, or an Error on failure.
+ */
+export async function readSafeTextWith(
+  path: ResourcePath,
+  init: BaseInit = {},
+  defaultText?: string,
+): Promise<string | Error> {
+  const r = await resourceFromPathWith(path, init);
+  return await r.safeText(defaultText);
+}
+
+/**
+ * Read binary bytes from a single path with overrides/plugins applied.
+ */
+export async function readBytesWith(
+  path: ResourcePath,
+  init: BaseInit = {},
+): Promise<Uint8Array> {
+  const r = await resourceFromPathWith(path, init);
+  return await r.bytes();
+}
+
+/**
+ * Read binary bytes from a single path with overrides/plugins applied,
+ * returning a default if provided, or an Error on failure.
+ */
+export async function readSafeBytesWith(
+  path: ResourcePath,
+  init: BaseInit = {},
+  defaultBytes?: Uint8Array,
+): Promise<Uint8Array | Error> {
+  const r = await resourceFromPathWith(path, init);
+  return await r.safeBytes(defaultBytes);
+}
+
+/* ----------------- Multi-path / glob-capable convenience ------------------ */
+
+/**
+ * Collect Resources for one or more paths, with optional overrides/plugins.
+ * If globbing is enabled via init.isGlob, patterns may expand to many files.
+ */
+export async function collectResources(
+  paths: Iterable<ResourcePath>,
+  init: BaseInit = {},
+): Promise<BaseResource[]> {
+  const rf = resourcesFactory<BaseProv, BaseStrat>(init);
+  const provs = provenanceFromPaths(paths);
+  const stratIter = rf.strategies(provs);
+  const resIter = rf.resources(stratIter);
+
+  const out: BaseResource[] = [];
+  for await (const r of resIter) {
+    out.push(r);
+  }
+  return out;
+}
+
+/**
+ * Collect `{ resource, text }` for one or more paths, using textResources().
+ * Resources that error are skipped unless onError in init.plugins handles them.
+ */
+export async function collectTextResources(
+  paths: Iterable<ResourcePath>,
+  init: BaseInit = {},
+  options?: Parameters<typeof textResources<BaseProv, BaseStrat>>[1],
+): Promise<{ resource: BaseResource; text: string }[]> {
+  const rf = resourcesFactory<BaseProv, BaseStrat>(init);
+  const provs = provenanceFromPaths(paths);
+  const stratIter = rf.strategies(provs);
+  const resIter = rf.resources(stratIter);
+  const txtIter = rf.textResources(resIter, options);
+
+  const out: { resource: BaseResource; text: string }[] = [];
+  for await (const item of txtIter) {
+    out.push(item);
+  }
+  return out;
+}
+
+/**
+ * Collect `{ resource, bytes }` for one or more paths, using binaryResources().
+ * Resources that error are skipped unless onError in init.plugins handles them.
+ */
+export async function collectBinaryResources(
+  paths: Iterable<ResourcePath>,
+  init: BaseInit = {},
+  options?: Parameters<typeof binaryResources<BaseProv, BaseStrat>>[1],
+): Promise<{ resource: BaseResource; bytes: Uint8Array }[]> {
+  const rf = resourcesFactory<BaseProv, BaseStrat>(init);
+  const provs = provenanceFromPaths(paths);
+  const stratIter = rf.strategies(provs);
+  const resIter = rf.resources(stratIter);
+  const binIter = rf.binaryResources(resIter, options);
+
+  const out: { resource: BaseResource; bytes: Uint8Array }[] = [];
+  for await (const item of binIter) {
+    out.push(item);
+  }
+  return out;
 }

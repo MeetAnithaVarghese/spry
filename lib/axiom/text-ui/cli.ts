@@ -197,18 +197,30 @@ export class CLI {
     await this.rootCmd().parse(args);
   }
 
-  rootCmd() {
-    return new Command()
-      .name("graph-cli")
-      .version(() => computeSemVerSync(import.meta.url))
-      .description("Spry Axiom Explorer CLI")
-      .command("help", new HelpCommand())
-      .command("completions", new CompletionsCommand())
-      .command("web-ui", this.webUiCLI.docCommand())
-      .command("ls", this.lsCommand())
-      .command("inspect", this.inspectCommand())
-      .command("projection", this.projectionCommand())
-      .command("shebang", this.shebangCommand());
+  rootCmd(subcommand?: string) {
+    const description = "Spry Axiom Explorer CLI";
+    const compose = subcommand
+      ? new Command().name(subcommand).description(description)
+      : new Command()
+        .name("Spry Axiom")
+        .version(() => computeSemVerSync(import.meta.url))
+        .description(description)
+        .command("help", new HelpCommand())
+        .command("completions", new CompletionsCommand());
+
+    for (
+      const c of [
+        this.webUiCLI.webUiCommand(),
+        this.lsCommand(),
+        this.inspectCommand(),
+        this.projectionCommand(),
+        this.shebangCommand(),
+      ]
+    ) {
+      compose.command(c.getName(), c);
+    }
+
+    return compose;
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
@@ -236,7 +248,7 @@ export class CLI {
   }
 
   inspectCommand(cmdName = "inspect") {
-    return this.baseCommand({ examplesCmd: cmdName })
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description("inspect mdast nodes as a hierarchy")
       .arguments("[paths...:string]")
       .option("--no-color", "Show output without ANSI colors")
@@ -264,7 +276,7 @@ export class CLI {
   }
 
   shebangCommand(cmdName = "shebang") {
-    return this.baseCommand({ examplesCmd: cmdName })
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description(
         "convert markdown files into executables with shebang (#!) helpers",
       )
@@ -307,7 +319,7 @@ export class CLI {
    * - `-n, --node <type>` adds more mdast node.type values (e.g., paragraph)
    */
   lsCommand(cmdName = "ls") {
-    return this.baseCommand({ examplesCmd: cmdName })
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description("browse containedInSection hierarchy as a tree")
       .arguments("[paths...:string]")
       .option(
@@ -417,7 +429,7 @@ export class CLI {
    * - emits as JSON to STDOUT
    */
   projectionCommand(cmdName = "projection") {
-    return this.baseCommand({ examplesCmd: cmdName })
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description(
         "compute a projection and emit as JSON (defaults to flexible)",
       )

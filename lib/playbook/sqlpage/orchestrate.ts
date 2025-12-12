@@ -1,15 +1,20 @@
+import { parse } from "@std/path";
 import z from "@zod/zod";
+import { codeFrontmatter } from "../../axiom/mdast/code-frontmatter.ts";
 import {
+  codeInterpolationStrategy,
+} from "../../axiom/mdast/code-interpolate.ts";
+import {
+  Directive,
   isMaterializable,
-  Materializable,
   PlaybookProjection,
   playbooksFromFiles,
 } from "../../axiom/projection/playbook.ts";
 import { docFrontmatterDataBag } from "../../axiom/remark/doc-frontmatter.ts";
-import { unsafeInterpFactory } from "../../interpolate/unsafe.ts";
 import { annotationsFactory } from "../../universal/annotations.ts";
 import { MarkdownDoc } from "../../universal/fluent-md.ts";
 import { forestToStatelessViews } from "../../universal/path-tree-tabular.ts";
+import { renderer } from "../../universal/render.ts";
 import {
   isRouteSupplier,
   PageRoute,
@@ -21,8 +26,6 @@ import {
   contentSuppliers,
   mutateRouteInCellAttrs,
   sqlCodeCellLangSpec,
-  SqlPageContent,
-  SqlPageFileUpsert,
   SqlPageHeadOrTail,
   sqlPagePathsFactory,
 } from "./content.ts";
@@ -111,135 +114,80 @@ export function sqlPageConf(conf: z.infer<typeof sqlPageConfSchema>) {
   return dropUndef(out);
 }
 
-export function sqlPageInterpolator() {
-  const context = (playbook: PlaybookProjection) => {
-    const pagination = {
-      active: undefined as undefined | ReturnType<typeof interp.pagination>,
-      prepare: interp.pagination,
-      debug: `/* \${paginate("tableOrViewName")} not called yet*/`,
-      limit: `/* \${paginate("tableOrViewName")} not called yet*/`,
-      navigation: `/* \${paginate("tableOrViewName")} not called yet*/`,
-      navWithParams: (..._extraQueryParams: string[]) =>
-        `/* \${paginate("tableOrViewName")} not called yet*/`,
-    };
-
-    return {
-      env: Deno.env.toObject(),
-      pagination,
-      playbook,
-      absUrlQuoted: interp.absUrlQuoted,
-      absUrlUnquoted: interp.absUrlUnquoted,
-      absUrlUnquotedEncoded: interp.absUrlUnquotedEncoded,
-      absUrlQuotedEncoded: interp.absUrlQuotedEncoded,
-      breadcrumbs: interp.breadcrumbs,
-      sitePrefixed: interp.absUrlQuoted,
-      md: markdownLinkFactory({ url_encode: "replace" }),
-      rawSQL,
-      sqlCat,
-      SQL,
-      paginate: (tableOrViewName: string, whereSQL?: string) => {
-        const pn = interp.pagination({ tableOrViewName, whereSQL });
-        pagination.active = pn;
-        pagination.debug = pn.debugVars();
-        pagination.limit = pn.limit();
-        pagination.navigation = pn.navigation();
-        pagination.navWithParams = pn.navigation;
-        return pagination.active.init();
-      },
-    };
+export function sqlPageInterpolator(
+  playbook: PlaybookProjection,
+  directives: Iterable<Directive>,
+) {
+  const pagination = {
+    active: undefined as undefined | ReturnType<typeof interp.pagination>,
+    prepare: interp.pagination,
+    debug: `/* \${paginate("tableOrViewName")} not called yet*/`,
+    limit: `/* \${paginate("tableOrViewName")} not called yet*/`,
+    navigation: `/* \${paginate("tableOrViewName")} not called yet*/`,
+    navWithParams: (..._extraQueryParams: string[]) =>
+      `/* \${paginate("tableOrViewName")} not called yet*/`,
   };
 
-  // "unsafely" means we're using JavaScript "eval"
-  async function mutateUpsertUnsafely(
-    ctx: ReturnType<typeof context>,
-    spfu: SqlPageFileUpsert,
-  ) {
-    const { playbook: { partials } } = ctx;
-    const unsafeInterp = unsafeInterpFactory({
-      partialsCollec: partials,
-      interpCtx: (purpose) => {
-        switch (purpose) {
-          case "default":
-            return ctx;
-          case "prime":
-          case "partial":
-            return {
-              pagination: ctx.pagination,
-              paginate: ctx.paginate,
-              safeJsonStringify,
-              SQL,
-              cat: sqlCat,
-              md: ctx.md,
-              raw: rawSQL,
-              ...(spfu.cell
-                ? (isMaterializable(spfu.cell)
-                  ? spfu.cell.materializationAttrs
-                  : {})
-                : {}),
-              ...spfu,
-            };
-        }
-      },
-    });
+  // available as "ctx.*" in ${...} variables
+  const globals = {
+    env: Deno.env.toObject(),
+    pagination,
+    playbook,
+    absUrlQuoted: interp.absUrlQuoted,
+    absUrlUnquoted: interp.absUrlUnquoted,
+    absUrlUnquotedEncoded: interp.absUrlUnquotedEncoded,
+    absUrlQuotedEncoded: interp.absUrlQuotedEncoded,
+    breadcrumbs: interp.breadcrumbs,
+    sitePrefixed: interp.absUrlQuoted,
+    md: markdownLinkFactory({ url_encode: "replace" }),
+    rawSQL,
+    sqlCat,
+    SQL,
+    paginate: (tableOrViewName: string, whereSQL?: string) => {
+      const pn = interp.pagination({ tableOrViewName, whereSQL });
+      pagination.active = pn;
+      pagination.debug = pn.debugVars();
+      pagination.limit = pn.limit();
+      pagination.navigation = pn.navigation();
+      pagination.navWithParams = pn.navigation;
+      return pagination.active.init();
+    },
+  };
 
-    let errSource: string | undefined;
-    try {
-      if (spfu.isUnsafeInterpolatable && typeof spfu.contents === "string") {
-        const { interpolateUnsafely } = unsafeInterp;
-        const interpResult = await interpolateUnsafely({
-          spfu,
-          source: spfu.contents,
-          interpolate: spfu.isUnsafeInterpolatable,
-        });
-        if (interpResult.status === "mutated") {
-          spfu.contents = String(interpResult.source);
-          spfu.isInterpolated = true;
-        }
-      }
+  const strategy = codeInterpolationStrategy(directives, {
+    approach: "unsafe-allowed",
+    unsafeGlobalsCtxName: "ctx",
+    globals,
+  });
 
-      return spfu;
-    } catch (error) {
-      spfu.error = error;
-      return {
-        ...spfu,
-        contents: spfu.asErrorContents(
-          `finalSqlPageFileEntries error: ${
-            String(error)
-          }\n*****\nSOURCE:\n${errSource}\n${
-            safeJsonStringify({ ctx, spf: spfu }, 2)
-          }`,
-          error,
-        ),
-      };
-    }
-  }
+  // available as "locals" in ${...} variables without "ctx." prefix
+  const typicalLocals = {
+    pagination: globals.pagination,
+    paginate: globals.paginate,
+    SQL,
+    cat: sqlCat,
+    md: globals.md,
+    raw: rawSQL,
+  };
 
-  // "unsafely" means we're using JavaScript "eval"
-  async function mutateContentUnsafely(
-    ctx: ReturnType<typeof context>,
-    spc: SqlPageContent,
-  ) {
-    if (spc.kind === "sqlpage_file_upsert") {
-      return await mutateUpsertUnsafely(ctx, spc);
-    }
-    return spc;
-  }
+  const interpolator = renderer(strategy);
 
-  return { context, mutateUpsertUnsafely, mutateContentUnsafely };
+  return { strategy, typicalLocals, globals, interpolator };
 }
 
 export async function* sqlPageFiles(
   playbook: Awaited<ReturnType<typeof sqlPagePlaybook>>,
 ) {
-  const {
-    sources,
-    routes,
-    partials,
-    materializables,
-    routeAnnsF,
-    directives,
-  } = playbook;
-  const { sqlSPF, jsonSPF, handlers: csHandlers } = contentSuppliers();
+  const { sources, routes, materializables, routeAnnsF, directives } = playbook;
+  const { sqlSPF, jsonSPF, handlers: csHandlers, contents } =
+    contentSuppliers();
+
+  const spi = sqlPageInterpolator(playbook, directives);
+
+  const ensureExtn = (name: string, ext: string) =>
+    parse(name).ext.toLowerCase() === ext.toLowerCase()
+      ? name
+      : `${name}${ext}`;
 
   for (const src of sources) {
     if (docFrontmatterDataBag.is(src.mdastRoot)) {
@@ -251,62 +199,65 @@ export async function* sqlPageFiles(
     }
   }
 
-  for (const pc of partials.catalog.values()) {
-    yield sqlSPF(
-      `spry.d/auto/partial/${pc.identity}.auto.sql`,
-      `-- ${safeJsonStringify(pc)}\n${pc.source}`,
-      { isPartial: true, cell: pc.provenance as Materializable },
-    );
-  }
-
   for (const d of directives) {
     switch (d.directive) {
       case "HEAD":
         yield {
-          contents: d.value,
           kind: "head_sql",
-          path: `sql.d/head/${d.identity}.sql`,
+          path: ensureExtn(`sql.d/head/${d.identity}`, ".sql"),
           cell: d,
+          ...await contents(d, codeFrontmatter(d)),
         } satisfies SqlPageHeadOrTail;
         break;
 
       case "TAIL":
         yield {
-          contents: d.value,
           kind: "tail_sql",
-          path: `sql.d/tail/${d.identity}.sql`,
+          path: ensureExtn(`sql.d/tail/${d.identity}`, ".sql"),
           cell: d,
+          ...await contents(d, codeFrontmatter(d)),
         } satisfies SqlPageHeadOrTail;
         break;
     }
   }
 
-  const { mutateContentUnsafely, context } = sqlPageInterpolator();
-  const spiContext = context(playbook);
+  const { interpolator: { renderOne }, typicalLocals } = spi;
 
   for await (const m of materializables) {
     const handlers = csHandlers(m.language);
     for (const handler of handlers) {
-      const content = await handler(m, {
+      const spc = await handler(m, {
         registerIssue: (message, error) =>
           console.error(`ERROR: ${message} ${error}`),
       });
-      if (content) {
-        const spf = await mutateContentUnsafely(spiContext, content);
-        if (typeof spf.contents === "string") {
+      if (spc) {
+        if (typeof spc.contents === "string") {
+          const rendered = await renderOne(m, {
+            body: () => spc.contents,
+            locals: (locals) => ({
+              ...typicalLocals,
+              ...locals,
+              cell: m,
+              path: spc.path,
+              spc,
+            }),
+          });
+          spc.contents = rendered.text;
           // see if any @route.* annotations are supplied in the mutated content
           // and merge them with existing { route: {...} } cell
           const route = routeAnnsF.transform(
-            await routeAnnsF.catalog(spf.contents),
+            await routeAnnsF.catalog(rendered.text),
           );
-          if (route) mutateRouteInCellAttrs(m, spf.path, undefined, route);
+          if (route) {
+            mutateRouteInCellAttrs(m, spc.path, undefined, route);
+          }
         }
-        yield spf;
-        if (isMaterializable(spf.cell)) {
-          const cell = spf.cell;
+        yield spc;
+        if (isMaterializable(spc.cell)) {
+          const cell = spc.cell;
           if (!cell.isBlob) {
             yield jsonSPF(
-              `spry.d/auto/cell/${spf.path}.auto.json`,
+              `spry.d/auto/cell/${spc.path}.auto.json`,
               safeJsonStringify(cell, 2),
               { cell, isAutoGenerated: true },
             );
@@ -324,7 +275,7 @@ export async function* sqlPageFiles(
             Object.entries(cell.materializationAttrs).length
           ) {
             yield jsonSPF(
-              `spry.d/auto/resource/${spf.path}.auto.json`,
+              `spry.d/auto/resource/${spc.path}.auto.json`,
               JSON.stringify(dropUndef(cell.materializationAttrs), null, 2),
               { cell, isAutoGenerated: true },
             );

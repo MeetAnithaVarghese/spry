@@ -200,7 +200,7 @@ displayed in the left-side navigation panel.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: prathitha
+assignee: Sarah Johnson
 status: passed
 ```
 
@@ -271,7 +271,7 @@ assessment sections for CMMC Level 1 and Level 2 self-assessments.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: prathitha
+assignee: Sarah Johnson
 status: passed
 ```
 
@@ -344,7 +344,7 @@ completed in the CMMC self-assessment.
 ```yaml HFM
   role: evidence
 cycle: 1.5
-assignee: arun-ramanan
+assignee: Emily Davis
 status: passed
 ```
 
@@ -400,7 +400,7 @@ completed sections.
 doc-classify:
   role: evidence
 cycle: 1.5
-assignee: arun-ramanan
+assignee: Emily Davis
 status: passed
 ```
 
@@ -458,7 +458,7 @@ Level 1 self-assessment are completed.
 doc-classify:
   role: evidence
 cycle: 1.5
-assignee: arun-ramanan
+assignee: Emily Davis
 status: failed
 ```
 
@@ -524,7 +524,7 @@ Login functionality implementation with Zitadel
 @id test-plan
 
 ```yaml
-owner: prathitha.cb@netspective.in
+owner: Sarah Johnson.cb@netspective.in
 priority: High
 tags:
   - Opsfolio
@@ -591,7 +591,7 @@ to the authentication screen.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Ann Jose
+assignee: Michael Thompson
 status: passed
 ```
 
@@ -640,7 +640,7 @@ Validate successful authentication and dashboard redirection for valid users.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Dency
+assignee: Sarah Johnson
 status: passed
 ```
 
@@ -689,7 +689,7 @@ Validate proper error handling for incorrect login attempts.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Ann Jose
+assignee: Michael Thompson
 status: passed
 ```
 
@@ -745,7 +745,7 @@ Opsfolio login page
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Prathitha
+assignee: Emily Davis
 status: failed
 issue_id: ["BUG-OPS-001"]
 ```
@@ -775,7 +775,7 @@ status: open
 @id test-plan-automation
 
 ```yaml
-owner: arun@netspective.in
+owner: john.carter@example.com
 test_type: Automated
 priority: High
 tags:
@@ -848,7 +848,7 @@ Opsfolio CMMC page using DOM validation and visual evidence capture.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Prathitha
+assignee: Emily Davis
 status: passed
 ```
 
@@ -903,7 +903,7 @@ credentials and are redirected to the dashboard.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Prathitha
+assignee: Emily Davis
 status: passed
 ```
 
@@ -958,7 +958,7 @@ invalid login attempts.
 doc-classify:
   role: evidence
 cycle: 1.1
-assignee: Ann Jose
+assignee: Michael Thompson
 status: passed
 ```
 

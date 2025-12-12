@@ -814,3 +814,43 @@ export const mergeFlexibleText = (
 
   return out;
 };
+
+export const flexibleFlagOrTextSchema = z.union([
+  z.boolean(),
+  z.string(),
+  z.array(z.string()),
+]);
+
+export type FlexibleFlagOrText = z.infer<typeof flexibleFlagOrTextSchema>;
+
+export const mergeFlexibleFlagOrText = (
+  shortcut?: FlexibleFlagOrText,
+  long?: FlexibleFlagOrText,
+): { readonly flagsCount: number; readonly texts: string[] } | false => {
+  let flagsCount = 0;
+
+  // Count boolean flags
+  if (shortcut === true) flagsCount++;
+  if (long === true) flagsCount++;
+
+  // Extract text components
+  const shortcutText = typeof shortcut === "string" || Array.isArray(shortcut)
+    ? shortcut
+    : undefined;
+
+  const longText = typeof long === "string" || Array.isArray(long)
+    ? long
+    : undefined;
+
+  const texts = mergeFlexibleText(shortcutText, longText);
+
+  // If no flags and no texts, return false
+  if (flagsCount === 0 && texts.length === 0) {
+    return false;
+  }
+
+  return {
+    flagsCount,
+    texts,
+  };
+};

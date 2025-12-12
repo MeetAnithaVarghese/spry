@@ -1,4 +1,4 @@
-import { testingAsserts as ta } from "./deps-test.ts";
+import { assertEquals } from "@std/assert";
 import {
   detectedValueNature,
   TransformArrayValuesStream,
@@ -6,17 +6,17 @@ import {
 } from "./value.ts";
 
 Deno.test("determineType function", () => {
-  ta.assertEquals(detectedValueNature("true").nature, "boolean");
-  ta.assertEquals(detectedValueNature("on").nature, "boolean");
-  ta.assertEquals(detectedValueNature("yes").nature, "boolean");
-  ta.assertEquals(detectedValueNature("false").nature, "boolean");
-  ta.assertEquals(detectedValueNature("off").nature, "boolean");
-  ta.assertEquals(detectedValueNature("no").nature, "boolean");
-  ta.assertEquals(detectedValueNature("123").nature, "number");
-  ta.assertEquals(detectedValueNature("123n").nature, "bigint");
-  ta.assertEquals(detectedValueNature("{Red}").nature, "union");
-  ta.assertEquals(detectedValueNature("2022-01-01").nature, "Date");
-  ta.assertEquals(detectedValueNature("John Doe").nature, "string");
+  assertEquals(detectedValueNature("true").nature, "boolean");
+  assertEquals(detectedValueNature("on").nature, "boolean");
+  assertEquals(detectedValueNature("yes").nature, "boolean");
+  assertEquals(detectedValueNature("false").nature, "boolean");
+  assertEquals(detectedValueNature("off").nature, "boolean");
+  assertEquals(detectedValueNature("no").nature, "boolean");
+  assertEquals(detectedValueNature("123").nature, "number");
+  assertEquals(detectedValueNature("123n").nature, "bigint");
+  assertEquals(detectedValueNature("{Red}").nature, "union");
+  assertEquals(detectedValueNature("2022-01-01").nature, "Date");
+  assertEquals(detectedValueNature("John Doe").nature, "string");
 });
 
 Deno.test("TransformObjectValuesStream class", async () => {
@@ -46,7 +46,7 @@ Deno.test("TransformObjectValuesStream class", async () => {
 
   for (const expected of expectedOutput) {
     const result = await reader.read();
-    ta.assertEquals(result.value, expected);
+    assertEquals(result.value, expected);
   }
 });
 
@@ -77,6 +77,6 @@ Deno.test("TransformArrayValuesStream class", async () => {
 
   for (const expected of expectedOutput) {
     const result = await reader.read();
-    ta.assertEquals(result.value, expected);
+    assertEquals(result.value, expected);
   }
 });

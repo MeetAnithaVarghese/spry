@@ -17,6 +17,7 @@ import docFrontmatter from "../remark/doc-frontmatter.ts";
 
 import {
   provenanceFromPaths,
+  relativeTo,
   type ResourceProvenance,
   type ResourceStrategy,
 } from "../../universal/resource.ts";
@@ -175,6 +176,7 @@ export async function* markdownASTs<
     await pipeline.run(mdastRoot, file);
 
     const nst = nodeSrcText(mdastRoot, text);
+    const relTo = relativeTo(resource);
 
     yield {
       resource,
@@ -190,6 +192,8 @@ export async function* markdownASTs<
           if (typeof l !== "number") return f;
           return `${f}:${l}`;
         }),
+      relativeTo: relTo,
+      resolveRelPath: (path: string) => relTo.path(path).provenance.path,
     };
   }
 }

@@ -1,8 +1,8 @@
-# Qualityfolio.md — Flexible Authoring Guide (works with Spry's Axiom pattern)
+# Qualityfolio.md - Flexible Authoring Guide (works with Spry's Axiom pattern)
 
 > Goal: Author plain, human-friendly Markdown for tests that can be parsed into
 > structure later.\
-> Principle: All headings are optional — use as few or as many levels as you
+> Principle: All headings are optional - use as few or as many levels as you
 > need. The parser (**Spry's Axiom pattern**) is schema-free at parse time and schema-driven
 > at query time.
 
@@ -18,7 +18,7 @@
 
 ## Why headings are optional
 
-Teams start simple and grow complexity over time. `folio.ts` supports all of
+Teams start simple and grow complexity over time. **Spry's Axiom pattern** supports all of
 these equally:
 
 | Project size | Typical content you write                                   | Example mapping (later at query time)                                    |
@@ -312,7 +312,7 @@ objective: Lockout policy & reset email
 }
 ```
 
-> Annotations do not inherit to children — add where you want them to apply.
+> Annotations do not inherit to children - add where you want them to apply.
 
 ## Steps & expectations (GFM tasks)
 
@@ -427,24 +427,16 @@ console.table(lsSchema(f, view));
 support/
 └── assurance/
     └── qualityfolio/
-    │   ├── evidence/
-    │   │   ├── TC-0001/
-    │   │   │   └── 1.1/
-    │   │   │       ├── screenshot1.auto.png
-    │   │   │       ├── screenshot2.auto.png
-    │   │   │       ├── result.auto.json
-    │   │   │       └── run.auto.md
-    │   ├── cap-exec-cli.surveilr[json].ts
-    │   ├── cap-exec.surveilr[json].ts
-    │   ├── cap-exec.surveillance[json].ts
-    │   ├── extract-code-cells.ts
-    │   ├── qf-complex.md
-    │   ├── qf-large.md
-    │   ├── qf-medium.md
-    │   ├── qf-small.md
-    │   └── readme-updated.md
+    │   ├── sample
+    │   │   └── example-artifact.md	
+    │   └── evidence/
+    │   │   └── TC-0001/
+    │   │       ├── screenshot1.auto.png
+    │   │       ├── screenshot2.auto.png
+    │   │       ├── result.auto.png
+    │   │       └── run.auto.md
     ├── resource-surveillance.sqlite.db
-    └── sqlite-etl.sql	
+    └── sqlite-etl.sql		
 ```
 
 > Remember: the parser does not require any folder layout. This is just for DX.

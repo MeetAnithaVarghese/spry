@@ -1298,3 +1298,197 @@ export function errorOnlyTaskEventBus<
   // Do NOT log plan/run events here — this bus is intentionally error-only
   return bus;
 }
+
+/**
+ * Create a text-logging event bus for Task execution.
+ *
+ * - style: "rich"  → includes emojis, no ANSI colors
+ * - style: "plain" → no emojis
+ *
+ * All log lines are appended to the returned `lines` array, which can be
+ * written to a file, persisted, or inspected in tests.
+ *
+ * Example:
+ *   const { bus, lines } = textInfoTaskEventBus<MyTask, Ctx>({ style: "plain" });
+ *   await executeDAG(plan, exec, { eventBus: bus, ctx });
+ *   // lines now holds a compact textual trace of the run
+ */
+export function textInfoTaskEventBus<
+  T extends Task,
+  Context,
+>(init: {
+  style: "plain" | "rich";
+  /** Max IDs to show inline before summarizing, default 10 */
+  showIdsMax?: number;
+}) {
+  const fancy = init.style === "rich";
+  const maxShow = init.showIdsMax ?? 10;
+  const bus = eventBus<TaskExecEventMap<T, Context>>();
+  const lines: string[] = [];
+
+  const E = {
+    run: "🏃",
+    graph: "📈",
+    link: "🔗",
+    play: "▶️",
+    stop: "⏹️",
+    check: "✅",
+    cross: "❌",
+    warn: "⚠️",
+    err: "💥",
+    box: "📦",
+    gear: "⚙️",
+    timer: "⏱️",
+    list: "📝",
+  } as const;
+
+  const em = {
+    run: (s: string) => (fancy ? `${E.run} ${s}` : s),
+    graph: (s: string) => (fancy ? `${E.graph} ${s}` : s),
+    link: (s: string) => (fancy ? `${E.link} ${s}` : s),
+    play: (s: string) => (fancy ? `${E.play} ${s}` : s),
+    stop: (s: string) => (fancy ? `${E.stop} ${s}` : s),
+    done: (
+      ok: boolean,
+    ) => (fancy ? (ok ? E.check : E.cross) : ok ? "OK" : "FAIL"),
+    warn: (s: string) => (fancy ? `${E.warn} ${s}` : s),
+    err: (s: string) => (fancy ? `${E.err} ${s}` : s),
+    timer: (ms?: number) =>
+      ms == null
+        ? ""
+        : fancy
+        ? `${E.timer} ${Math.round(ms)}ms`
+        : `${Math.round(ms)}ms`,
+    list: (s: string) => (fancy ? `${E.list} ${s}` : s),
+    gear: (s: string) => (fancy ? `${E.gear} ${s}` : s),
+    box: (s: string) => (fancy ? `${E.box} ${s}` : s),
+  };
+
+  const tag = (s: string) => `[${s}]`;
+
+  const fmtIds = (ids: readonly string[]) => {
+    if (ids.length <= maxShow) return ids.join(", ");
+    return `${ids.slice(0, maxShow).join(", ")} …(+${ids.length - maxShow})`;
+  };
+
+  const fmtPairs = (obj: Record<string, unknown>) =>
+    Object.entries(obj)
+      .filter(([, v]) => v != null && v !== "")
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join(" ");
+
+  const fmtTotals = (t: {
+    tasks: number;
+    failed: number;
+    succeeded: number;
+    unresolved: number;
+    missingDeps: number;
+  }) =>
+    fmtPairs({
+      tasks: t.tasks,
+      ok: t.succeeded,
+      fail: t.failed,
+      unresolved: t.unresolved,
+      missingDeps: t.missingDeps,
+    });
+
+  // ---- listeners ----
+
+  bus.on("run:start", ({ startedAt }) => {
+    lines.push(
+      `${tag("run")} ${em.run("start")} ${startedAt.toISOString()}`,
+    );
+  });
+
+  bus.on("plan:ready", ({ ids, unresolved, missingDeps }) => {
+    lines.push(
+      `${tag("plan")} ${
+        em.box("plan")
+      } ids=${ids.length} unresolved=${unresolved.length} missingDeps=${
+        Object.keys(missingDeps).length
+      }`,
+    );
+    if (ids.length) {
+      lines.push(
+        `${tag("plan")} ${em.list("ids")} ${fmtIds(ids)}`,
+      );
+    }
+    if (unresolved.length) {
+      lines.push(
+        `${tag("plan")} ${em.list("unresolved")} ${fmtIds(unresolved)}`,
+      );
+    }
+    const mdKeys = Object.keys(missingDeps);
+    if (mdKeys.length) {
+      for (const k of mdKeys) {
+        lines.push(
+          `${tag("plan")} ${em.link(`${k} ->`)} ${fmtIds(missingDeps[k])}`,
+        );
+      }
+    }
+  });
+
+  bus.on("dag:ready", ({ ids }) => {
+    lines.push(
+      `${tag("dag")} ${em.graph("ready")} nodes=${ids.length}${
+        ids.length ? ` ${fmtIds(ids)}` : ""
+      }`,
+    );
+  });
+
+  bus.on("dag:release", ({ from, to }) => {
+    lines.push(
+      `${tag("dag")} ${em.link(`${from} ->`)} ${fmtIds(to)}`,
+    );
+  });
+
+  bus.on("task:scheduled", ({ id }) => {
+    lines.push(
+      `${tag("task")} ${em.gear("scheduled")} ${id}`,
+    );
+  });
+
+  bus.on("task:start", ({ id, at }) => {
+    lines.push(
+      `${tag("task")} ${em.play("start")} ${id} ${at.toISOString()}`,
+    );
+  });
+
+  bus.on("task:end", ({ id, result }) => {
+    const header = `${tag("task")} ${em.stop("end")} ${id} ${
+      em.done(result.success)
+    }`;
+    const extras: Record<string, unknown> = {
+      // deno-lint-ignore no-explicit-any
+      code: (result as any).exitCode ?? (result as any).code,
+      // deno-lint-ignore no-explicit-any
+      startedAt: (result as any).startedAt?.toISOString?.(),
+      // deno-lint-ignore no-explicit-any
+      endedAt: (result as any).endedAt?.toISOString?.(),
+    };
+    const extraText = fmtPairs(extras);
+    lines.push(extraText ? `${header} ${extraText}` : header);
+  });
+
+  bus.on("run:end", ({ endedAt, durationMs, totals }) => {
+    const head = `${tag("run")} ${em.stop("end")} ${endedAt.toISOString()}`;
+    const tail = fmtTotals(totals);
+    const timed = durationMs != null ? ` ${em.timer(durationMs)}` : "";
+    lines.push(`${head} ${tail}${timed}`);
+  });
+
+  bus.on("error", ({ message, cause, taskId, stage }) => {
+    const parts: string[] = [message];
+    if (taskId) parts.push(`task=${taskId}`);
+    if (stage) parts.push(`stage=${stage}`);
+    let line = `${tag("error")} ${em.err(parts.join(" "))}`;
+    if (cause instanceof Error) {
+      line += ` cause=${cause.name}:${cause.message}`;
+    } else if (cause != null) {
+      line += ` cause=${String(cause)}`;
+    }
+    lines.push(line);
+  });
+
+  return { bus, lines };
+}

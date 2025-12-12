@@ -4,12 +4,13 @@ import type { Node } from "types/unist";
 import { queryPosixPI } from "../../../universal/posix-pi.ts";
 import { codeFrontmatter } from "../../mdast/code-frontmatter.ts";
 import { headingText } from "../../mdast/node-content.ts";
+import { nodeIssues } from "../../mdast/node-issues.ts";
 import { type GraphEdgesTree, graphEdgesTree } from "../../projection/tree.ts";
+import { isActionableCodeCandidate } from "../../remark/actionable-code-candidates.ts";
 import {
   isCodeDirectiveCandidate,
   isCodePartialCandidate,
 } from "../../remark/code-directive-candidates.ts";
-import { isActionableCodeCandidate } from "../../remark/actionable-code-candidates.ts";
 import { GraphEdge } from "../orchestrate.ts";
 import {
   containedInSectionRule,
@@ -108,6 +109,16 @@ export function typicalRules() {
         TypicalRuleCtx,
         TypicalGraphEdge
       >("isCode", (node) => node.type === "code"),
+    )
+    .use(
+      nodesClassificationRule<
+        TypicalRelationship,
+        TypicalRuleCtx,
+        TypicalGraphEdge
+      >(
+        "hasIssues",
+        (node) => nodeIssues.is(node) && node.data.issues.length > 0,
+      ),
     )
     .use(
       nodesClassificationRule<

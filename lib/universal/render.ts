@@ -35,7 +35,7 @@ export interface Memory<
   memoize?(
     rendered: string,
     memoize: Memoizable,
-    rawBody: string,
+    rawBody?: string,
   ): void | Promise<void>;
 }
 
@@ -108,6 +108,16 @@ export interface InjectionProvider<S> {
   inject(
     context: InjectionContext<S>,
   ): string | undefined | Promise<string | undefined>;
+  injectionDiagnostics(
+    context: InjectionContext<S>,
+    diags: {
+      readonly target: string;
+      readonly inject: boolean;
+      readonly why: string;
+      readonly how: string;
+      readonly weight?: number;
+    }[],
+  ): void | Promise<void>;
 }
 
 /**
@@ -159,7 +169,7 @@ export interface EventBus<EventMap> {
  * Events emitted by the renderer. Extend as needed.
  */
 export interface RenderEvents<S, Memoizable> {
-  "render:start": { path?: string };
+  "render:start": { path?: string; source: S };
   "render:end": {
     source: S;
     path?: string;
@@ -200,9 +210,13 @@ export interface RenderStrategy<
  * Result of rendering a single content item.
  */
 export interface RenderResult {
-  text: string;
-  mutation: "mutated" | "unmodified" | "error";
-  error?: unknown;
+  readonly text: string;
+  readonly mutation: "mutated" | "unmodified" | "error";
+  readonly injectedTmpls?: {
+    readonly templateName: string;
+    readonly path?: string;
+  }[];
+  readonly error?: unknown;
 }
 
 /**
@@ -284,14 +298,14 @@ export function renderer<
   Memoizable,
 >(
   rs: RenderStrategy<S, MemoryValue, Shape, Memoizable>,
-): Renderer<S> {
+) {
   const { content, memory, interpolator, globals, bus } = rs;
 
   async function applyInjections(
     path: string | undefined,
     source: S,
     body: string,
-  ): Promise<string> {
+  ) {
     const injectable = content.isInjectable?.(path, source) ?? false;
     if (!injectable) return body;
 
@@ -301,6 +315,7 @@ export function renderer<
     const asyncList = toAsyncIterable(listResult);
 
     let result = body;
+    const injectedTmpls: RenderResult["injectedTmpls"] = [];
 
     for await (const [name, value] of asyncList) {
       // Any memory value that implements InjectionProvider<S> participates.
@@ -315,28 +330,43 @@ export function renderer<
       if (typeof injected !== "string") continue;
 
       result = injected;
+
+      const templateName = String(name);
+      injectedTmpls.push({ templateName, path });
       bus?.emit("injection:applied", {
         source,
         path,
-        templateName: String(name),
+        templateName,
       });
     }
 
-    return result;
+    return { rendered: result, injectedTmpls };
   }
 
-  async function renderOne(source: S): Promise<RenderResult> {
+  async function renderOne(source: S, overrides?: {
+    body?: (source: S) => Promise<BodyInput> | BodyInput;
+    locals?: (
+      source: S,
+      supplied?: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>> | Record<string, unknown>;
+  }): Promise<RenderResult> {
     const path = content.path?.(source);
-    bus?.emit("render:start", { path });
+    bus?.emit("render:start", { path, source });
 
-    const rawBodyInput = await content.body(source);
+    const rawBodyInput = await overrides?.body?.(source) ??
+      await content.body(source);
     const rawBody = await bodyToString(rawBodyInput);
 
     // 3. Injections (if applicable).
-    const bodyWithInjections = await applyInjections(path, source, rawBody);
+    const applied = await applyInjections(path, source, rawBody);
+    const bodyWithInjections = typeof applied === "string"
+      ? applied
+      : applied.rendered;
 
     // 4. Interpolation (if applicable).
-    const locals = (await content.locals?.(source)) ?? {};
+    let locals = (await content.locals?.(source)) ?? {};
+    if (overrides?.locals) locals = await overrides.locals(source, locals);
+
     let interpolated = bodyWithInjections;
     let error: unknown;
     if (content.isInterpolatable?.(source)) {
@@ -378,21 +408,68 @@ export function renderer<
       length: interpolated.length,
     });
 
-    return { text: interpolated, mutation, error };
+    return {
+      text: interpolated,
+      mutation,
+      error,
+      injectedTmpls: typeof applied === "string"
+        ? undefined
+        : applied.injectedTmpls,
+    };
   }
 
   async function renderAll(
     sources: Iterable<S> | AsyncIterable<S>,
+    overrides?: Parameters<typeof renderOne>[1],
   ): Promise<{ results: RenderResult[] }> {
     const results: RenderResult[] = [];
     const iterable = toAsyncIterable(sources as AsyncIterable<S> | Iterable<S>);
     for await (const source of iterable) {
       // Intentional sequential rendering to preserve ordering and memory semantics.
-      const res = await renderOne(source);
+      const res = await renderOne(source, overrides);
       results.push(res);
     }
     return { results };
   }
 
-  return { renderOne, renderAll };
+  async function diagnostics(
+    sources: Iterable<S> | AsyncIterable<S>,
+    overrides?: Parameters<typeof renderOne>[1],
+  ) {
+    const injectDiags: Parameters<
+      InjectionProvider<S>["injectionDiagnostics"]
+    >[1] = [];
+    if (memory.injectables) {
+      const injectables = memory.injectables();
+      const iterable = toAsyncIterable(
+        sources as AsyncIterable<S> | Iterable<S>,
+      );
+      for await (const source of iterable) {
+        const path = content.path?.(source);
+        const injectable = content.isInjectable?.(path, source) ?? false;
+        if (!injectable) continue;
+
+        const rawBodyInput = await overrides?.body?.(source) ??
+          await content.body(source);
+        const rawBody = await bodyToString(rawBodyInput);
+
+        for await (const [_, value] of toAsyncIterable(injectables)) {
+          // Any memory value that implements InjectionProvider<S> participates.
+          if (!isInjectionProviderForSource<S, MemoryValue>(value)) continue;
+          value.injectionDiagnostics(
+            { path, source, body: rawBody },
+            injectDiags,
+          );
+        }
+      }
+    }
+    return {
+      injectDiags,
+      injectables: memory.injectables
+        ? await Array.fromAsync(memory.injectables())
+        : undefined,
+    };
+  }
+
+  return { renderOne, renderAll, diagnostics };
 }

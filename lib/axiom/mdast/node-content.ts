@@ -2,8 +2,10 @@
 // Node content helpers
 // -----------------------------------------------------------------------------
 
-import { Heading, Node, Text } from "types/mdast";
+import { Code, Heading, Node, Text } from "types/mdast";
+import { directivesParser } from "../../universal/directive.ts";
 import { NodeDecorator } from "../remark/node-decorator.ts";
+import { codeFrontmatter } from "./code-frontmatter.ts";
 
 // Helper: extract heading text for assertions
 export function headingText(node: Node): string {
@@ -49,6 +51,8 @@ export function truncateNodeLabel(text: string, max: number): string {
   return text.slice(0, max - 1).trimEnd() + "…";
 }
 
+const nodeLabelDP = directivesParser();
+
 export function typicalNodeLabel(node: Node): string {
   const type = (node as { type?: string }).type ?? "unknown";
 
@@ -70,12 +74,17 @@ export function typicalNodeLabel(node: Node): string {
 
   // Code blocks: "code:yaml @id mdast-io-project"
   if (type === "code") {
-    const c = node as Node & { lang?: string | null; value?: string };
+    const c = node as Code;
+    const dir = c.meta ? nodeLabelDP.isDirective(c.meta) : false;
+    const codeFM = codeFrontmatter(c);
+    const identity = dir
+      ? `${dir.nature}:${dir.identity}`
+      : (codeFM?.pi.pos[0] ?? undefined);
     const lang = c.lang ? c.lang.toLowerCase() : "";
     const firstLine = (c.value ?? "").split(/\r?\n/, 1)[0] ?? "";
     const langPart = lang ? `${lang} ` : "";
     const textPart = firstLine ? truncateNodeLabel(firstLine, 60) : "(code)";
-    return `code: ${langPart}${textPart}`;
+    return `code${identity ? `[${identity}]` : ""}: ${langPart}${textPart}`;
   }
 
   // Lists and list items: "list", "- First list item…"

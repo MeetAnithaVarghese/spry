@@ -72,10 +72,10 @@
  *         path (`nature: "relFsPath"`) with optional `gitignore`.
  *       - Otherwise it is treated as an in-memory capture key
  *         (`nature: "memory"`).
- *   - `captureOnly`:
+ *   - `memoizeOnly`:
  *       - When true, indicates that the code should not actually be executed,
  *         only interpolated and captured.
- *       - For some languages (see `captureOnlyLangIds`), this effectively
+ *       - For some languages (see `memoizeOnlyLangIds`), this effectively
  *         makes the node `nature: "STORABLE"` even though it is still a `code`
  *         block in the Markdown.
  *
@@ -86,7 +86,7 @@
  * - `spawnableLangIds`: base language IDs (e.g. `"shell"`, `"envrc"`, `"env"`).
  * - `spawnableLangSpecs`: their corresponding `LanguageSpec` entries from
  *   `languageRegistry`.
- * - `captureOnlyLangIds`: a subset of those whose code is never “run” but
+ * - `memoizeOnlyLangIds`: a subset of those whose code is never “run” but
  *   only **captured** (e.g. `"env"`, `"envrc"`); these are always treated as
  *   `nature: "STORABLE"` and not as executable tasks.
  *
@@ -139,12 +139,20 @@ import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { languageRegistry, languageSpecSchema } from "../../universal/code.ts";
 import {
+  flexibleFlagOrTextSchema,
   flexibleTextSchema,
+  mergeFlexibleFlagOrText,
   mergeFlexibleText,
 } from "../../universal/posix-pi.ts";
 import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
+
+// given any arbitrary key, make it camel case so it can be easily accessed
+export const resolveCaptureSpecKey = (s: string) =>
+  s.toLowerCase()
+    .replace(/[^a-z0-9]+([a-z0-9])/g, (_, c) => c.toUpperCase())
+    .replace(/[^a-z0-9]/g, "");
 
 export type CaptureSpec =
   | {
@@ -154,13 +162,13 @@ export type CaptureSpec =
   }
   | {
     readonly nature: "memory";
-    readonly key: string;
+    readonly key?: string;
   };
 
 export const actionableCodePiFlagsSchema = z.object({
   descr: z.string().optional(),
   dep: flexibleTextSchema.optional(), // collected as multiple --dep
-  capture: flexibleTextSchema.optional(),
+  capture: flexibleFlagOrTextSchema.optional(),
   interpolate: z.boolean().optional(),
   noInterpolate: z.boolean().optional(),
   silent: z.boolean().optional(),
@@ -172,7 +180,7 @@ export const actionableCodePiFlagsSchema = z.object({
   notinjectable: z.boolean().optional(),
 
   // shortcuts
-  /* capture */ C: z.string().optional(),
+  /* capture */ C: flexibleFlagOrTextSchema.optional(),
   /* branch/graph */ B: flexibleTextSchema.optional(),
   /* dep */ D: flexibleTextSchema.optional(),
   /* graph/branch */ G: flexibleTextSchema.optional(),
@@ -181,16 +189,26 @@ export const actionableCodePiFlagsSchema = z.object({
 }).transform((raw) => {
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
-  const capture = mergeFlexibleText(raw.C, raw.capture);
   const injectedDep = mergeFlexibleText(raw.injectedDep);
+
+  let capture: CaptureSpec[] = [];
+  const capRaw = mergeFlexibleFlagOrText(raw.C, raw.capture);
+  if (capRaw) {
+    capture = capRaw.texts.map((
+      c,
+    ) => (c.startsWith("./")
+      ? { nature: "relFsPath", fsPath: c, gitignore: raw.gitignore }
+      : { nature: "memory", key: c })
+    );
+    if (capRaw.flagsCount > 0) {
+      capture.push({ nature: "memory" }); // "key" will be calculated since null
+    }
+  }
+
   return {
     description: raw.descr,
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
-    capture: capture.map((c) =>
-      (c.startsWith("./")
-        ? { nature: "relFsPath", fsPath: c, gitignore: raw.gitignore }
-        : { nature: "memory", key: c }) satisfies CaptureSpec
-    ),
+    capture: capture.length > 0 ? capture : undefined,
     interpolate: raw.I ?? raw.interpolate,
     noInterpolate: raw.noInterpolate,
     injectable: raw.J ?? raw.injectable,
@@ -208,7 +226,7 @@ export type ActionableCodePiFlags = z.infer<typeof actionableCodePiFlagsSchema>;
 export const actionableCodeSchema = z.discriminatedUnion("nature", [
   z.object({
     nature: z.literal("EXECUTABLE"),
-    captureOnly: z.boolean().optional(), // don't execute, just capture interpolation results
+    memoizeOnly: z.boolean().optional(), // don't execute, just capture interpolation results
     spawnableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema,
     spawnableArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
@@ -271,7 +289,7 @@ export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
   if (!langSpec) throw new Error("this should never happen");
   return langSpec;
 });
-export const captureOnlySpawnableLangSpecs = captureOnlySpawnableLangIds.map(
+export const memoizeOnlySpawnableLangSpecs = captureOnlySpawnableLangIds.map(
   (lid) => {
     const langSpec = languageRegistry.get(lid);
     if (!langSpec) throw new Error("this should never happen");
@@ -315,7 +333,7 @@ export const actionableCodeCandidates: Plugin<
                 actionable.spawnableIdentity = identity;
                 actionable.language = codeFM.langSpec!;
                 actionable.spawnableArgs = args.data; // by default we do NOT interpolate
-                actionable.captureOnly = captureOnlySpawnableLangSpecs.find(
+                actionable.memoizeOnly = memoizeOnlySpawnableLangSpecs.find(
                     (l) => l.id == codeFM.langSpec?.id,
                   )
                   ? true

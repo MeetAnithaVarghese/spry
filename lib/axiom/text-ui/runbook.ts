@@ -15,144 +15,54 @@ import {
   yellow,
 } from "@std/fmt/colors";
 import { relative } from "@std/path";
-import { Code } from "types/mdast";
-import { MarkdownDoc } from "../../markdown/fluent-doc.ts";
-import { markdownShellEventBus } from "../../task/mdbus.ts";
+import { toMarkdown } from "mdast-util-to-markdown";
+import { Code, Node, Root } from "types/mdast";
+import { select } from "unist-util-select";
+
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
+import { MarkdownDoc } from "../../universal/fluent-md.ts";
 import {
   ColumnDef,
   ListerBuilder,
 } from "../../universal/lister-tabular-tui.ts";
+import { markdownShellEventBus } from "../../universal/shell-mdbus.ts";
 import {
   errorOnlyShellEventBus,
+  shell,
   ShellBusEvents,
   verboseInfoShellEventBus,
 } from "../../universal/shell.ts";
 import {
-  errorOnlyTaskEventBus,
-  executeDAG,
-  executionPlan,
-  executionSubplan,
-  fail,
-  ok,
-  TaskExecEventMap,
-  TaskExecutionPlan,
-  verboseInfoTaskEventBus,
-} from "../../universal/task.ts";
-import { computeSemVerSync } from "../../universal/version.ts";
-
-import {
-  captureFactory,
-  CaptureSpec,
-  gitignorableOnCapture,
-} from "../../interpolate/capture.ts";
-import { type PartialCollection } from "../../interpolate/partial.ts";
-import {
-  unsafeInterpFactory,
-  UnsafeInterpolationResult,
-} from "../../interpolate/unsafe.ts";
-import { eventBus } from "../../universal/event-bus.ts";
-import { shell } from "../../universal/shell.ts";
-import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
 } from "../../universal/task-visuals.ts";
-import { ExecutableTask, playbooksFromFiles } from "../projection/playbook.ts";
+import {
+  errorOnlyTaskEventBus,
+  executionPlan,
+  executionSubplan,
+  verboseInfoTaskEventBus,
+} from "../../universal/task.ts";
+import { computeSemVerSync } from "../../universal/version.ts";
+import { ansiPrettyNodeIssues } from "../mdast/node-issues.ts";
+import { exectutionReport, tasksRunbook } from "../orchestrate/task.ts";
+import {
+  ExecutableTask,
+  PlaybookProjection,
+  playbooksFromFiles,
+} from "../projection/playbook.ts";
+import { CaptureSpec } from "../remark/actionable-code-candidates.ts";
 import * as axiomCLI from "./cli.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
-
-export function executeTasksFactory<
-  T extends ExecutableTask,
-  Context extends { readonly runId: string },
-  FragmentLocals extends Record<string, unknown> = Record<string, unknown>,
->(
-  opts?: {
-    partials: PartialCollection<FragmentLocals>;
-    shellBus?: ReturnType<typeof eventBus<ShellBusEvents>>;
-    tasksBus?: ReturnType<typeof eventBus<TaskExecEventMap<T, Context>>>;
-  },
-) {
-  const td = new TextDecoder();
-
-  const cf = captureFactory<
-    ExecutableTask,
-    {
-      readonly interpResult: UnsafeInterpolationResult;
-      readonly execResult?: Awaited<
-        ReturnType<ReturnType<typeof shell>["auto"]>
-      >;
-    }
-  >({
-    isCapturable: (task) =>
-      task.spawnableArgs.capture.length ? task.spawnableArgs.capture : false,
-    prepareCaptured: (op) => {
-      const text = () => {
-        if (op.execResult) {
-          if (Array.isArray(op.execResult)) {
-            return op.execResult.map((er) => td.decode(er.stdout)).join("\n");
-          } else {
-            return td.decode(op.execResult.stdout);
-          }
-        } else {
-          return op.interpResult.source;
-        }
-      };
-      const json = () => JSON.parse(text());
-      return { text, json };
-    },
-    onCapture: gitignorableOnCapture,
-  });
-
-  const { capture, history: captured } = cf;
-  const { partials } = opts ?? {};
-  const unsafeInterp = unsafeInterpFactory({
-    partialsCollec: partials,
-    interpCtx: () => ({ captured }),
-  });
-  const sh = shell({ bus: opts?.shellBus });
-  const { interpolateUnsafely } = unsafeInterp;
-
-  const te = new TextEncoder();
-  const execute = async (plan: TaskExecutionPlan<T>) =>
-    await executeDAG(plan, async (task, ctx) => {
-      const interpResult = await interpolateUnsafely({
-        task,
-        source: task.value,
-        interpolate: task.spawnableArgs.interpolate,
-      });
-      if (interpResult.status) {
-        const execResult = task.captureOnly
-          ? { // could be "env", "envrc" or other "output-only" tasks
-            code: 0,
-            success: true,
-            stdout: te.encode(interpResult.source),
-            stderr: new Uint8Array(),
-          }
-          : await sh.auto(interpResult.source, undefined, task);
-        await capture(task, { interpResult, execResult });
-        return ok(ctx);
-      } else {
-        return fail(ctx, interpResult.error);
-      }
-    }, { eventBus: opts?.tasksBus });
-
-  return {
-    execute,
-    sh,
-    unsafeInterp,
-    capture: cf,
-  };
-}
 
 export type LsTaskRow = {
   code: Code;
   name: string;
   origin: string;
   engine: ReturnType<ReturnType<typeof shell>["strategy"]> | {
-    engine: "capture-only";
-    label: "Capture Only";
+    engine: "memoize-only";
+    label: "Memoize Only";
     linesOfCode: string[];
   };
   descr: string;
@@ -220,7 +130,7 @@ function lsCmdEngineField<Row extends LsTaskRow>(): Partial<
           return green(v.label);
         case "deno-task":
           return cyan(v.label);
-        case "capture-only":
+        case "memoize-only":
           return gray(v.label);
       }
     },
@@ -314,17 +224,35 @@ export class CLI {
     await this.rootCmd().parse(args);
   }
 
-  rootCmd() {
-    return new Command()
-      .name("runbook.ts")
-      .version(() => computeSemVerSync(import.meta.url))
-      .description(`Spry Runbook operator`)
-      .command("help", new HelpCommand())
-      .command("completions", new CompletionsCommand())
-      .command("axiom", this.axiomCLI.rootCmd())
-      .command("ls", this.lsCommand())
-      .command("task", this.taskCommand())
-      .command("run", this.runCommand());
+  rootCmd(subcommand?: string) {
+    const description = "Spry Runbook operator";
+    const compose = subcommand
+      ? new Command().name(subcommand).description(description)
+      : new Command()
+        .name("runbook.ts")
+        .version(() => computeSemVerSync(import.meta.url))
+        .description(description)
+        .command("help", new HelpCommand())
+        .command("completions", new CompletionsCommand());
+
+    for (
+      const c of [
+        this.lsCommand(),
+        this.taskCommand(),
+        this.runCommand(),
+        this.issuesCommand(),
+        this.reportCommand(),
+      ]
+    ) {
+      compose.command(c.getName(), c);
+    }
+
+    if (!subcommand) {
+      const axiomCmd = this.axiomCLI.rootCmd("axiom");
+      compose.command(axiomCmd.getName(), axiomCmd);
+    }
+
+    return compose;
   }
 
   protected baseCommand({ examplesCmd }: { examplesCmd: string }) {
@@ -351,6 +279,16 @@ export class CLI {
       );
   }
 
+  preface(check: Pick<PlaybookProjection, "issues">) {
+    if (check.issues.length) {
+      console.warn(
+        red(
+          `⚠️ ${check.issues.length} nodes issues found, use 'issues' command to list them.`,
+        ),
+      );
+    }
+  }
+
   taskCommand() {
     return new Command()
       .name("task")
@@ -361,25 +299,26 @@ export class CLI {
       .option("--summarize", "Emit summary after execution in JSON")
       .action(
         async (opts, taskId, ...paths: string[]) => {
-          const { tasks, partials } = await playbooksFromFiles(
+          const { tasks, directives, issues } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
+          this.preface({ issues });
           if (tasks.find((t) => t.taskId() == taskId)) {
             const ieb = informationalEventBuses<
               typeof tasks[number],
               { runId: string }
             >(opts?.verbose);
-            const etf = executeTasksFactory({
-              partials,
+            const runbook = tasksRunbook({
+              directives,
               shellBus: ieb.shellEventBus,
               tasksBus: ieb.tasksEventBus,
             });
-            const runbook = await etf.execute(
+            const rbResults = await runbook.execute(
               executionSubplan(executionPlan(tasks), [taskId]),
             );
             if (ieb.emit) ieb.emit();
             if (opts.summarize) {
-              console.log(runbook);
+              console.log(rbResults);
             }
           } else {
             console.warn(`Task '${taskId}' not found.`);
@@ -407,7 +346,7 @@ export class CLI {
       .option("--visualize <style:visualStyle>", "Visualize the DAG")
       .action(
         async (opts, ...paths: string[]) => {
-          const { tasks, partials } = await playbooksFromFiles(
+          const { tasks, directives, issues } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
             {
               filter: opts.graph?.length
@@ -420,6 +359,7 @@ export class CLI {
                 : ((task) => task.spawnableArgs.graphs?.length ? false : true),
             },
           );
+          this.preface({ issues });
           const plan = executionPlan(tasks);
           if (opts?.visualize) {
             const epv = executionPlanVisuals(plan);
@@ -429,16 +369,108 @@ export class CLI {
               typeof tasks[number],
               { runId: string }
             >(opts?.verbose);
-            const etf = executeTasksFactory({
-              partials,
+            const runbook = tasksRunbook({
+              directives,
               shellBus: ieb.shellEventBus,
               tasksBus: ieb.tasksEventBus,
             });
-            const runbook = await etf.execute(plan);
+            const rbResults = await runbook.execute(plan);
             if (ieb.emit) ieb.emit();
             if (opts.summarize) {
-              console.log(runbook);
+              console.log(rbResults);
             }
+          }
+        },
+      );
+  }
+
+  reportCommand() {
+    function sanitizeMdastForToMarkdown(node: Node) {
+      if (!node || typeof node !== "object") return node;
+
+      const result = { ...node };
+
+      if ("children" in result && Array.isArray(result.children)) {
+        result.children = result.children
+          .filter(
+            (child) =>
+              child &&
+              typeof child.type === "string" &&
+              child.type !== "yaml" &&
+              child.type !== "toml" &&
+              child.type !== "decorator",
+          )
+          .map((child) => sanitizeMdastForToMarkdown(child));
+      }
+
+      return result;
+    }
+
+    return new Command()
+      .name("report")
+      .description(`execute all code cells and return as new markdown`)
+      .arguments("[paths...:string]")
+      .option(
+        "--graph <name:string>",
+        "Run only the nodes in provided graph(s)",
+        {
+          collect: true,
+        },
+      )
+      .action(
+        async (opts, ...paths: string[]) => {
+          const { tasks, directives, issues, sources } =
+            await playbooksFromFiles(
+              paths.length ? paths : this.conf?.defaultFiles ?? [],
+              {
+                filter: opts.graph?.length
+                  ? ((task) =>
+                    task.spawnableArgs.graphs?.some((g) =>
+                        opts.graph!.includes(g)
+                      )
+                      ? true
+                      : false)
+                  : ((task) =>
+                    task.spawnableArgs.graphs?.length ? false : true),
+              },
+            );
+          this.preface({ issues });
+          const plan = executionPlan(tasks);
+          // create a runbook that will mutate the original markdown with output
+          const er = exectutionReport({ directives });
+          await er.execute(plan); // the results all go back into the mdast code cells
+          for (const src of sources) {
+            const logNode = select(
+              `code[lang="spry"][meta="exectutionReportLog"]`,
+              src.mdastRoot,
+            ) as Code;
+            if (logNode) {
+              logNode.lang = "text";
+              logNode.value = er.shellEventBus.lines.join("\n");
+              logNode.value += "\n----" + er.tasksEventBus.lines.join("\n");
+            }
+            console.log(
+              toMarkdown(sanitizeMdastForToMarkdown(src.mdastRoot) as Root),
+            );
+          }
+        },
+      );
+  }
+
+  issuesCommand(cmdName = "issues") {
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
+      .description(
+        "display any issues (errors, warnings, etc.) in the mdast nodes",
+      )
+      .arguments("[paths...:string]")
+      .action(
+        async (_options, ...paths) => {
+          const files = paths.length ? paths : this.conf?.defaultFiles ?? [];
+          const { issues } = await playbooksFromFiles(files);
+          if (issues.length) {
+            console.log(ansiPrettyNodeIssues(issues).join("\n"));
+          } else {
+            console.info("No issues detected in " + files.join(", "));
           }
         },
       );
@@ -458,16 +490,17 @@ export class CLI {
    *   shows a CLASS column with key:value pairs.
    */
   protected lsCommand(cmdName = "ls") {
-    return this.baseCommand({ examplesCmd: cmdName })
+    return this.baseCommand({ examplesCmd: cmdName }).name(cmdName)
       .description(`list code cells (tasks) in markdown documents`)
       .arguments("[paths...:string]")
       .option("--no-color", "Show output without using ANSI colors")
       .action(
         async (options, ...paths: string[]) => {
           const sh = shell();
-          const { tasks } = await playbooksFromFiles(
+          const { tasks, issues } = await playbooksFromFiles(
             paths.length ? paths : this.conf?.defaultFiles ?? [],
           );
+          this.preface({ issues });
           const lsRows = tasks.map((task) => {
             const { spawnableArgs: args } = task;
             return {
@@ -476,18 +509,24 @@ export class CLI {
               deps: task.taskDeps().join(", "),
               descr: args.description ?? "",
               origin: task.provenance.fileRef(task),
-              engine: task.captureOnly
+              engine: task.memoizeOnly
                 ? {
-                  engine: "capture-only",
-                  label: "Capture Only",
+                  engine: "memoize-only",
+                  label: "Memoize Only",
                   linesOfCode: [],
                 }
                 : sh.strategy(task.value),
               flags: {
                 isInterpolated: args.interpolate ? true : false,
-                isCaptured: args.capture.length > 0 ? args.capture[0] : false,
-                isCaptureOnly: task.captureOnly ?? false,
-                isGitIgnored: args.capture[0]?.gitignore ? true : false,
+                isCaptured: args.capture ? args.capture[0] : false,
+                isCaptureOnly: task.memoizeOnly ?? false,
+                isGitIgnored: args.capture && args.capture.filter((c) =>
+                    c.nature === "relFsPath"
+                  ).find((c) =>
+                    c.gitignore
+                  )
+                  ? true
+                  : false,
                 isSilent: args.silent ?? false,
                 hasIssues: false,
               },

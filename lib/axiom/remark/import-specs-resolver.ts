@@ -19,15 +19,14 @@
  * The actual insertion/replacement of nodes is done by
  * `insertCodeImportNodes` in `code-insert.ts`.
  */
-import { join, relative } from "@std/path";
+import { join, normalize, relative } from "@std/path";
 import z from "@zod/zod";
 import type { Code, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
-import { safeInterpolate } from "../../interpolate/safe.ts";
-import { relativeUrlAsFsPath } from "../../universal/content-acquisition.ts";
 import { onlyDirectiveCandidateRegEx } from "../../universal/directive.ts";
+import { safeInterpolate } from "../../universal/flexible-interpolator.ts";
 import {
   flexibleTextSchema,
   instructionsFromText,
@@ -403,5 +402,52 @@ export const resolveImportSpecs: Plugin<[CodeImportOptions?], Root> = (
     });
   };
 };
+
+/**
+ * Return the relative portion of `url` from `base` as a valid filesystem path.
+ * - If same origin, computes relative path.
+ * - If different origin or invalid URL, normalizes to a valid fs-safe path.
+ */
+export function relativeUrlAsFsPath(base: string, url: string): string {
+  // relativeUrlAsFsPath("https://example.com/dir/", "https://example.com/dir/a/b.txt");
+  // → "a/b.txt"
+
+  // relativeUrlAsFsPath("https://example.com/", "https://other.com/path/file.json");
+  // → "other.com/path/file.json"
+
+  // relativeUrlAsFsPath("/root/", "/root/sub/thing.sql");
+  // → "sub/thing.sql"
+
+  // relativeUrlAsFsPath("/root/", "https://api.example.com/v1/data?id=1#top");
+  // → "api.example.com/v1/data_id=1_top"
+  try {
+    const from = new URL(url, base);
+    const baseUrl = new URL(base, base);
+
+    // If different origins, sanitize to a filesystem-safe path
+    if (from.origin !== baseUrl.origin) {
+      return normalize(
+        from.hostname +
+          from.pathname.replace(/^\/+/, "").replace(/[:?&#]/g, "_"),
+      );
+    }
+
+    // Same origin → compute relative portion
+    let rel = from.pathname.startsWith(baseUrl.pathname)
+      ? from.pathname.slice(baseUrl.pathname.length)
+      : from.pathname;
+
+    if (from.search) rel += from.search.replace(/[?&#]/g, "_");
+    if (from.hash) rel += from.hash.replace(/[?&#]/g, "_");
+
+    return normalize(rel.replace(/^\/+/, ""));
+  } catch {
+    // Fallback for non-URL inputs (e.g., local paths)
+    const path = url.startsWith(base)
+      ? url.slice(base.length).replace(/^\/+/, "")
+      : url;
+    return normalize(join(".", path));
+  }
+}
 
 export default resolveImportSpecs;

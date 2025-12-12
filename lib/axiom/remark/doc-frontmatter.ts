@@ -17,7 +17,7 @@ import { z } from "@zod/zod";
 import type { Node, Root, RootContent } from "types/mdast";
 import type { Plugin } from "unified";
 import type { VFile } from "vfile";
-import { safeInterpolate } from "../../interpolate/safe.ts";
+import { safeInterpolate } from "../../universal/flexible-interpolator.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 
 // deno-lint-ignore no-explicit-any

@@ -1,4 +1,4 @@
-import { testingAsserts as ta } from "./deps-test.ts";
+import { assertEquals, assertThrows } from "@std/assert";
 import { callables, callablesCollection, CallablesNature } from "./callable.ts";
 
 // Test class for testing callables
@@ -25,15 +25,15 @@ Deno.test("callables - should return method names for a class instance", () => {
   const instance = new TestClass();
   const result = callables(instance);
 
-  ta.assertEquals(result.identifiers, ["foo", "bar"]);
-  ta.assertEquals(result.nature, CallablesNature.CLASS);
+  assertEquals(result.identifiers, ["foo", "bar"]);
+  assertEquals(result.nature, CallablesNature.CLASS);
 });
 
 Deno.test("callables - should return method names for an object", () => {
   const result = callables(testObject);
 
-  ta.assertEquals(result.identifiers, ["greet", "add"]);
-  ta.assertEquals(result.nature, CallablesNature.OBJECT);
+  assertEquals(result.identifiers, ["greet", "add"]);
+  assertEquals(result.nature, CallablesNature.OBJECT);
 });
 
 Deno.test("callables - should filter methods based on include and exclude criteria", async () => {
@@ -45,15 +45,15 @@ Deno.test("callables - should filter methods based on include and exclude criter
     exclude: "bar", // Exclude method named "bar"
   });
 
-  ta.assertEquals(filteredMethods.length, 1);
-  ta.assertEquals(filteredMethods[0].callable, "foo");
-  ta.assertEquals(await filteredMethods[0].call(), 42);
+  assertEquals(filteredMethods.length, 1);
+  assertEquals(filteredMethods[0].callable, "foo");
+  assertEquals(await filteredMethods[0].call(), 42);
 
   filteredMethods = result.filter({ include: "bar" });
 
-  ta.assertEquals(filteredMethods.length, 1);
-  ta.assertEquals(filteredMethods[0].callable, "bar");
-  ta.assertEquals(
+  assertEquals(filteredMethods.length, 1);
+  assertEquals(filteredMethods[0].callable, "bar");
+  assertEquals(
     filteredMethods[0].callSync("bar"),
     "Hello, bar (instanceVarValue)",
   );
@@ -64,16 +64,16 @@ Deno.test("callables - should handle standalone object functions correctly", asy
 
   const filteredMethods = result.filter();
 
-  ta.assertEquals(filteredMethods.length, 2);
-  ta.assertEquals(filteredMethods[0].callable, "greet");
-  ta.assertEquals(await filteredMethods[0].call("Alice"), "Hi, Alice");
+  assertEquals(filteredMethods.length, 2);
+  assertEquals(filteredMethods[0].callable, "greet");
+  assertEquals(await filteredMethods[0].call("Alice"), "Hi, Alice");
 
-  ta.assertEquals(filteredMethods[1].callable, "add");
-  ta.assertEquals(filteredMethods[1].callSync(2, 3), 5);
+  assertEquals(filteredMethods[1].callable, "add");
+  assertEquals(filteredMethods[1].callSync(2, 3), 5);
 });
 
 Deno.test("callables - should throw an error for invalid instance types", () => {
-  ta.assertThrows(
+  assertThrows(
     () => {
       callables(null);
     },
@@ -81,7 +81,7 @@ Deno.test("callables - should throw an error for invalid instance types", () => 
     "The provided instance must be an object or a constructed class instance.",
   );
 
-  ta.assertThrows(
+  assertThrows(
     () => {
       callables("not an object");
     },
@@ -89,7 +89,7 @@ Deno.test("callables - should throw an error for invalid instance types", () => 
     "The provided instance must be an object or a constructed class instance.",
   );
 
-  ta.assertThrows(
+  assertThrows(
     () => {
       callables([1, 2, 3]);
     },
@@ -104,19 +104,19 @@ Deno.test("callables - should handle filtering by string, RegExp, and function",
 
   // Filtering by string
   const byString = result.filter({ include: "foo" });
-  ta.assertEquals(byString.length, 1);
-  ta.assertEquals(byString[0].callable, "foo");
+  assertEquals(byString.length, 1);
+  assertEquals(byString[0].callable, "foo");
 
   // Filtering by RegExp
   const byRegExp = result.filter({ include: /ba/ });
-  ta.assertEquals(byRegExp.length, 1);
-  ta.assertEquals(byRegExp[0].callable, "bar");
+  assertEquals(byRegExp.length, 1);
+  assertEquals(byRegExp[0].callable, "bar");
 
   // Filtering by function
   const byFunction = result.filter({ include: (name) => name.length === 3 });
-  ta.assertEquals(byFunction.length, 2);
-  ta.assertEquals(byFunction[0].callable, "foo");
-  ta.assertEquals(byFunction[1].callable, "bar");
+  assertEquals(byFunction.length, 2);
+  assertEquals(byFunction[0].callable, "foo");
+  assertEquals(byFunction[1].callable, "bar");
 });
 
 Deno.test("callables - should handle complex object with nested functions", () => {
@@ -134,9 +134,9 @@ Deno.test("callables - should handle complex object with nested functions", () =
 
   const filteredMethods = result.filter();
 
-  ta.assertEquals(filteredMethods.length, 1);
-  ta.assertEquals(filteredMethods[0].callable, "describe");
-  ta.assertEquals(filteredMethods[0].callSync(), "I am a complex object");
+  assertEquals(filteredMethods.length, 1);
+  assertEquals(filteredMethods[0].callable, "describe");
+  assertEquals(filteredMethods[0].callSync(), "I am a complex object");
 });
 
 Deno.test("callables - should ensure `this` context is correctly handled in class methods", () => {
@@ -153,9 +153,9 @@ Deno.test("callables - should ensure `this` context is correctly handled in clas
 
   const filteredMethods = result.filter();
 
-  ta.assertEquals(filteredMethods.length, 1);
-  ta.assertEquals(filteredMethods[0].callable, "getName");
-  ta.assertEquals(filteredMethods[0].callSync(), "Deno");
+  assertEquals(filteredMethods.length, 1);
+  assertEquals(filteredMethods[0].callable, "getName");
+  assertEquals(filteredMethods[0].callSync(), "Deno");
 });
 
 Deno.test("callablesCollection - should return combined callables and allow filtering across multiple instances", () => {
@@ -186,12 +186,12 @@ Deno.test("callablesCollection - should return combined callables and allow filt
   );
 
   // Assert that callables are identified correctly for each notebook
-  ta.assertEquals(collectionResult.callables.length, 2);
-  ta.assertEquals(collectionResult.callables[0].identifiers, [
+  assertEquals(collectionResult.callables.length, 2);
+  assertEquals(collectionResult.callables[0].identifiers, [
     "cell1",
     "cell2",
   ]);
-  ta.assertEquals(collectionResult.callables[1].identifiers, [
+  assertEquals(collectionResult.callables[1].identifiers, [
     "cell3",
     "cell4",
   ]);
@@ -200,15 +200,15 @@ Deno.test("callablesCollection - should return combined callables and allow filt
   const filtered = collectionResult.filter({ include: /cell/ });
 
   // Assert the filtered result contains the correct callable names
-  ta.assertEquals(filtered.length, 4);
-  ta.assertEquals(filtered[0].callable, "cell1");
-  ta.assertEquals(filtered[1].callable, "cell2");
-  ta.assertEquals(filtered[2].callable, "cell3");
-  ta.assertEquals(filtered[3].callable, "cell4");
+  assertEquals(filtered.length, 4);
+  assertEquals(filtered[0].callable, "cell1");
+  assertEquals(filtered[1].callable, "cell2");
+  assertEquals(filtered[2].callable, "cell3");
+  assertEquals(filtered[3].callable, "cell4");
 
   // Assert the callable methods return the expected results
-  ta.assertEquals(filtered[0].callSync(), "Notebook 1 - Cell 1");
-  ta.assertEquals(filtered[1].callSync(), "Notebook 1 - Cell 2");
-  ta.assertEquals(filtered[2].callSync(), "Notebook 2 - Cell 3");
-  ta.assertEquals(filtered[3].callSync(), "Notebook 2 - Cell 4");
+  assertEquals(filtered[0].callSync(), "Notebook 1 - Cell 1");
+  assertEquals(filtered[1].callSync(), "Notebook 1 - Cell 2");
+  assertEquals(filtered[2].callSync(), "Notebook 2 - Cell 3");
+  assertEquals(filtered[3].callSync(), "Notebook 2 - Cell 4");
 });

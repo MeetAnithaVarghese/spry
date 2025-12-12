@@ -94,7 +94,7 @@ Quick troubleshooting
 While you're developing, Spry's `dev-src.auto` generator should be used:
 
 ```bash prepare-sqlpage-dev --descr "Generate the dev-src.auto directory to work in SQLPage dev mode"
-./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json
+./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json
 ```
 
 ```bash clean --descr "Clean up the project directory's generated artifacts"
@@ -106,7 +106,7 @@ whenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,
 which is then picked up automatically by the SQLPage server:
 
 ```bash
-./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage
+./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage
 ```
 
 - `--watch` turns on watching all `--md` files passed in (defaults to
@@ -121,7 +121,7 @@ window.
 If you're running SQLPage in another terminal window, use:
 
 ```bash
-./spry.ts spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch
+./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch
 ```
 
 ## SQLPage single database deployment mode
@@ -131,7 +131,7 @@ single-database deployment can be used:
 
 ```bash deploy -C --descr "Generate sqlpage_files table upsert SQL and push them to SQLite"
 rm -rf dev-src.auto
-./spry.ts spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db
+./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db
 ```
 
 ## Raw SQL
@@ -150,6 +150,10 @@ pseudo-cells.
 sql *.sql TAIL
 ```
 
+💡 `schema-info.dml.sqlite.sql` will appear twice in the output, once as
+`sql.d/tail/0000.sql` and another as `sql.d/tail/schema-info.dml.sqlite.sql`
+because the file is referenced in both the `import` cell and using `--import`.
+
 ## Layout
 
 This cell instructs Spry to automatically inject the SQL `PARTIAL` into all
@@ -157,6 +161,9 @@ SQLPage content cells. The name `global-layout.sql` is not significant (it's
 required by Spry but only used for reference), but the `--inject **/*` argument
 is how matching occurs. The `--BEGIN` and `--END` comments are not required by
 Spry but make it easier to trace where _partial_ injections are occurring.
+
+⚠️ Content injection content happens _before_ any other interpolation so the
+final interpolation for injected content will occur in the destination cell.
 
 ```sql PARTIAL global-layout.sql --inject **/*
 -- BEGIN: PARTIAL global-layout.sql
@@ -177,7 +184,6 @@ SET page_path = json_extract($resource_json, '$.route.path');
 ${ctx.breadcrumbs()}
 
 -- END: PARTIAL global-layout.sql
--- this is the `${cell.info}` cell on line ${cell.startLine}
 ```
 
 Get the brand assets and store them into the SQLPage content stream. They will
@@ -196,6 +202,8 @@ utf8 https://www.surveilr.com/assets/brand/compliance-explorer.png --spc
 Index page which automatically generates links to all `/scf` pages.
 
 ```sql index.sql { route: { caption: "Home" } }
+-- locals: ${Object.keys(__l).join(", ")}
+-- mdastNode: ${safeJsonStringify(cell)}
 SET routes_json = sqlpage.read_file_as_text('spry.d/auto/route/forest.auto.json');
 SET root_path   = '/scf';
 

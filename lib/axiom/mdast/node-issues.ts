@@ -1,6 +1,8 @@
+import { red, white, yellow } from "@std/fmt/colors";
 import { z } from "@zod/zod";
 import { Node } from "types/mdast";
 import { dataBag } from "./data-bag.ts";
+import { typicalNodeLabel } from "./node-content.ts";
 
 /* -------------------------------------------------------------------------- */
 /* Core issue type                                                            */
@@ -250,4 +252,85 @@ export function runIssueNodeRules<Root>(
       });
     }
   });
+}
+
+/* -------------------------------------------------------------------------- */
+/* ANSI pretty printing                                                       */
+/* -------------------------------------------------------------------------- */
+
+export interface AnsiPrettyPrintedOptions<N extends Node = Node> {
+  /**
+   * Given a node, return a short reference string to include in the output
+   * (e.g. "file.md:12:5" or just an identifier).
+   */
+  readonly nodeRef?: (node: N, label: string) => string;
+
+  /**
+   * Fallback formatter for unknown error payloads.
+   * Defaults to `String(error)`.
+   */
+  readonly formatUnknownError?: (error: unknown) => string;
+}
+
+/**
+ * Collect and ANSI-pretty-print issues from an iterable of nodes.
+ *
+ * For every node that has issues, it produces lines like:
+ *
+ *   red("error:") + " " + yellow(fileRef(node)) + " " + white(message)
+ *
+ * where `message` is derived from:
+ *   - `issue.error.message` if `issue.error` is an `Error`
+ *   - `z.prettyError(issue.error)` if it is a `ZodError`
+ *   - `formatUnknownError(issue.error)` if provided, otherwise `String(error)`
+ *   - falls back to `issue.message` if `issue.error` is undefined
+ */
+export function ansiPrettyNodeIssues<N extends Node = Node>(
+  nodes: Iterable<N>,
+  options: AnsiPrettyPrintedOptions<N> = {},
+): string[] {
+  const {
+    nodeRef = (node) => typicalNodeLabel(node),
+    formatUnknownError = (error: unknown) => String(error),
+  } = options;
+
+  const lines: string[] = [];
+
+  for (const n of nodes) {
+    const node = n as Node;
+
+    if (!nodeIssues.is(node)) continue;
+
+    const data = node.data as Record<string, unknown> & {
+      issues?: NodeIssue[];
+    };
+
+    const issues = data.issues;
+    if (!issues || issues.length === 0) continue;
+
+    const ref = nodeRef(n, typicalNodeLabel(node));
+
+    for (const issue of issues) {
+      const err = issue.error;
+      let msg: string;
+
+      if (err instanceof z.ZodError) {
+        msg = z.prettifyError(err);
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else if (err != null) {
+        msg = formatUnknownError(err);
+      } else {
+        msg = issue.message;
+      }
+
+      const prefix = red("error:");
+      const refPart = ref ? ` ${yellow(ref)}` : "";
+      const msgPart = msg ? ` ${white(msg)}` : "";
+
+      lines.push(`${prefix}${refPart}${msgPart}`);
+    }
+  }
+
+  return lines;
 }
