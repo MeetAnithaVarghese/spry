@@ -1,4 +1,3 @@
-import { globToRegExp, isGlob, normalize } from "@std/path";
 import z from "@zod/zod";
 import { Code } from "types/mdast";
 import {
@@ -6,6 +5,10 @@ import {
   safeInterpolateAsync,
   SafeInterpolationFunctionRegistry,
 } from "../../universal/flexible-interpolator.ts";
+import {
+  flexiblePatterns,
+  iterPatterns,
+} from "../../universal/flexible-pattern.ts";
 import { gitignore } from "../../universal/gitignore.ts";
 import {
   flexibleTextSchema,
@@ -33,6 +36,14 @@ import {
 } from "../remark/actionable-code-candidates.ts";
 import { codeFrontmatter } from "./code-frontmatter.ts";
 
+const injectPatterns = flexiblePatterns({
+  trim: true,
+  allowNegation: true,
+  defaultKind: "glob",
+  preferExactWhenNoGlobMeta: true,
+  allowQuotedExact: true,
+});
+
 export const partialTmplPiFlagsSchema = z.object({
   descr: z.string().optional(),
   inject: flexibleTextSchema.optional(),
@@ -40,73 +51,18 @@ export const partialTmplPiFlagsSchema = z.object({
   append: z.boolean().optional(),
   weight: z.union([z.number(), z.string()]).optional().default(99),
 }).transform((raw) => {
-  const inject = mergeFlexibleText(raw.inject);
+  const injectSpecs = mergeFlexibleText(raw.inject);
   const weight = typeof raw.weight === "string"
     ? Number(raw.weight)
     : raw.weight;
-  let injectRules: {
-    readonly nature: "regex" | "regex-negative" | "glob" | "auto";
-    readonly regExp: RegExp;
-    readonly from: string;
-    readonly weight: number;
-  }[] = [];
-  let injectAll: boolean = false;
-  if (inject.length == 1 && (inject[0] == "**/*" || inject[0] == "*")) {
-    injectAll = true;
-  } else {
-    injectRules = inject.map((glob) => {
-      if (
-        (glob.startsWith("/") || glob.startsWith("!/")) && glob.endsWith("/")
-      ) {
-        const strictRegEx = glob.slice(0, glob.length - 1); // strip the slash
-        if (glob.startsWith("!/")) {
-          const regExp = new RegExp(strictRegEx.slice(2));
-          return {
-            nature: "regex-negative",
-            regExp,
-            from: glob,
-            weight,
-          };
-        }
-        const regExp = new RegExp(strictRegEx.slice(1));
-        return { nature: "regex", regExp, from: glob, weight };
-      }
-      if (!isGlob(glob)) {
-        const exact = normalize(glob).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return {
-          nature: "auto",
-          regExp: new RegExp(`^${exact}$`),
-          from: glob,
-          weight,
-        };
-      }
-      return {
-        nature: "glob",
-        regExp: globToRegExp(glob, {
-          extended: true,
-          globstar: true,
-          caseInsensitive: false,
-        }),
-        from: glob,
-        weight,
-      };
-    });
-  }
+  const inject = injectSpecs.length > 0
+    ? injectSpecs.map((s) => injectPatterns.parse(s))
+    : false as const;
   return {
     description: raw.descr,
-    inject: inject.length > 0 ? inject : false as const,
-    injectAll,
-    injectRegExes: inject.length > 0
-      ? injectRules.filter((ir) => ir.nature !== "regex-negative").map((ir) =>
-        ir.regExp
-      )
-      : false as const,
-    donotInjectRegExes: inject.length > 0
-      ? injectRules.filter((ir) => ir.nature === "regex-negative").map((ir) =>
-        ir.regExp
-      )
-      : false as const,
-    injectRules,
+    injectSpecs: injectSpecs.length > 0 ? injectSpecs : false as const,
+    inject,
+    injectAll: inject ? injectPatterns.hasMatchAll(inject) : false,
     prepend: raw.prepend ?? false,
     append: raw.append ?? false,
     weight,
@@ -146,37 +102,20 @@ export function partialTmpl(identity: string, code: Code): PartialTmpl | false {
     let inject: PartialTmpl["inject"] = undefined;
     let injectionDiagnostics: PartialTmpl["injectionDiagnostics"] = undefined;
 
-    if (
-      piFlags.injectAll || piFlags.injectRegExes || piFlags.donotInjectRegExes
-    ) {
-      const {
-        injectAll,
-        injectRules,
-        injectRegExes,
-        donotInjectRegExes,
-        append,
-      } = piFlags;
+    if (piFlags.injectAll || piFlags.inject) {
+      const { inject: rules, injectAll, append, weight } = piFlags;
       inject = injectAll
         ? ((ctx) =>
           append ? `${ctx.body}\n${code.value}` : `${code.value}\n${ctx.body}`)
         : (ctx) => {
-          if (ctx.path && donotInjectRegExes) {
-            for (const re of donotInjectRegExes) {
-              if (re.test(ctx.path)) {
-                // check for negations first and bail early if we shouldn't inject
-                return undefined;
-              }
-            }
-          }
-
-          if (ctx.path && injectRegExes) {
-            for (const re of injectRegExes) {
-              if (re.test(ctx.path)) {
-                return append
-                  ? `${ctx.body}\n${code.value}`
-                  : `${code.value}\n${ctx.body}`;
-              }
-            }
+          if (
+            ctx.path && rules && injectPatterns.testSome(rules, ctx.path, {
+              prioritizedNegations: true,
+            })
+          ) {
+            return append
+              ? `${ctx.body}\n${code.value}`
+              : `${code.value}\n${ctx.body}`;
           }
         };
       injectionDiagnostics = injectAll
@@ -191,38 +130,22 @@ export function partialTmpl(identity: string, code: Code): PartialTmpl | false {
           }
         })
         : (ctx, diags) => {
-          if (ctx.path && injectRules) {
-            for (
-              const ir of injectRules.filter((ir) =>
-                ir.nature === "regex-negative"
-              )
-            ) {
-              if (ir.regExp.test(ctx.path)) {
-                diags.push({
-                  target: ctx.path,
-                  inject: false,
-                  why:
-                    `PARTIAL ${identity}: ${ir.regExp} (${ir.nature}: ${ir.from})`,
-                  how: append ? "append" : "prepend",
-                  weight: ir.weight,
-                });
-                return;
-              }
-            }
-            for (
-              const ir of injectRules.filter((ir) =>
-                ir.nature !== "regex-negative"
-              )
-            ) {
-              if (ir.regExp.test(ctx.path)) {
+          if (ctx.path && rules) {
+            const injectFPs = iterPatterns(rules, injectPatterns, {
+              prioritizedNegations: true,
+            });
+            for (const ifp of injectFPs) {
+              if (injectPatterns.test(ifp, ctx.path)) {
                 diags.push({
                   target: ctx.path,
                   inject: true,
-                  why:
-                    `PARTIAL ${identity}: ${ir.regExp} (${ir.nature}: ${ir.from})`,
+                  why: `PARTIAL ${identity}: ${
+                    injectPatterns.toDebugString(ifp)
+                  })`,
                   how: append ? "append" : "prepend",
-                  weight: ir.weight,
+                  weight,
                 });
+                return;
               }
             }
           }
@@ -285,8 +208,7 @@ export function flexibleMemory(
 ): FlexibleMemory {
   const memoizedFsPaths: FlexibleMemory["memoizedFsPaths"] = [];
   const injectables = {
-    donotInjectRegExes: [] as [string, PartialTmpl][],
-    injectRegExes: [] as [string, PartialTmpl][],
+    some: [] as [string, PartialTmpl][],
     all: [] as [string, PartialTmpl][],
   };
   const partials: Record<string, PartialTmpl> = {};
@@ -298,21 +220,14 @@ export function flexibleMemory(
         partials[ptc.identity] = partial;
         if (partial.piFlags.injectAll) {
           injectables.all.push([ptc.identity, partial]);
-        } else if (partial.piFlags.donotInjectRegExes) {
-          injectables.donotInjectRegExes.push([ptc.identity, partial]);
-        } else if (partial.piFlags.injectRegExes) {
-          injectables.injectRegExes.push([ptc.identity, partial]);
+        } else if (partial.piFlags.inject) {
+          injectables.some.push([ptc.identity, partial]);
         }
       }
     }
   }
   // lower weight is more important
-  injectables.donotInjectRegExes.sort((a, b) =>
-    b[1].piFlags.weight - a[1].piFlags.weight
-  );
-  injectables.injectRegExes.sort((a, b) =>
-    b[1].piFlags.weight - a[1].piFlags.weight
-  );
+  injectables.some.sort((a, b) => b[1].piFlags.weight - a[1].piFlags.weight);
   injectables.all.sort((a, b) => b[1].piFlags.weight - a[1].piFlags.weight);
 
   const memoize: Memory<
@@ -357,8 +272,7 @@ export function flexibleMemory(
     // the more specific (injectRegExes ones) come first because "all" is higher precendence;
     // injectables are "wrapping" inward to outward
     injectables: () => [
-      ...injectables.donotInjectRegExes,
-      ...injectables.injectRegExes,
+      ...injectables.some,
       ...injectables.all,
     ],
     memoize,

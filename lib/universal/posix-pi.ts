@@ -1,3 +1,4 @@
+// lib/universal/posix-pi.ts
 /**
  * @module posix-pi
  *
@@ -12,7 +13,12 @@
  * - Treats everything from the first unquoted `{` to the end as pure JSON5
  *   configuration (attrs), not part of the POSIX CLI.
  *
- * For usage patterns and edge cases, see the tests in `posix-pi_test.ts`.
+ * Defaults behavior:
+ * - You can provide default PI flags and/or default attrs via `options.defaults`.
+ * - Flags defaults do NOT affect args/pos; only flags are merged.
+ * - Attrs defaults are merged with parsed attrs based on `attrsPolicy`.
+ * - Whether to return attrs when only defaults exist is controlled by
+ *   `returnAttrsWhenDefaulted` (default false to preserve pre-defaults behavior).
  */
 import z from "@zod/zod";
 import JSON5 from "json5";
@@ -168,9 +174,7 @@ function scanInfoString(text: string): {
       if (ch === "\\") {
         const next = trimmed[++i];
         if (next !== undefined) {
-          if (buf.length === 0) {
-            buf = "";
-          }
+          if (buf.length === 0) buf = "";
           buf += next;
         }
         continue;
@@ -225,6 +229,64 @@ function scanInfoString(text: string): {
   }
 
   return { cliTokens: tokens, cli, attrsText };
+}
+
+export type DefaultsFlagPolicy =
+  | "fill-missing"
+  | "override"
+  | "append";
+
+export type DefaultsAttrsPolicy =
+  | "fill-missing"
+  | "override"
+  | "deep-fill-missing"
+  | "deep-override";
+
+type FlagValue =
+  | string
+  | number
+  | boolean
+  | (string | number | boolean)[];
+
+type DefaultsShape = {
+  pi?: Pick<PosixStylePI, "flags">;
+  attrs?: Record<string, unknown>;
+
+  flagsPolicy?: DefaultsFlagPolicy;
+  attrsPolicy?: DefaultsAttrsPolicy;
+
+  /**
+   * If true, return `attrs` even when no attrsText exists, as long as defaults
+   * produced some keys.
+   *
+   * Default: false (preserves pre-defaults behavior).
+   */
+  returnAttrsWhenDefaulted?: boolean;
+};
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
+function deepMergeInto(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  mode: "fill" | "override",
+): void {
+  for (const [k, v] of Object.entries(source)) {
+    const existing = target[k];
+
+    if (isPlainObject(existing) && isPlainObject(v)) {
+      deepMergeInto(existing, v, mode);
+      continue;
+    }
+
+    if (mode === "fill") {
+      if (target[k] === undefined) target[k] = v;
+    } else {
+      target[k] = v;
+    }
+  }
 }
 
 /**
@@ -308,6 +370,10 @@ export function instructionsFromText(
      *   included in flag / `pos` parsing.
      */
     retainCmdLang?: boolean;
+    /**
+     * Defaults (typically derived from presets).
+     */
+    defaults?: DefaultsShape;
   },
 ): InstructionsResult {
   const { cliTokens, cli, attrsText } = scanInfoString(text);
@@ -318,14 +384,10 @@ export function instructionsFromText(
   // `args` are the CLI tokens only (no tokens from the JSON5 attrs portion).
   const args = [...cliTokens];
 
-  const flags: Record<
-    string,
-    string | number | boolean | (string | number | boolean)[]
-  > = {};
-  const pos: string[] = [];
-
   const normalize = (k: string) =>
     options?.normalizeFlagKey ? options.normalizeFlagKey(k) : k;
+
+  const normalizeFlagKey = (k: string) => normalize(k.replace(/^(--?)/, ""));
 
   const coerce = (v: string): string | number | boolean => {
     if (options?.coerceNumbers && /^-?\d+(\.\d+)?$/.test(v)) {
@@ -335,8 +397,11 @@ export function instructionsFromText(
     return v;
   };
 
+  const flags: Record<string, FlagValue> = {};
+  const pos: string[] = [];
+
   const pushFlag = (key: string, val: string | number | boolean) => {
-    const k = normalize(key.replace(/^(--?)/, ""));
+    const k = normalizeFlagKey(key);
     if (k in flags) {
       const prev = flags[k];
       if (Array.isArray(prev)) prev.push(val);
@@ -379,34 +444,120 @@ export function instructionsFromText(
     pos.push(normalize(token));
   }
 
-  const attrs: Record<string, unknown> = {};
+  // -----------------------------
+  // Apply defaults (flags)
+  // -----------------------------
+  const defaults = options?.defaults;
+  const defaultsFlags = defaults?.pi?.flags as
+    | Record<string, FlagValue>
+    | undefined;
+  const flagsPolicy: DefaultsFlagPolicy = defaults?.flagsPolicy ??
+    "fill-missing";
+
+  const asArray = (v: FlagValue): (string | number | boolean)[] =>
+    Array.isArray(v) ? v : [v];
+
+  const mergeFlagDefaults = () => {
+    if (!defaultsFlags) return;
+    for (const [kRaw, vRaw] of Object.entries(defaultsFlags)) {
+      const k = normalizeFlagKey(kRaw);
+      const v = vRaw as FlagValue;
+
+      const exists = flags[k] !== undefined;
+
+      if (!exists) {
+        flags[k] = v;
+        continue;
+      }
+
+      if (flagsPolicy === "fill-missing") continue;
+
+      if (flagsPolicy === "override") {
+        flags[k] = v;
+        continue;
+      }
+
+      // append
+      flags[k] = [...asArray(flags[k] as FlagValue), ...asArray(v)];
+    }
+  };
+
+  mergeFlagDefaults();
+
+  // -----------------------------
+  // Parse attrsText (if present)
+  // -----------------------------
+  let parsedAttrs: Record<string, unknown> | undefined;
+
   if (attrsText) {
     const raw = attrsText.trim();
     try {
       const parsed = JSON5.parse(raw);
       if (parsed && typeof parsed === "object") {
-        Object.assign(attrs, parsed as Record<string, unknown>);
+        parsedAttrs = parsed as Record<string, unknown>;
+      } else {
+        parsedAttrs = {};
       }
     } catch (err) {
       if (options?.onAttrsParseError === "throw") throw err;
+
+      parsedAttrs = {};
       if (options?.onAttrsParseError === "store") {
-        const attrsWithRaw: Record<string, unknown> & { __raw?: string } =
-          attrs;
-        attrsWithRaw.__raw = raw;
+        (parsedAttrs as Record<string, unknown> & { __raw?: string }).__raw =
+          raw;
       }
-      // otherwise ignore -> attrs stays {}
     }
   }
+
+  // -----------------------------
+  // Apply defaults (attrs)
+  // -----------------------------
+  const defaultsAttrs = defaults?.attrs;
+  const attrsPolicy: DefaultsAttrsPolicy = defaults?.attrsPolicy ??
+    "fill-missing";
+
+  let mergedAttrs: Record<string, unknown> | undefined;
+  if (defaultsAttrs || parsedAttrs) {
+    if (attrsPolicy === "fill-missing") {
+      const out: Record<string, unknown> = {};
+      if (defaultsAttrs) Object.assign(out, defaultsAttrs);
+      if (parsedAttrs) Object.assign(out, parsedAttrs); // parsed wins
+      mergedAttrs = out;
+    } else if (attrsPolicy === "override") {
+      const out: Record<string, unknown> = {};
+      if (parsedAttrs) Object.assign(out, parsedAttrs);
+      if (defaultsAttrs) Object.assign(out, defaultsAttrs); // defaults win
+      mergedAttrs = out;
+    } else if (attrsPolicy === "deep-fill-missing") {
+      const out: Record<string, unknown> = {};
+      if (parsedAttrs) deepMergeInto(out, parsedAttrs, "override"); // parsed first
+      if (defaultsAttrs) deepMergeInto(out, defaultsAttrs, "fill"); // defaults fill missing
+      mergedAttrs = out;
+    } else {
+      // deep-override
+      const out: Record<string, unknown> = {};
+      if (defaultsAttrs) deepMergeInto(out, defaultsAttrs, "override"); // defaults first
+      if (parsedAttrs) deepMergeInto(out, parsedAttrs, "override"); // parsed overwrites (deep)
+      mergedAttrs = out;
+    }
+  }
+
+  const returnAttrsWhenDefaulted = defaults?.returnAttrsWhenDefaulted ?? false;
+
+  const shouldReturnAttrs = !!attrsText ||
+    (returnAttrsWhenDefaulted &&
+      !!mergedAttrs &&
+      Object.keys(mergedAttrs).length > 0);
 
   return {
     pi: {
       args,
       pos,
-      flags,
+      flags: flags as PosixStylePI["flags"],
       count: args.length,
       posCount: pos.length,
     },
-    attrs: attrsText ? attrs : undefined,
+    attrs: shouldReturnAttrs ? mergedAttrs : undefined,
     cmdLang,
     cli,
     attrsText,
@@ -547,81 +698,19 @@ export interface PosixPIQuery<
    */
   hasFlag(...names: string[]): boolean;
 
-  /**
-   * Return all values for the given flag names as a flattened array.
-   *
-   * - Scalar flag values are pushed as a single element.
-   * - Array-valued flags are concatenated.
-   * - Flags that are not present are skipped.
-   *
-   * This is useful when multiple names should be treated as the
-   * same logical option (e.g. `-t`, `--tag`, `--tags`).
-   */
   getFlagValues<T = unknown>(...names: string[]): T[];
-
-  /**
-   * Return all values for the given text flag names as a flattened array.
-   *
-   * - Scalar flag values are pushed as a single element.
-   * - Array-valued flags are concatenated.
-   * - Flags that are not present are skipped.
-   *
-   * This is useful when multiple names should be treated as the
-   * same logical option (e.g. `-t`, `--tag`, `--tags`).
-   */
   getTextFlagValues<T extends string = string>(...names: string[]): T[];
 
-  /**
-   * Convenience helper for boolean-style flags.
-   *
-   * Returns:
-   * - `true` if any named flag exists and is not strictly `false`,
-   * - `false` otherwise.
-   *
-   * This lets callers treat bare flags (`--verbose`) and value flags
-   * (`--verbose=true`) uniformly.
-   */
   isEnabled(...names: string[]): boolean;
 
-  /**
-   * Safe Zod-backed validation result for `pi.flags`.
-   *
-   * - With schema: mirrors `schema.safeParse(pi.flags)`, but with `data`
-   *   typed as `FlagsShape`.
-   * - Without schema: returns `{ success: true, data: pi.flags as FlagsShape }`.
-   */
   safeFlags(): { success: true; data: FlagsShape } | {
     success: false;
     error: z.ZodError<unknown>;
   };
 
-  /**
-   * Strict Zod-backed access to flags.
-   *
-   * - With schema: returns parsed `FlagsShape` or throws `ZodError`.
-   * - Without schema: returns `pi.flags as FlagsShape`.
-   */
   flags(): FlagsShape;
 }
 
-/**
- * Build a convenience query wrapper for a given {@link PosixStylePI}.
- *
- * This does not modify the PI; it simply layers a small, ergonomic
- * API for common access patterns used when interpreting CLI-style
- * metadata extracted from code fences or similar sources.
- *
- * Typical usage is:
- *
- *   const { pi, attrs } = instructionsFromText(infoString, ...);
- *   const q = queryPosixPI(pi, attrs, { normalizeFlagKey });
- *
- *   const partialName = q.getFirstBareWord();
- *   const level = q.getFlag<number>("L", "level");
- *   const tags  = q.getFlagValues<string>("tag", "tags");
- *
- * For concrete examples and expectations, see `posix-pi_test.ts`.
- */
 export function queryPosixPI<
   FlagsShape extends Record<string, unknown> = Record<string, unknown>,
 >(
@@ -762,7 +851,6 @@ export function queryPosixPI<
       const res = schema.safeParse(pi.flags);
       if (res.success) return res.data;
 
-      // Add a bit of context, but keep the original error
       res.error.message =
         `posix-pi flags() validation failed: ${res.error.message}`;
       throw res.error;
@@ -829,11 +917,9 @@ export const mergeFlexibleFlagOrText = (
 ): { readonly flagsCount: number; readonly texts: string[] } | false => {
   let flagsCount = 0;
 
-  // Count boolean flags
   if (shortcut === true) flagsCount++;
   if (long === true) flagsCount++;
 
-  // Extract text components
   const shortcutText = typeof shortcut === "string" || Array.isArray(shortcut)
     ? shortcut
     : undefined;
@@ -844,7 +930,6 @@ export const mergeFlexibleFlagOrText = (
 
   const texts = mergeFlexibleText(shortcutText, longText);
 
-  // If no flags and no texts, return false
   if (flagsCount === 0 && texts.length === 0) {
     return false;
   }

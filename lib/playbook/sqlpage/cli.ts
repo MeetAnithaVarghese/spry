@@ -24,8 +24,8 @@ import {
   isMaterializable,
   Materializable,
 } from "../../axiom/projection/playbook.ts";
+import { isIncludedNode } from "../../axiom/remark/code-contribute.ts";
 import { docFrontmatterDataBag } from "../../axiom/remark/doc-frontmatter.ts";
-import { isImportPlaceholder } from "../../axiom/remark/import-placeholders-generator.ts";
 import * as axiomCLI from "../../axiom/text-ui/cli.ts";
 import * as runbookCLI from "../../axiom/text-ui/runbook.ts";
 import { collectAsyncGenerated } from "../../universal/collectable.ts";
@@ -88,7 +88,7 @@ const flagsFrom = (spc: SqlPageContent) => {
         isError: false,
         isPartialInjected: false,
         isRouteSupplier: false,
-        isVirtual: spc.cell ? isImportPlaceholder(spc.cell) : false,
+        isVirtual: spc.cell ? isIncludedNode(spc.cell) : false,
         isBinary: isMaterializable(spc.cell)
           ? (spc.cell.isBlob ?? false)
           : false,
@@ -103,7 +103,7 @@ const flagsFrom = (spc: SqlPageContent) => {
         isRouteSupplier: isMaterializable(spc.cell)
           ? (isRouteSupplier(spc.cell?.materializationAttrs) ? true : false)
           : false,
-        isVirtual: spc.cell ? isImportPlaceholder(spc.cell) : false,
+        isVirtual: spc.cell ? isIncludedNode(spc.cell) : false,
         isBinary: isMaterializable(spc.cell)
           ? (spc.cell.isBlob ?? false)
           : false,
@@ -507,7 +507,7 @@ export class CLI<Project> {
     },
   ) {
     const spp = await sqlPagePlaybook(opts.md);
-    const { items } = await collectAsyncGenerated(sqlPageFiles(spp));
+    const { items } = await collectAsyncGenerated(sqlPageFiles(spp, "typical"));
     let spfe = items.map((spf) => ({
       ...spf,
       name: basename(spf.path),
@@ -585,7 +585,7 @@ export class CLI<Project> {
               line: s.position?.start.line ?? -1,
               language: s.language?.id ?? "?",
               pi: s.meta ?? "?",
-              virtual: isImportPlaceholder(s) ? "V" : " ",
+              virtual: isIncludedNode(s) ? "V" : " ",
               binary: "?", // TODO: s.sourceElaboration?.isRefToBinary ? "B" : " "
               notebook: s.provenance.file.path ?? "",
             };
@@ -653,7 +653,7 @@ export class CLI<Project> {
       );
 
     const spp = await sqlPagePlaybook(opts.md);
-    const { items } = await collectAsyncGenerated(sqlPageFiles(spp));
+    const { items } = await collectAsyncGenerated(sqlPageFiles(spp, "typical"));
 
     for (const spf of items) {
       if (matchesAnyGlob(spf.path)) {
@@ -683,7 +683,7 @@ export class CLI<Project> {
 
     const spp = await sqlPagePlaybook(opts.md);
     for await (
-      const spf of normalizeSPC(sqlPageFiles(spp))
+      const spf of normalizeSPC(sqlPageFiles(spp, "typical"))
     ) {
       const absPath = join(fs, spf.path);
       await ensureDir(dirname(absPath));
@@ -934,12 +934,15 @@ export class CLI<Project> {
         // If -p/--package is present (i.e., user requested SQL package), emit to stdout
         if (opts.package) {
           for (
-            const chunk of await sqlPageFilesUpsertDML(sqlPageFiles(spp), {
-              dialect: opts.dialect
-                ? opts.dialect
-                : SqlPageFilesUpsertDialect.SQLite,
-              includeSqlPageFilesTable: true,
-            })
+            const chunk of await sqlPageFilesUpsertDML(
+              sqlPageFiles(spp, "package"),
+              {
+                dialect: opts.dialect
+                  ? opts.dialect
+                  : SqlPageFilesUpsertDialect.SQLite,
+                includeSqlPageFilesTable: true,
+              },
+            )
           ) {
             console.log(chunk);
           }

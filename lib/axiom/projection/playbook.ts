@@ -202,11 +202,6 @@ export type PlaybookProjection = {
  *   This means filtered-out tasks never appear in the identity maps or in
  *   the dependency graph.
  *
- * @typeParam FragmentLocals
- *   The locals type each partial expects at render time.
- *   Kept for compatibility with higher-level interpolation layers, even if
- *   not used directly here.
- *
  * @param markdownPaths
  *   A path/glob/URL or array accepted by `markdownASTs`. This can be a file
  *   path, directory, remote URL, or a collection of them.

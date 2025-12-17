@@ -8,6 +8,16 @@ docFM:
 
 This notebook shows how cells, partials, and injections work together.
 
+## Config
+
+Add default flags to specific code blocks like `sql`, `text`, etc. allowing them
+to be interpolatable and injectable by default. `code DEFAULTS` is a special
+directive parsed by `actionable-code-candidates.ts` Remark plugin.
+
+```code DEFAULTS
+/sql|text|markdown|md/ * --interpolate --injectable
+```
+
 ## Code nodes
 
 This is an actionable (executable) code node with a name `init`.

@@ -1,3 +1,4 @@
+// lib/universal/posix-pi_test.ts
 import { assert, assertEquals, assertThrows } from "@std/assert";
 import { instructionsFromText, queryPosixPI } from "./posix-pi.ts";
 
@@ -74,7 +75,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
     ]);
     assertEquals(pi.pos.sort(), ["limit", "x", "feature", "f"].sort());
 
-    // no numeric coercion by default: values remain strings
     assertEquals(pi.flags, {
       limit: "10",
       x: "9",
@@ -142,7 +142,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
       ["l", "l", "level3", "tag", "tag2"].sort(),
     );
 
-    // `--tag important` is treated as two-token flag: tag = "important"
     assertEquals(pi.flags, {
       l: ["1", "2"],
       level3: true,
@@ -172,7 +171,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
         "{ foo: 1, bar: 'baz' }",
       );
 
-      // CLI tokens only; attrs-only string means no CLI
       assertEquals(pi.args, []);
       assertEquals(pi.flags, {});
       assertEquals(pi.pos, []);
@@ -192,10 +190,7 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
       "js --tag important { id: 'foo', count: 3 }",
     );
 
-    // args are CLI tokens only (no tokens from attrs JSON5)
     assertEquals(pi.args, ["js", "--tag", "important"]);
-
-    // normalized behavior: "--tag important" is a two-token flag
     assertEquals(pi.flags, { tag: "important" });
     assertEquals(pi.pos, ["tag"]);
 
@@ -214,7 +209,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
 
     assertEquals(pi.flags, { x: "1" });
     assert(attrs);
-    // default behavior: ignore parse errors -> empty object
     assertEquals(attrs, {});
     assertEquals(attrsText, "{ not: valid: json5 }");
   });
@@ -247,7 +241,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
   await t.step(
     "cmd/lang is excluded from flags by default, but can be retained",
     () => {
-      // Default: cmd/lang is NOT parsed as flag
       const { pi: piDefault, cmdLang: cmdDefault } = instructionsFromText(
         "--lang --flag value",
       );
@@ -256,7 +249,6 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
       assertEquals(piDefault.pos, ["flag"]);
       assertEquals(cmdDefault, "--lang");
 
-      // With retainCmdLang: cmd/lang participates in flag/pos parsing
       const { pi: piRetain, cmdLang: cmdRetain } = instructionsFromText(
         "--lang --flag value",
         { retainCmdLang: true },
@@ -276,6 +268,212 @@ Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
     assertEquals(attrs, undefined);
     assertEquals(attrsText, undefined);
   });
+
+  // ---------------------------------------------------------------------------
+  // Defaults behavior (new)
+  // ---------------------------------------------------------------------------
+
+  await t.step(
+    "defaults: flagsPolicy fill-missing only fills absent keys",
+    () => {
+      const { pi } = instructionsFromText("ts --a 1 --b 9", {
+        defaults: {
+          pi: { flags: { a: "0", b: "2", c: "3" } },
+          flagsPolicy: "fill-missing",
+        },
+      });
+
+      assertEquals(pi.flags, { a: "1", b: "9", c: "3" });
+    },
+  );
+
+  await t.step("defaults: flagsPolicy override replaces parsed keys", () => {
+    const { pi } = instructionsFromText("ts --a 1 --b 9", {
+      defaults: {
+        pi: { flags: { a: "0", b: "2", c: "3" } },
+        flagsPolicy: "override",
+      },
+    });
+
+    assertEquals(pi.flags, { a: "0", b: "2", c: "3" });
+  });
+
+  await t.step("defaults: flagsPolicy append accumulates into arrays", () => {
+    const { pi } = instructionsFromText("ts --b 9 --a 1", {
+      defaults: {
+        pi: { flags: { a: "0", b: "2", c: "3" } },
+        flagsPolicy: "append",
+      },
+    });
+
+    assertEquals(pi.flags, { b: ["9", "2"], a: ["1", "0"], c: "3" });
+  });
+
+  await t.step(
+    "defaults: default flag keys are normalized consistently",
+    () => {
+      // Important: if -L canonicalizes to "level", -l should too (same option).
+      const normalizeFlagKey = (k: string) =>
+        (k === "L" || k === "l") ? "level" : k.toLowerCase();
+
+      const { pi } = instructionsFromText("ts -L 2", {
+        normalizeFlagKey,
+        defaults: {
+          pi: { flags: { "--LEVEL": "9", "-l": "7", "Tag": "x" } },
+          flagsPolicy: "fill-missing",
+        },
+      });
+
+      // parsed sets level=2, so defaults for level do not apply (fill-missing)
+      // tag comes from defaults
+      assertEquals(pi.flags, { level: "2", tag: "x" });
+    },
+  );
+
+  await t.step(
+    "defaults: attrsPolicy fill-missing (shallow) lets parsed override",
+    () => {
+      const { attrs } = instructionsFromText(
+        "ts { a: 1, nested: { x: 9 } }",
+        {
+          defaults: {
+            attrs: { a: 0, b: 2, nested: { x: 1, y: 2 } },
+            attrsPolicy: "fill-missing",
+          },
+        },
+      );
+
+      assert(attrs);
+      assertEquals(attrs, { a: 1, b: 2, nested: { x: 9 } });
+    },
+  );
+
+  await t.step(
+    "defaults: attrsPolicy override (shallow) lets defaults override parsed",
+    () => {
+      const { attrs } = instructionsFromText(
+        "ts { a: 1, nested: { x: 9 } }",
+        {
+          defaults: {
+            attrs: { a: 0, b: 2, nested: { x: 1, y: 2 } },
+            attrsPolicy: "override",
+          },
+        },
+      );
+
+      assert(attrs);
+      assertEquals(attrs, { a: 0, b: 2, nested: { x: 1, y: 2 } });
+    },
+  );
+
+  await t.step(
+    "defaults: attrsPolicy deep-fill-missing keeps parsed and fills only missing",
+    () => {
+      const { attrs } = instructionsFromText(
+        "ts { a: 1, nested: { x: 9 } }",
+        {
+          defaults: {
+            attrs: { a: 0, b: 2, nested: { x: 1, y: 2 } },
+            attrsPolicy: "deep-fill-missing",
+          },
+        },
+      );
+
+      assert(attrs);
+      assertEquals(attrs, { a: 1, b: 2, nested: { x: 9, y: 2 } });
+    },
+  );
+
+  await t.step(
+    "defaults: attrsPolicy deep-override overwrites nested keys with parsed",
+    () => {
+      const { attrs } = instructionsFromText(
+        "ts { a: 1, nested: { x: 9 } }",
+        {
+          defaults: {
+            attrs: { a: 0, b: 2, nested: { x: 1, y: 2 } },
+            attrsPolicy: "deep-override",
+          },
+        },
+      );
+
+      assert(attrs);
+      assertEquals(attrs, { a: 1, b: 2, nested: { x: 9, y: 2 } });
+    },
+  );
+
+  await t.step(
+    "defaults: by default, attrs are NOT returned when only defaults exist",
+    () => {
+      const { attrs, attrsText } = instructionsFromText("ts --x 1", {
+        defaults: {
+          attrs: { a: 1 },
+        },
+      });
+
+      assertEquals(attrsText, undefined);
+      assertEquals(attrs, undefined);
+    },
+  );
+
+  await t.step(
+    "defaults: returnAttrsWhenDefaulted=true returns attrs even without attrsText",
+    () => {
+      const { attrs, attrsText } = instructionsFromText("ts --x 1", {
+        defaults: {
+          attrs: { a: 1 },
+          returnAttrsWhenDefaulted: true,
+        },
+      });
+
+      assertEquals(attrsText, undefined);
+      assert(attrs);
+      assertEquals(attrs, { a: 1 });
+    },
+  );
+
+  await t.step(
+    "defaults: invalid attrsText still merges defaults (ignore mode)",
+    () => {
+      const { attrs } = instructionsFromText("ts { not: valid: json5 }", {
+        defaults: {
+          attrs: { a: 1, nested: { y: 2 } },
+          attrsPolicy: "deep-fill-missing",
+        },
+      });
+
+      assert(attrs);
+      assertEquals(attrs, { a: 1, nested: { y: 2 } });
+    },
+  );
+
+  await t.step(
+    "defaults: onAttrsParseError='store' preserves __raw and defaults still apply",
+    () => {
+      const { attrs } = instructionsFromText("ts { not: valid: json5 }", {
+        onAttrsParseError: "store",
+        defaults: {
+          attrs: { a: 1 },
+          attrsPolicy: "fill-missing",
+        },
+      });
+
+      assert(attrs);
+      const a = attrs as Record<string, unknown>;
+      assert(typeof a.__raw === "string");
+      assertEquals(a.a, 1);
+    },
+  );
+
+  await t.step("defaults: empty defaults has no effect", () => {
+    const { pi, attrs } = instructionsFromText("ts --a 1");
+    const { pi: pi2, attrs: attrs2 } = instructionsFromText("ts --a 1", {
+      defaults: {},
+    });
+
+    assertEquals(pi, pi2);
+    assertEquals(attrs, attrs2);
+  });
 });
 
 Deno.test("queryPosixPI convenience helpers", async (t) => {
@@ -287,12 +485,7 @@ Deno.test("queryPosixPI convenience helpers", async (t) => {
 
     const q = queryPosixPI(pi, attrs);
 
-    // cmdLang is the first CLI token
     assertEquals(q.cmdLang, "ts");
-
-    // bareWords excludes:
-    // - cmdLang ("ts")
-    // - flag value for --level ("2")
     assertEquals(q.bareWords, ["PARTIAL", "main", "tag", "another"]);
     assertEquals(q.getFirstBareWord(), "PARTIAL");
     assertEquals(q.getSecondBareWord(), "main");
@@ -310,19 +503,16 @@ Deno.test("queryPosixPI convenience helpers", async (t) => {
       normalizeFlagKey: (k) => (k === "s" ? "short" : k),
     });
 
-    // Flags are stored under normalized keys
     assertEquals(pi.flags, {
       short: "foo",
       long: "bar",
     });
 
-    // getFlag sees both normalized and raw names
     assertEquals(q.getFlag<string>("s"), "foo");
     assertEquals(q.getFlag<string>("short"), "foo");
     assertEquals(q.getFlag<string>("long"), "bar");
     assertEquals(q.getFlag("missing"), undefined);
 
-    // hasFlag mirrors getFlag semantics
     assertEquals(q.hasFlag("short"), true);
     assertEquals(q.hasFlag("s"), true);
     assertEquals(q.hasFlag("missing"), false);
@@ -339,12 +529,10 @@ Deno.test("queryPosixPI convenience helpers", async (t) => {
 
     const q = queryPosixPI(pi, attrs, { normalizeFlagKey });
 
-    // All aliases end up under the same key
     assertEquals(pi.flags, {
       tag: ["a", "b", "c"],
     });
 
-    // getFlagValues flattens arrays for all aliases
     assertEquals(
       q.getFlagValues<string>("t", "tag", "tags"),
       ["a", "b", "c"],
@@ -363,22 +551,16 @@ Deno.test("queryPosixPI convenience helpers", async (t) => {
 
       const q = queryPosixPI(pi, attrs, { normalizeFlagKey });
 
-      // Underlying flags (note: "--feature=false" is string "false")
       assertEquals(pi.flags, {
         debug: true,
         verbose: true,
         feature: "false",
       });
 
-      // Bare flags and truthy values -> enabled
       assertEquals(q.isEnabled("debug"), true);
       assertEquals(q.isEnabled("v", "verbose"), true);
 
-      // Explicit "false" (string) is still considered enabled by default
-      // because only strictly `false` disables.
       assertEquals(q.isEnabled("feature"), true);
-
-      // Non-existent flags -> disabled
       assertEquals(q.isEnabled("missing"), false);
     },
   );

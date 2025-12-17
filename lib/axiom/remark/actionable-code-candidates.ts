@@ -144,7 +144,11 @@ import {
   mergeFlexibleFlagOrText,
   mergeFlexibleText,
 } from "../../universal/posix-pi.ts";
-import { codeFrontmatter } from "../mdast/code-frontmatter.ts";
+import {
+  codeFrontmatter,
+  CodeFrontmatterPresetsFactory,
+  presetsFactory,
+} from "../mdast/code-frontmatter.ts";
 import { addIssue } from "../mdast/node-issues.ts";
 import { isCodeDirectiveCandidate } from "./code-directive-candidates.ts";
 
@@ -297,20 +301,37 @@ export const memoizeOnlySpawnableLangSpecs = captureOnlySpawnableLangIds.map(
   },
 );
 
-// deno-lint-ignore no-empty-interface
 export interface ActionableCodeCandidatesOptions {
+  readonly codeFmDefaults?: CodeFrontmatterPresetsFactory;
 }
 
 export const actionableCodeCandidates: Plugin<
   [ActionableCodeCandidatesOptions?],
   Root
-> = () => {
+> = (options) => {
   return (tree) => {
+    let codeFmDefaults = options?.codeFmDefaults;
+
+    // find all the "defaults" or code frontmatter "presets" first
+    visit<Root, "code">(tree, "code", (code) => {
+      if (
+        isCodeDirectiveCandidate(code) && code.directive === "DEFAULTS" &&
+        code.lang === "code"
+      ) {
+        if (!codeFmDefaults) codeFmDefaults = presetsFactory();
+        codeFmDefaults.catalogRulesFromText(code.value);
+      }
+    });
+
     visit<Root, "code">(tree, "code", (code) => {
       if (isCodeDirectiveCandidate(code)) return;
 
       if (code.meta) {
-        const codeFM = codeFrontmatter(code);
+        const presets = codeFmDefaults
+          ? codeFmDefaults.matchingRules(code)
+          : undefined;
+
+        const codeFM = codeFrontmatter(code, { presets });
         if (codeFM?.pi.posCount) {
           const args = z.safeParse(
             actionableCodePiFlagsSchema,
@@ -332,7 +353,7 @@ export const actionableCodeCandidates: Plugin<
                 actionable.nature = "EXECUTABLE";
                 actionable.spawnableIdentity = identity;
                 actionable.language = codeFM.langSpec!;
-                actionable.spawnableArgs = args.data; // by default we do NOT interpolate
+                actionable.spawnableArgs = args.data;
                 actionable.memoizeOnly = memoizeOnlySpawnableLangSpecs.find(
                     (l) => l.id == codeFM.langSpec?.id,
                   )
@@ -347,12 +368,6 @@ export const actionableCodeCandidates: Plugin<
                 actionable.language = codeFM.langSpec;
                 actionable.isBlob = code.lang == "utf8";
                 actionable.materializationArgs = args.data;
-                if (!args.data.noInterpolate) {
-                  actionable.materializationArgs.interpolate = true; // by default we interpolate
-                }
-                if (!args.data.notInjectable) {
-                  actionable.materializationArgs.injectable = true; // by default we are injectable
-                }
                 actionable.materializationAttrs = codeFM.attrs;
               }
             }

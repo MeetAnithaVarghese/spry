@@ -77,6 +77,7 @@ Deno.test(
       assertEquals(
         directives.map((d) => `${d.lang} ${d.directive}:${d.identity}`),
         [
+          "code DEFAULTS:0000",
           "yaml META:0000",
           "text HEAD:0000",
           "markdown HEAD:0001",
@@ -97,92 +98,97 @@ Deno.test(
         [...injectableIDs],
       );
       const d = await r.diagnostics(Object.values(pbff.materializablesById));
-      assertEquals(d.injectDiags, [
-        {
-          target: "path1/name.txt",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "admin/name.txt",
-          inject: true,
-          why: "PARTIAL admin-layout: /^admin/ (regex: /^admin/)",
-          how: "prepend",
-        },
-        {
-          target: "admin/name.txt",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "admin/name.md",
-          inject: true,
-          why: "PARTIAL admin-layout: /^admin/ (regex: /^admin/)",
-          how: "prepend",
-        },
-        {
-          target: "admin/name.md",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "admin/home.txt",
-          inject: true,
-          why: "PARTIAL admin-layout: /^admin/ (regex: /^admin/)",
-          how: "prepend",
-        },
-        {
-          target: "admin/home.txt",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "debug.txt",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "index.sql",
-          inject: true,
-          why:
-            "PARTIAL global-layout: /^(?:[^/]*(?:\\/|$)+)*[^/]*\\/*$/ (glob: **/*)",
-          how: "prepend",
-        },
-        {
-          target: "api/ambulatory-glucose-profile/index.sql",
-          inject: true,
-          why: "PARTIAL api-head.sql: /^api/ (regex: /^api/)",
-          how: "prepend",
-        },
-        {
-          target: "api/ambulatory-glucose-profile/index.sql",
-          inject: false,
-          why: "PARTIAL global-layout: /^api/ (regex-negative: !/^api/)",
-          how: "prepend",
-        },
-        {
-          target: "../sqlpage/templates/gri_component.handlebars",
-          inject: false,
-          why:
-            "PARTIAL global-layout: /.handlebars$/ (regex-negative: !/.handlebars$/)",
-          how: "prepend",
-        },
-      ]);
       assertEquals(d.injectables?.map((i) => i[0]), [
         "admin-layout",
         "api-head.sql",
         "handlebars.sql",
         "global-layout",
+      ]);
+      assertEquals(d.injectDiags, [
+        {
+          target: "path1/name.txt",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "admin/name.txt",
+          inject: true,
+          why: "PARTIAL admin-layout: re:/^admin/)",
+          how: "prepend",
+          weight: 100,
+        },
+        {
+          target: "admin/name.txt",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "admin/name.md",
+          inject: true,
+          why: "PARTIAL admin-layout: re:/^admin/)",
+          how: "prepend",
+          weight: 100,
+        },
+        {
+          target: "admin/name.md",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "admin/home.txt",
+          inject: true,
+          why: "PARTIAL admin-layout: re:/^admin/)",
+          how: "prepend",
+          weight: 100,
+        },
+        {
+          target: "admin/home.txt",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "debug.txt",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "index.sql",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "api/ambulatory-glucose-profile/index.sql",
+          inject: true,
+          why: "PARTIAL api-head.sql: re:/^api/)",
+          how: "prepend",
+          weight: 99,
+        },
+        {
+          target: "api/ambulatory-glucose-profile/index.sql",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/.handlebars$/)",
+          how: "prepend",
+          weight: 0,
+        },
+        {
+          target: "../sqlpage/templates/gri_component.handlebars",
+          inject: true,
+          why: "PARTIAL global-layout: not re:/^api/)",
+          how: "prepend",
+          weight: 0,
+        },
       ]);
     });
 

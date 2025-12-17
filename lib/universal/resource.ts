@@ -8,9 +8,9 @@
  * This file intentionally stays "core": no markdown, no domain-specific plugins.
  */
 
-import { expandGlob, expandGlobSync } from "@std/fs";
+import { expandGlobSync } from "@std/fs";
 import { contentType } from "@std/media-types";
-import { dirname, join } from "@std/path";
+import { dirname, isGlob as stdIsGlob, join } from "@std/path";
 
 /* -------------------------------------------------------------------------- */
 /*                               Core types                                   */
@@ -263,7 +263,7 @@ const normalizeProvenance = <P extends ResourceProvenance>(
   return origProv;
 };
 
-const strategyFromProvenance = <P extends ResourceProvenance>(
+export const strategyFromProvenance = <P extends ResourceProvenance>(
   prov: P,
 ): ResourceStrategy => {
   const normalized = normalizeProvenance(prov);
@@ -276,22 +276,18 @@ const strategyFromProvenance = <P extends ResourceProvenance>(
 export function provenanceResource<
   P extends ResourceProvenance,
   S extends ResourceStrategy = ResourceStrategy,
->(origProv: P) {
-  const prov = normalizeProvenance(origProv);
-  const baseStrategy = strategyFromProvenance(prov);
-  const strategy = baseStrategy as S;
+>(origin: {
+  provenance: P;
+  strategy: S;
+}) {
+  const { provenance, strategy } = origin;
 
   const fetcher: FetchOverride<P, S> = strategy.target === "remote-url"
     ? defaultRemoteFetch<P, S>
     : defaultLocalFetch<P, S>;
 
-  const loaders = makeLoaders<P, S>(fetcher, prov as P, strategy);
-
-  const resource: Resource<P, S> = {
-    provenance: prov as P,
-    strategy,
-    ...loaders,
-  };
+  const loaders = makeLoaders<P, S>(fetcher, provenance, strategy);
+  const resource: Resource<P, S> = { provenance, strategy, ...loaders };
 
   return resource;
 }
@@ -311,7 +307,7 @@ export function* strategyDecisions<
   provenances: Iterable<P>,
   init?: StrategiesInit<P>,
 ) {
-  const isGlob = init?.isGlob;
+  const isGlob = init?.isGlob ?? ((p) => stdIsGlob(p.path));
 
   for (const origProv of provenances) {
     const baseProv = normalizeProvenance(origProv as P);
@@ -319,9 +315,10 @@ export function* strategyDecisions<
     const baseStrategy = strategyFromProvenance(baseProv) as S;
     const url = (baseStrategy as ResourceStrategy).url;
 
-    // Glob handling only for non-URLs.
+    // Glob handling only for non-URLs
     if (!url) {
-      const decision = !isGlob || isGlob(baseProv);
+      // Globs are DISABLED by default unless isGlob is provided
+      const decision = isGlob ? isGlob(baseProv) : false;
       const treatAsGlob = decision === true ||
         (decision === "auto" && hasGlobChar(path));
 
@@ -331,6 +328,7 @@ export function* strategyDecisions<
             ...baseProv,
             path: entry.path as ResourcePath,
           };
+
           const childProv = normalizeProvenance(childProvRaw);
           const childStrategy = strategyFromProvenance(childProv) as S;
           yield { provenance: childProv, strategy: childStrategy };
@@ -339,53 +337,8 @@ export function* strategyDecisions<
       }
     }
 
+    // Non-glob (or URL) path → emit as-is
     yield { provenance: baseProv, strategy: baseStrategy };
-  }
-}
-
-/**
- * Phase 2: assign strategies and attach basic loaders.
- *
- * - Classifies each provenance as `remote-url` or `local-fs`.
- * - Detects MIME and encoding (`utf8-text` vs `utf8-binary`).
- * - Handles glob expansion (if configured).
- * - Attaches lazy `text()`, `bytes()`, `stream()`, `reader()` loaders
- *   using default fetchers.
- */
-export async function* strategies<
-  P extends ResourceProvenance = ResourceProvenance,
-  S extends ResourceStrategy = ResourceStrategy,
->(
-  provenances: Iterable<P> | AsyncIterable<P>,
-  init?: StrategiesInit<P>,
-): AsyncGenerator<Resource<P, S>, void, unknown> {
-  const isGlob = init?.isGlob;
-
-  for await (const origProv of provenances) {
-    const prov = normalizeProvenance(origProv as P);
-    const path = prov.path;
-    const url = tryParseHttpUrl(path);
-
-    // Glob handling only for non-URLs.
-    if (!url && isGlob) {
-      const decision = isGlob(prov);
-      const treatAsGlob = decision === true ||
-        (decision === "auto" && hasGlobChar(path));
-
-      if (treatAsGlob) {
-        for await (const entry of expandGlob(path)) {
-          const childProvRaw: P = {
-            ...prov,
-            path: entry.path as ResourcePath,
-          };
-          const childProv = normalizeProvenance(childProvRaw);
-          yield provenanceResource<P, S>(childProv);
-        }
-        continue;
-      }
-    }
-
-    yield provenanceResource<P, S>(prov);
   }
 }
 
@@ -647,9 +600,7 @@ export type ResourcesFactory<
   /**
    * Phase 2: classify provenances and attach strategies + base loaders.
    */
-  strategies: (
-    provenances: Iterable<P> | AsyncIterable<P>,
-  ) => AsyncIterable<Resource<P, S>>;
+  strategies: (provenances: Iterable<P>) => Iterable<Resource<P, S>>;
 
   /**
    * Phase 3: apply fetch overrides and plugins.
@@ -702,10 +653,11 @@ export function resourcesFactory<
       plugins.push(...more);
     },
 
-    strategies: (provenances) =>
-      strategies<P, S>(provenances, {
+    strategies: (provenances) => {
+      return Array.from(strategyDecisions<P, S>(provenances, {
         isGlob: factoryInit.isGlob,
-      }),
+      })).map(provenanceResource);
+    },
 
     resources: (res) =>
       resources<P, S>(res, {
@@ -780,7 +732,10 @@ export function relativeTo<
 
   const resource = (p: string): Resource<P, S> => {
     const { provenance } = path(p);
-    return provenanceResource<P, S>(provenance);
+    return provenanceResource<P, S>({
+      provenance,
+      strategy: strategyFromProvenance(provenance) as S,
+    });
   };
 
   return { path, resource };
@@ -802,8 +757,11 @@ export function resourceFromPath(
   if (first.done || !first.value) {
     throw new Error(`No provenance for path: ${path}`);
   }
-  const prov = first.value;
-  return provenanceResource<ResourceProvenance, ResourceStrategy>(prov);
+  const provenance = first.value;
+  return provenanceResource<ResourceProvenance, ResourceStrategy>({
+    provenance,
+    strategy: strategyFromProvenance(provenance),
+  });
 }
 
 /**

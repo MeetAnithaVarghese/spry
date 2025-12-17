@@ -16,6 +16,39 @@ into a structured SQLite database.
 - Uses Spry to manage tasks and generate the SQLPage presentation layer.
 - Uses DuckDB with its built-in `excel` and `sqlite` extensions.
 
+## Spry Axiom configuration
+
+`code DEFAULTS` is a special directive use by Spry's Axiom library to supply
+default flags to specific code blocks like `sql`, `text`, etc. allowing them to
+be interpolatable (`${...}`) and injectable (using `PARTIAL`s) by default
+instead of having to pass `--interpolate` and `--injectable` into each code
+cell. 💡 `code DEFAULTS` is necessary in Spry SQLPage playbooks to tell Axiom
+how to treat `sql` code fenced blocks.
+
+```code DEFAULTS
+sql * --interpolate --injectable
+```
+
+The following example shows how arbitrary files can be "contributed" to
+`sqlpage_files`. `--base` should be relative to the current working directory
+(CWD). 💡 It's included just as an examplar and is not required:
+
+```contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry
+**/* SUNDRY
+```
+
+The following example shows how template files can be "contributed" to
+`sqlpage_files` but only when `--package` is being used. Spry picks them up from
+`../sqlpage/templates/*` and store them in `templates/*` path in `sqlpage_files`
+table only during `--package` operation:
+
+```contribute sqlpage_files --base sqlpage/templates --mode package
+**/* templates --mime text/plain
+```
+
+💡 You should use the above technique if you ever create custom
+`sqlplage/templates` files that you want included in the database.
+
 ## Setup
 
 Download the SCF Excel workbook from the GitHub repo and place it into the same
@@ -136,23 +169,17 @@ rm -rf dev-src.auto
 
 ## Raw SQL
 
-This raw SQL will be placed into HEAD/TAIL.
+This raw SQL will be placed into HEAD/TAIL. As an example, copy the same file
+twice to show how it can be renamed.
 
-```sql TAIL --import ../../../lib/universal/schema-info.dml.sqlite.sql
--- this will be replaced by the content of schema-info.dml.sqlite.sql
+```include --base ../../../lib/universal
+sql *.sql sql.d/tail
+sql schema-info.dml.sqlite.sql sql.d/tail/0000.sql
 ```
 
-This raw SQL will be placed into HEAD/TAIL. Include as a duplicate of the above
-show style-difference between `sql TAIL --import` and `import` which creates
-pseudo-cells.
-
-```import --base ../../../lib/universal
-sql *.sql TAIL
-```
-
-💡 `schema-info.dml.sqlite.sql` will appear twice in the output, once as
-`sql.d/tail/0000.sql` and another as `sql.d/tail/schema-info.dml.sqlite.sql`
-because the file is referenced in both the `import` cell and using `--import`.
+💡 `schema-info.dml.sqlite.sql` will appear in the output as
+`sql.d/tail/0000.sql` and `sql.d/tail/schema-info.dml.sqlite.sql` (doing it
+twice just for testing).
 
 ## Layout
 
@@ -187,14 +214,12 @@ ${ctx.breadcrumbs()}
 ```
 
 Get the brand assets and store them into the SQLPage content stream. They will
-be stored as `assets/brand/*` because the `--base` is
-`https://www.surveilr.com/`. The `--spc` reminds Spry to include it as part of
-the SQLPage content since by default utf8 and other file types don't get
-inserted into the stream.
+be stored as `assets/brand/*` because `--base` is `https://www.surveilr.com/`
+and destination is set to `.`.
 
-```import --base https://www.surveilr.com/
-utf8 https://www.surveilr.com/assets/brand/content-assembler.ico --spc
-utf8 https://www.surveilr.com/assets/brand/compliance-explorer.png --spc
+```contribute sqlpage_files --base https://www.surveilr.com/
+https://www.surveilr.com/assets/brand/content-assembler.ico .
+https://www.surveilr.com/assets/brand/compliance-explorer.png .
 ```
 
 ## SCF Home Page

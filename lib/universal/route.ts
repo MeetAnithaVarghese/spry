@@ -94,7 +94,7 @@ export function pathExtensions(path: string) {
   };
 }
 
-export function muateRoutePaths(route: PageRoute, path: string) {
+export function mutateRoutePaths(route: PageRoute, path: string) {
   if (!route.path) {
     route.path = path;
     const extensions = pathExtensions(route.path);

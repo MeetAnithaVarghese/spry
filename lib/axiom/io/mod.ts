@@ -10,8 +10,9 @@ import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
-import type { Root, RootContent } from "types/mdast";
+import type { Node, Root, RootContent } from "types/mdast";
 import { unified } from "unified";
+import { selectAll } from "unist-util-select";
 
 import docFrontmatter from "../remark/doc-frontmatter.ts";
 
@@ -34,9 +35,13 @@ import { GraphEdge } from "../edge/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
 import actionableCodeCandidates from "../remark/actionable-code-candidates.ts";
+import {
+  isIncludeSpecBlock,
+  isIncludesSpec,
+  prepareContributionSpecs,
+  prepareIncludedNodes,
+} from "../remark/code-contribute.ts";
 import codeDirectiveCandidates from "../remark/code-directive-candidates.ts";
-import insertImportPlaceholders from "../remark/import-placeholders-generator.ts";
-import resolveImportSpecs from "../remark/import-specs-resolver.ts";
 import nodeDecorator from "../remark/node-decorator.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -57,31 +62,42 @@ export type Yielded<T> = T extends Generator<infer Y> ? Y
 // ---------------------------------------------------------------------------
 
 export function mardownParserPipeline() {
+  const interpolationCtx = (_root: Root, vfile: VFile) => ({
+    cwd: Deno.cwd(),
+    env: Deno.env.toObject(),
+    mdSrcAbsPath: resolve(vfile.path),
+    mdSrcDirname: dirname(resolve(vfile.path)),
+  });
+  const consumeEdges = (
+    edges: { generatedBy: Node; included: Node }[],
+    vfile: VFile,
+  ) => {
+    if (graphEdgesVFileDataBag.is(vfile)) {
+      vfile.data.edges.push(...edges.map((e) => ({
+        rel: "isIncludedNode",
+        from: e.generatedBy,
+        to: e.included,
+      } satisfies GraphEdge<"isIncludedNode">)));
+    }
+  };
+
   return unified()
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"]) // extracts to YAML node but does not parse
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatter, { interpolate: true }) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
-    .use(resolveImportSpecs, { // find code cells which want to be imported from local/remote files
-      interpolationCtx: (_root, vfile) => ({
-        cwd: Deno.cwd(),
-        env: Deno.env.toObject(),
-        mdSrcAbsPath: resolve(vfile.path),
-        mdSrcDirname: dirname(resolve(vfile.path)),
-      }),
-    })
-    .use(insertImportPlaceholders, { // generate code cells found by resolveImportSpecs
-      consumeEdges: (edges, vfile) => {
-        if (graphEdgesVFileDataBag.is(vfile)) {
-          vfile.data.edges.push(...edges.map((e) => ({
-            rel: "isImportPlaceholder",
-            from: e.generatedBy,
-            to: e.placeholder,
-          } satisfies GraphEdge<"isImportPlaceholder">)));
-        }
-      },
-    })
+    .use(prepareContributionSpecs, { interpolationCtx }) // find code cells which want to be "contributed" from local/remote files
+    .use(prepareIncludedNodes, {
+      consumeEdges,
+      isSpecBlock: (spec, vfile) =>
+        isIncludeSpecBlock(spec)
+          ? ({
+            allowUrls: true,
+            resolveBasePath: (base) => resolve(vfile.dirname!, base),
+          })
+          : false,
+    }) // find code cells which want to be "contributed" from local/remote files
     .use(nodeDecorator) // look for @id and transform to node.type == "decorator"
     .use(codeDirectiveCandidates) // be sure this comes before actionableCodeCandidates
     .use(actionableCodeCandidates);
@@ -106,6 +122,11 @@ export interface MarkdownASTsOptions<
    * If omitted, `vfileResourcesFactory()` is used with its defaults.
    */
   readonly factory?: ReturnType<typeof vfileResourcesFactory<P, S>>;
+
+  /**
+   * Find isIncludedNode content and inject it into the node;
+   */
+  readonly resolveIncludesContent?: boolean;
 }
 
 /**
@@ -132,29 +153,30 @@ export async function* markdownASTs<
   P extends ResourceProvenance = MarkdownProvenance,
   S extends ResourceStrategy = ResourceStrategy,
 >(
-  provenances: readonly string[] | Iterable<P> | AsyncIterable<P>,
+  provenances: readonly string[] | Iterable<P>,
   options: MarkdownASTsOptions<P, S> = {},
 ) {
   const pipeline = options.pipeline ?? mardownParserPipeline();
   const rf = options.factory ?? vfileResourcesFactory<P, S>({});
+  const resolveIncludes = options.resolveIncludesContent ?? true;
 
   // ---------------------------------------------------------------------------
   // Normalize input → provenance iterable
   // ---------------------------------------------------------------------------
 
-  let provenanceIter: Iterable<P> | AsyncIterable<P>;
+  let provenanceIter: Iterable<P>;
 
   if (
     Array.isArray(provenances) &&
     provenances.every((x) => typeof x === "string")
   ) {
     // Only treat as paths when it's really string[]
-    provenanceIter = provenanceFromPaths(provenances as string[]) as
-      | Iterable<P>
-      | AsyncIterable<P>;
+    provenanceIter = provenanceFromPaths(provenances as string[]) as Iterable<
+      P
+    >;
   } else {
     // Anything else (including P[]) is treated as Iterable<P> / AsyncIterable<P>
-    provenanceIter = provenances as Iterable<P> | AsyncIterable<P>;
+    provenanceIter = provenances as Iterable<P>;
   }
 
   // ---------------------------------------------------------------------------
@@ -177,6 +199,16 @@ export async function* markdownASTs<
 
     const nst = nodeSrcText(mdastRoot, text);
     const relTo = relativeTo(resource);
+
+    if (resolveIncludes) {
+      // "includes" are "unresolved" during parsing and content acquisition is
+      // required asynchronously (for remotes, etc.)
+      for (const code of selectAll("code", mdastRoot)) {
+        if (isIncludesSpec(code)) {
+          await code.resolveIncludes();
+        }
+      }
+    }
 
     yield {
       resource,
