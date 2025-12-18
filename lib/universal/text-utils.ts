@@ -64,3 +64,49 @@ export function stringifyYamlWithQuotes(data: string): string {
     return `${key}"${trimmedValue}"`;
   });
 }
+
+/**
+ * Create a reusable regex-based replacer from user-provided patterns.
+ *
+ * - `findRegEx` is a string representation of a regular expression pattern
+ *   (without surrounding slashes).
+ * - The RegExp is always created with the global (`g`) flag so that all
+ *   occurrences are replaced.
+ * - When `options.cache === true` (default), the RegExp instance is reused
+ *   across calls for identical `(findRegEx, replaceRegEx)` pairs.
+ *
+ * @param findRegEx Pattern string used to build the RegExp.
+ * @param replaceRegEx Replacement string (supports `$1`, `$2`, etc.).
+ * @param options Optional configuration.
+ * @returns A function that applies the unified RegExp replacement to input text.
+ */
+export function createRegexRewriter(
+  findRegEx: string,
+  replaceRegEx: string,
+  options?: {
+    /** Reuse RegExp instances for identical inputs (default: true). */
+    cache?: boolean;
+  },
+): (input: string) => string {
+  const useCache = options?.cache !== false;
+
+  // Shared cache across all invocations
+  const staticCache = (createRegexRewriter as unknown as {
+    __cache?: Map<string, RegExp>;
+  }).__cache ??= new Map<string, RegExp>();
+
+  const cacheKey = `${findRegEx}␟${replaceRegEx}`;
+
+  const regex = useCache
+    ? (staticCache.get(cacheKey) ??
+      (() => {
+        const r = new RegExp(findRegEx, "g");
+        staticCache.set(cacheKey, r);
+        return r;
+      })())
+    : new RegExp(findRegEx, "g");
+
+  return (input: string): string => {
+    return input.replace(regex, replaceRegEx);
+  };
+}
