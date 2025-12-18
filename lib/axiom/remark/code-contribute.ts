@@ -1,22 +1,193 @@
 /**
- * contribute-specs-resolver.ts
+ * code-contribute.ts
  *
- * Thin wrapper around `resourceContributions()` for ```contribute blocks.
+ * A small family of Unified/Remark plugins that implement **spec-driven inclusion** and **inline inclusion**
+ * of external text and binary resources into an mdast tree.
  *
- * ```contribute <target> [PI flags...]
- * <candidate> [<destPrefix>] [flags...]
- * ...
- * ```
+ * The goal is to keep Markdown source readable (short specs) while allowing the processor to:
+ * - interpret fenced code blocks as *inclusion specifications* (` ```contribute ` / ` ```include ` / ` ```import `),
+ * - optionally interpolate both fence meta and spec body,
+ * - resolve local paths / globs (and optionally URLs) into a set of concrete resources,
+ * - inject new mdast nodes for each resolved resource,
+ * - asynchronously acquire the resource text and replace placeholder values,
+ * - allow binary resources to be cataloged but left to the caller for processing,
+ * - preserve provenance and attach issues on nodes instead of throwing.
  *
- * Block PI flags:
- * - --base / -B         => fromBase
- * - --dest              => destPrefix
- * - --labeled           => labeled
- * - --interpolate / -I  => interpolate spec body before parsing
+ * -----------------------------------------------------------------------------
+ * Concepts
+ * -----------------------------------------------------------------------------
  *
- * This plugin:
- * - parses fence PI + interpolates block body (optional)
- * - attaches `contributables()` to the Code node, returning the contributions factory
+ * 1) Contribute spec blocks (planning)
+ *    A fenced code block whose `lang` (or identity semantics) indicates one of:
+ *      - `contribute`
+ *      - `include`
+ *      - `import`
+ *
+ *    These blocks contain:
+ *      - a *target identity* (positional token after the fence language),
+ *      - optional block-level flags (Posix PI flags in code-frontmatter meta),
+ *      - a body containing one resource spec per line.
+ *
+ *    After planning, the original `code` node is upgraded into a `ContributeSpec` by attaching:
+ *      - parsed frontmatter (`contributeFM`)
+ *      - parsed/queryable PI (`contributeQPI`)
+ *      - safe parsed flags (`contributeSF`)
+ *      - `contributables(opts)` → a lazy factory that returns `resourceContributions(...)`
+ *
+ * 2) Single-node include (inline include)
+ *    Any regular `code` node (not a spec block) may opt into inclusion if `code.meta` contains:
+ *      - `--include <path-or-url>`
+ *
+ *    This attaches `includeResource` + `acquireResources()` so that the node can replace its own `value`
+ *    with the acquired external text later.
+ *
+ * 3) Included nodes (expansion)
+ *    Each resolved `ResourceContribution` from a spec block can become an injected mdast node (default: `code`)
+ *    that carries:
+ *      - `include` (the `ResourceContribution`)
+ *      - `acquireContent()` (async fetch/load of the text resource)
+ *      - `isContentAcquired`
+ *
+ * -----------------------------------------------------------------------------
+ * Flags and parsing
+ * -----------------------------------------------------------------------------
+ *
+ * Block PI flags on spec fences are validated via `contributePiFlagsSchema` and normalized into:
+ *
+ * - `--base` / `-B`       => `fromBase` (defaults to "." if omitted)
+ * - `--dest`              => `destPrefix`
+ * - `--labeled`           => enables labeled grammar in spec body
+ * - `--interpolate` / `-I`=> interpolate spec body before parsing (also supports shorthand `-I`)
+ *
+ * Labeled vs unlabeled:
+ * - `include` / `import` fences are treated as "include semantics" and default to labeled parsing unless overridden.
+ *
+ * Interpolation:
+ * - `prepareExternalContributions()` may interpolate `code.meta` and/or spec body using an optional
+ *   `interpolationCtx(tree, vfile)` provider; interpolated meta is tracked in `interpolatedCodeMeta`.
+ *
+ * -----------------------------------------------------------------------------
+ * Two-phase design (why two plugins)
+ * -----------------------------------------------------------------------------
+ *
+ * The processing model is intentionally split into:
+ *
+ * Phase 1: **Annotate / Plan** (no tree edits)
+ *   - `prepareExternalContributions` traverses the tree and attaches factories, provenance metadata,
+ *     and directive-candidate markers.
+ *   - It does NOT inject nodes and does NOT fetch external content.
+ *
+ * Phase 2: **Inject** (tree edits)
+ *   - `prepareIncludedNodes` consumes `ContributeSpec.contributables(...)`, creates generated nodes,
+ *     and mutates the mdast tree in a single post-traversal splice pass.
+ *   - It attaches `resolveIncludes()` to the original spec node (as `IncludesSpec`) so acquisition can
+ *     happen in a later async step.
+ *
+ * Phase 3: **Acquire** (async; performed by caller)
+ *   - The caller (or a later pipeline stage) invokes:
+ *       - `ExternalResource.acquireResources()` for inline includes, and/or
+ *       - `IncludesSpec.resolveIncludes()` for spec expansions
+ *     to replace placeholder `code.value` with resolved text content.
+ *
+ * This separation keeps traversal deterministic and makes it easy for downstream tooling to decide:
+ * - when to fetch (build time vs preview time),
+ * - whether to keep or remove spec nodes,
+ * - how to route/record inclusion edges for provenance.
+ *
+ * -----------------------------------------------------------------------------
+ * Public types
+ * -----------------------------------------------------------------------------
+ *
+ * - `ContributeSpec`:
+ *   A `Code` node annotated as a contribute/include/import spec with:
+ *     - `identity` (target)
+ *     - `contributeFM`, `contributeQPI`, `contributeSF`
+ *     - `contributables(opts)` → returns `resourceContributions(...)`
+ *
+ * - `ExternalResource<N>`:
+ *   A node that can self-resolve `--include` into its own `value`:
+ *     - `includeResource` (provenance)
+ *     - `acquireResources()`
+ *     - `resourcesAcquired`
+ *
+ * - `IncludesSpec`:
+ *   A `Code` spec node after expansion planning:
+ *     - `includables` (generated nodes)
+ *     - `resolveIncludes()` (acquires content for all includables)
+ *
+ * - `IncludedNode<N>`:
+ *   A generated node tied to a single `ResourceContribution`:
+ *     - `include`
+ *     - `acquireContent()`
+ *     - `isContentAcquired`
+ *
+ * -----------------------------------------------------------------------------
+ * Plugins
+ * -----------------------------------------------------------------------------
+ *
+ * 1) `prepareExternalContributions(options?)`
+ *
+ * Responsibilities:
+ * - Identify spec blocks (`contribute` / `include` / `import`) via `options.isSpecBlock` (defaults to fence lang).
+ * - For spec blocks:
+ *   - parse code-frontmatter PI (`codeFrontmatter`)
+ *   - validate/normalize flags (`queryPosixPI` + `contributePiFlagsSchema`)
+ *   - default `--base` to "." if omitted
+ *   - optionally interpolate:
+ *       - fence meta (via `codeFrontmatter(... transform ...)`)
+ *       - spec body (via `safeInterpolate`) when `--interpolate/-I` is set
+ *   - attach:
+ *       - directive candidate metadata (`CodeDirectiveCandidate` fields)
+ *       - `ContributeSpec` fields + `contributables(opts)` factory
+ * - For non-spec blocks:
+ *   - if `code.meta` includes `--include`, attach `ExternalResource` fields via `externalResource(...)`
+ *
+ * Result:
+ * - The tree is annotated with "plans" for inclusion but remains structurally unchanged.
+ *
+ * 2) `prepareIncludedNodes(options)`
+ *
+ * Responsibilities:
+ * - Visit `ContributeSpec` nodes and ask `options.isSpecBlock(spec, vfile, root)` whether/how to expand them.
+ *   - If it returns `false`, skip.
+ *   - If it returns contribute options, they are passed into `spec.contributables(...)`.
+ * - For each resolved `ResourceContribution`:
+ *   - generate a node via `options.generatedNode` (default `generatedCodeNode`)
+ *   - attach `IncludedNode` fields (`include`, `acquireContent`, `isContentAcquired`)
+ * - Attach `IncludesSpec` conveniences to the spec node:
+ *   - `includables` array
+ *   - `resolveIncludes()` that sequentially acquires all includables
+ * - Mutate the tree (after traversal) by splicing in generated nodes:
+ *   - "retain-after-injections": keep the spec node, insert generated nodes after it
+ *   - "remove-before-injections": replace the spec node with generated nodes
+ *   (controlled by `options.retainAfterInjections`)
+ * - Optionally report graph edges (`options.consumeEdges`) for provenance/telemetry.
+ *
+ * Default node generation (`generatedCodeNode`) details:
+ * - Builds a `code` node whose:
+ *   - `lang` comes from the contribution label
+ *   - `meta` begins with the destination path and may include extracted flags like `--directive`
+ * - Supports optional destination rewrite via:
+ *   - `--rewrite-path-find` + `--rewrite-path-replace`
+ *   - implemented with a cached regex rewriter (`createRegexRewriter(..., { cache: true })`)
+ * - Extracts certain meta flags while leaving other tokens alone:
+ *   - uses `rewrittenInstructions(..., { dashedOnly: true })` so only `-`/`--` flags are processed
+ * - Sets an approximate `position` based on the spec block’s position + line offsets for better diagnostics.
+ * - `acquireContent()` only injects text if the strategy encoding is `utf8-text`; otherwise it records an info issue.
+ *
+ * -----------------------------------------------------------------------------
+ * Typical pipeline usage
+ * -----------------------------------------------------------------------------
+ *
+ * 1) Run `prepareExternalContributions()` to annotate spec blocks and inline includes.
+ * 2) Run `prepareIncludedNodes()` to inject generated nodes for spec blocks.
+ * 3) After parsing (async), call:
+ *    - `ExternalResource.acquireResources()` for inline `--include` nodes, and/or
+ *    - `IncludesSpec.resolveIncludes()` for spec-expanded nodes,
+ *    to replace placeholder values with fetched text.
+ *
+ * The net effect is a flexible, provenance-aware ingestion mechanism that turns compact Markdown specs into
+ * concrete mdast nodes whose content originates from external resources.
  */
 import z from "@zod/zod";
 import type { Code, Node, Root } from "types/mdast";
