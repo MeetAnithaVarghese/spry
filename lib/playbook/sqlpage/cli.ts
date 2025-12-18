@@ -39,7 +39,7 @@ import {
 } from "../../universal/lister-tabular-tui.ts";
 import { TreeLister } from "../../universal/lister-tree-tui.ts";
 import { isRouteSupplier } from "../../universal/route.ts";
-import { dedentIfFirstLineBlank } from "../../universal/tmpl-literal-aide.ts";
+
 import { computeSemVerSync } from "../../universal/version.ts";
 import {
   SidecarOpts,
@@ -246,103 +246,19 @@ export class CLI<Project> {
     },
   ) {
     const {
-      absPathToSpryTsLocal,
       absPathToSpryfileLocal,
-      absPathToImportMapLocal,
-      importSpecifierForSpryLatest,
-      isRemote,
-      cliModuleUrl,
     } = await this.projectPaths(projectHome);
 
-    // spry.ts template (imports CLI from remote/local depending on our own location)
-    const spryTs = (importSpec = importSpecifierForSpryLatest) =>
-      dedentIfFirstLineBlank(`
-      #!/usr/bin/env -S deno run -A --import-map=import_map.json
-      // Use \`deno run -A --watch\` in the shebang if you're contributing / developing Spry itself.
-
-      import { CLI } from "${importSpec}";
-
-      CLI.instance().run();`);
-
-    // Copy import_map.json from repository root or remote URL to project directory
-    const copyImportMap = async (
-      source: string,
-      targetPath: string,
-    ): Promise<void> => {
-      let content: string;
-      if (source.startsWith("http://") || source.startsWith("https://")) {
-        // Fetch from remote URL
-        const response = await fetch(source);
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch ${source}: ${response.status} ${response.statusText}`,
-          );
-        }
-        content = await response.text();
-      } else {
-        // Read from local file
-        content = await Deno.readTextFile(source);
-      }
-      const parsed = JSON.parse(content);
-      await Deno.writeTextFile(
-        targetPath,
-        JSON.stringify(parsed, null, 2) + "\n",
-      );
-    };
+    // Note: spry.ts and import_map.json are no longer created by init
+    // Only Spryfile.md and .gitignore are created
 
     const exists = async (path: string) =>
       await Deno.stat(path).catch(() => false);
     const relativeToCWD = (path: string) => relative(Deno.cwd(), path);
 
     const removed: string[] = [];
-    if (init?.force) {
-      if (await exists(absPathToSpryTsLocal)) {
-        await Deno.remove(absPathToSpryTsLocal);
-        removed.push(relativeToCWD(absPathToSpryTsLocal));
-      }
-      if (await exists(absPathToImportMapLocal)) {
-        await Deno.remove(absPathToImportMapLocal);
-        removed.push(relativeToCWD(absPathToImportMapLocal));
-      }
-    }
-
     const ignored: string[] = [];
     const created: string[] = [];
-
-    if (!await exists(absPathToSpryTsLocal)) {
-      await Deno.writeTextFile(absPathToSpryTsLocal, spryTs());
-      created.push(relativeToCWD(absPathToSpryTsLocal));
-      await Deno.chmod(absPathToSpryTsLocal, 0o755);
-    } else {
-      ignored.push(relativeToCWD(absPathToSpryTsLocal));
-    }
-
-    // Copy import_map.json from repository root (local) or remote URL
-    if (!await exists(absPathToImportMapLocal)) {
-      try {
-        if (isRemote) {
-          // Fetch from remote URL
-          const remoteUrl =
-            "https://raw.githubusercontent.com/programmablemd/spry/refs/heads/main/import_map.json";
-          await copyImportMap(remoteUrl, absPathToImportMapLocal);
-          created.push(relativeToCWD(absPathToImportMapLocal));
-        } else {
-          // Copy from local repository root
-          const cliFsPath = fromFileUrl(cliModuleUrl);
-          const repoRoot = dirname(dirname(dirname(cliFsPath))); // Go up from lib/sqlpage/cli.ts to root
-          const sourceImportMapPath = join(repoRoot, "import_map.json");
-
-          await copyImportMap(sourceImportMapPath, absPathToImportMapLocal);
-          created.push(relativeToCWD(absPathToImportMapLocal));
-        }
-      } catch (err) {
-        console.warn(
-          `⚠️  Failed to copy import_map.json: ${(err as Error).message}`,
-        );
-      }
-    } else {
-      ignored.push(relativeToCWD(absPathToImportMapLocal));
-    }
 
     const webRoot = "dev-src.auto";
     if (!await exists(absPathToSpryfileLocal)) {
@@ -385,7 +301,7 @@ export class CLI<Project> {
       );
       sfMD.codeTag(
         `bash prepare-sqlpage-dev --descr "Generate the dev-src.auto directory to work in ${init?.dialect} dev mode"`,
-      )`./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json`;
+      )`spry sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json`;
       sfMD.codeTag(
         `bash clean --descr "Clean up the project directory's generated artifacts"`,
       )`rm -rf dev-src.auto`;
@@ -394,7 +310,7 @@ export class CLI<Project> {
       );
       sfMD.codeTag(
         `bash`,
-      )`./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage`;
+      )`spry sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage`;
       sfMD.ul(
         "--watch` turns on watching all `--md` files passed in (defaults to `Spryfile.md`)",
       );
@@ -405,14 +321,14 @@ export class CLI<Project> {
       sfMD.p("If you're running SQLPage in another terminal window, use:");
       sfMD.codeTag(
         `bash`,
-      )`./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch`;
+      )`spry sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch`;
       sfMD.title(2, "SQLPage single database deployment mode");
       sfMD.p(
         "After development is complete, the `dev-src.auto` can be removed and single-database deployment can be used:",
       );
       sfMD.codeTag(
         `bash deploy --descr "Generate sqlpage_files table upsert SQL and push them to ${init?.dialect}"`,
-      )`rm -rf dev-src.auto\n./spry.ts sp spc --package ${
+      )`rm -rf dev-src.auto\nspry sp spc --package ${
         init?.dialect ? `--dialect ${init?.dialect}` : ``
       } --conf sqlpage/sqlpage.json | ${
         init?.dialect === "postgres" ? `psql` : `sqlite3`
@@ -821,7 +737,7 @@ export class CLI<Project> {
     return new Command()
       .name("init")
       .description(
-        "Setup Spryfile.md and spry.ts for local dev environment",
+        "Setup Spryfile.md and .gitignore for local dev environment",
       )
       .type("dialect", dialect)
       /* .option("--db-name <file>", "name of SQLite database", {
