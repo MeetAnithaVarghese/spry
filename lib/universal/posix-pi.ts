@@ -939,3 +939,271 @@ export const mergeFlexibleFlagOrText = (
     texts,
   };
 };
+
+/**
+ * Rewrite a `cmd/lang + meta` instruction string by scanning the CLI portion
+ * once and selectively extracting or retaining flag occurrences.
+ *
+ * Behavior:
+ * - Scans only the CLI portion (everything before the first unquoted `{`).
+ * - Token text is preserved exactly as authored (including quoting/escaping).
+ * - Tokens are output in the same order, with only extracted tokens removed
+ *   (and for two-token flags, the value token is removed too).
+ * - Appends the attrs block (from the first unquoted `{` onward) verbatim.
+ *
+ * Parsing rules for *dashed* flags:
+ * - `--key=value` / `-k=value`
+ * - `--key value` / `-k value` (two-token form; value is the next token when it
+ *   does not start with `-`)
+ * - `--verbose` / `-v` (bare dashed flag) => boolean `true`
+ *
+ * Optional mode:
+ * - When `options.dashedOnly === true`, only dashed flags (`-`/`--`) are processed.
+ *   All non-dashed tokens are left alone (never passed to `onFlag`, always retained).
+ * - When `options.dashedOnly !== true` (default), non-dashed tokens are treated
+ *   as boolean flags `true` and are passed to `onFlag`.
+ *
+ * The `onFlag(flag, value, index)` callback:
+ * - `flag` is the parsed flag name without leading dashes (e.g. `"level"`),
+ * - `value` is `true` for bare dashed flags, otherwise a string/number,
+ * - `index` is 0 for the first time that `flag` is seen, 1 for the second, etc.
+ *
+ * Notes:
+ * - Output CLI is rebuilt by joining retained CLI tokens with single spaces.
+ */
+export function rewrittenInstructions(
+  instr: string,
+  handlers: {
+    onFlag: (
+      flag: string,
+      value?: string | boolean | number,
+      index?: number,
+    ) => "extract" | "retain";
+    /**
+     * If true, only process dashed flags (`-x`, `--x`, `--x=y`, etc.).
+     * All non-dashed tokens are preserved verbatim and never passed to `onFlag`.
+     *
+     * This allows inputs like:
+     * - `ts PARTIAL main --level=2 ...`
+     * - `--level=2 ...` (no cmd/lang)
+     */
+    dashedOnly?: boolean;
+  },
+): string {
+  const trimmed = instr.trim();
+  if (!trimmed) return "";
+
+  type State = "OUT" | "SINGLE" | "DOUBLE";
+  let state: State = "OUT";
+
+  const retained: string[] = [];
+
+  // token buffers: raw preserves exactly; unquoted is used for parsing decisions
+  let rawBuf = "";
+  let unqBuf = "";
+
+  // find attrs (first unquoted '{')
+  let attrsStart = -1;
+
+  // pending dashed flag that *might* take a value in two-token form
+  let pending:
+    | {
+      raw: string;
+      keyNoDash: string; // no leading dashes (and before any '=')
+    }
+    | undefined;
+
+  const seenIndex = new Map<string, number>();
+
+  const dashedOnly = handlers.dashedOnly === true;
+
+  const coerce = (v: string): string | number | boolean => {
+    if (/^-?\d+(\.\d+)?$/.test(v)) {
+      const n = Number(v);
+      if (!Number.isNaN(n)) return n;
+    }
+    return v;
+  };
+
+  const nextIndex = (k: string): number => {
+    const cur = seenIndex.get(k) ?? 0;
+    seenIndex.set(k, cur + 1);
+    return cur;
+  };
+
+  const stripLeadingDashes = (s: string) => s.replace(/^(--?)/, "");
+
+  const emitPendingAsBare = () => {
+    if (!pending) return;
+    const k = pending.keyNoDash;
+    const idx = nextIndex(k);
+    const decision = handlers.onFlag(k, true, idx);
+    if (decision === "retain") retained.push(pending.raw);
+    pending = undefined;
+  };
+
+  const processToken = (rawToken: string, unquotedToken: string) => {
+    if (!rawToken) return;
+
+    // If there is a pending dashed flag, decide whether THIS token is its value.
+    if (pending) {
+      const isValue = unquotedToken.length > 0 &&
+        !unquotedToken.startsWith("-");
+      if (isValue) {
+        const k = pending.keyNoDash;
+        const idx = nextIndex(k);
+        const decision = handlers.onFlag(k, coerce(unquotedToken), idx);
+        if (decision === "retain") retained.push(pending.raw, rawToken);
+        pending = undefined;
+        return;
+      }
+
+      // Not a value => pending is a bare boolean dashed flag
+      emitPendingAsBare();
+      // ...then continue processing this token normally
+    }
+
+    const isDashed = unquotedToken.startsWith("-");
+
+    if (dashedOnly) {
+      // Only process dashed flags; everything else is preserved verbatim.
+      if (!isDashed) {
+        retained.push(rawToken);
+        return;
+      }
+
+      const noDash = stripLeadingDashes(unquotedToken);
+
+      // key=value form
+      const eq = noDash.indexOf("=");
+      if (eq > 0) {
+        const k = noDash.slice(0, eq);
+        const vRaw = noDash.slice(eq + 1);
+        const v = vRaw.length ? coerce(vRaw) : true;
+
+        const idx = nextIndex(k);
+        const decision = handlers.onFlag(k, v, idx);
+        if (decision === "retain") retained.push(rawToken);
+        return;
+      }
+
+      // Might be two-token form or bare dashed flag; defer decision until next token.
+      pending = { raw: rawToken, keyNoDash: noDash };
+      return;
+    }
+
+    // First CLI token treated as cmd/lang and always retained (never sent to onFlag)
+    if (retained.length === 0) {
+      retained.push(rawToken);
+      return;
+    }
+
+    if (isDashed) {
+      const noDash = stripLeadingDashes(unquotedToken);
+
+      // key=value form
+      const eq = noDash.indexOf("=");
+      if (eq > 0) {
+        const k = noDash.slice(0, eq);
+        const vRaw = noDash.slice(eq + 1);
+        const v = vRaw.length ? coerce(vRaw) : true;
+
+        const idx = nextIndex(k);
+        const decision = handlers.onFlag(k, v, idx);
+        if (decision === "retain") retained.push(rawToken);
+        return;
+      }
+
+      pending = { raw: rawToken, keyNoDash: noDash };
+      return;
+    }
+
+    // Bare token => boolean true flag
+    const k = unquotedToken;
+    const idx = nextIndex(k);
+    const decision = handlers.onFlag(k, true, idx);
+    if (decision === "retain") retained.push(rawToken);
+  };
+
+  const flushToken = () => {
+    if (rawBuf.length === 0) return;
+    processToken(rawBuf, unqBuf);
+    rawBuf = "";
+    unqBuf = "";
+  };
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+
+    if (state === "OUT") {
+      if (ch === "{" && attrsStart === -1) {
+        flushToken();
+        attrsStart = i;
+        break;
+      }
+
+      if (/\s/.test(ch)) {
+        flushToken();
+        continue;
+      }
+
+      if (ch === "'" || ch === '"') {
+        rawBuf += ch;
+        state = ch === "'" ? "SINGLE" : "DOUBLE";
+        continue;
+      }
+
+      if (ch === "\\") {
+        rawBuf += ch;
+        const next = trimmed[++i];
+        if (next !== undefined) {
+          rawBuf += next;
+          unqBuf += next;
+        }
+        continue;
+      }
+
+      rawBuf += ch;
+      unqBuf += ch;
+      continue;
+    }
+
+    if (state === "SINGLE") {
+      rawBuf += ch;
+      if (ch === "'") {
+        state = "OUT";
+      } else {
+        unqBuf += ch;
+      }
+      continue;
+    }
+
+    // state === "DOUBLE"
+    rawBuf += ch;
+    if (ch === '"') {
+      state = "OUT";
+      continue;
+    }
+    if (ch === "\\") {
+      const next = trimmed[++i];
+      if (next !== undefined) {
+        rawBuf += next;
+        unqBuf += next;
+      }
+      continue;
+    }
+    unqBuf += ch;
+  }
+
+  flushToken();
+
+  // If the CLI ended with a pending dashed flag, treat it as bare boolean.
+  emitPendingAsBare();
+
+  const rewrittenCli = retained.join(" ").trim();
+  if (attrsStart >= 0) {
+    const attrsText = trimmed.slice(attrsStart).trim();
+    return rewrittenCli ? `${rewrittenCli} ${attrsText}` : attrsText;
+  }
+  return rewrittenCli;
+}

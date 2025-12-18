@@ -1,5 +1,6 @@
 // lib/universal/posix-pi_test.ts
 import { assert, assertEquals, assertThrows } from "@std/assert";
+import { rewrittenInstructions } from "./posix-pi.ts";
 import { instructionsFromText, queryPosixPI } from "./posix-pi.ts";
 
 Deno.test("instructionsFromText basic and edge behaviors", async (t) => {
@@ -575,4 +576,219 @@ Deno.test("queryPosixPI convenience helpers", async (t) => {
     assertEquals(q.getFlag("tag"), "important");
     assertEquals(q.cmdLang, "js");
   });
+});
+
+Deno.test("rewrittenInstructions()", async (t) => {
+  await t.step(
+    "retains everything when onFlag returns retain (default mode)",
+    () => {
+      const input =
+        `ts PARTIAL main --level=2 --name "hello world" --verbose { id: "foo" }`;
+
+      const out = rewrittenInstructions(input, { onFlag: () => "retain" });
+
+      assertEquals(out, input);
+    },
+  );
+
+  await t.step("extracts a key=value flag occurrence (default mode)", () => {
+    const input = `ts main --level=2 --name=Bob { id: "x" }`;
+
+    const out = rewrittenInstructions(input, {
+      onFlag: (flag) => (flag === "level" ? "extract" : "retain"),
+    });
+
+    assertEquals(out, `ts main --name=Bob { id: "x" }`);
+  });
+
+  await t.step("extracts a two-token flag occurrence (default mode)", () => {
+    const input = `ts main --name "hello world" --level 2 { id: "x" }`;
+
+    const out = rewrittenInstructions(input, {
+      onFlag: (flag) => (flag === "name" ? "extract" : "retain"),
+    });
+
+    assertEquals(out, `ts main --level 2 { id: "x" }`);
+  });
+
+  await t.step("extracts a bare dashed flag (--verbose) (default mode)", () => {
+    const input = `ts main --verbose --dry-run { id: "x" }`;
+
+    const out = rewrittenInstructions(input, {
+      onFlag: (flag) => (flag === "verbose" ? "extract" : "retain"),
+    });
+
+    assertEquals(out, `ts main --dry-run { id: "x" }`);
+  });
+
+  await t.step(
+    "extracts a bare word (treated as boolean flag true) (default mode)",
+    () => {
+      const input = `ts main tag1 tag2 --x=1 { id: "x" }`;
+
+      const out = rewrittenInstructions(input, {
+        onFlag: (flag) => (flag === "tag2" ? "extract" : "retain"),
+      });
+
+      assertEquals(out, `ts main tag1 --x=1 { id: "x" }`);
+    },
+  );
+
+  await t.step(
+    "preserves attrs block verbatim even when extracting everything after cmd/lang (default mode)",
+    () => {
+      const input = `ts --a=1 --b 2 tag { id: "foo", nested: { x: 1 } }`;
+
+      const out = rewrittenInstructions(input, { onFlag: () => "extract" });
+
+      assertEquals(out, `ts { id: "foo", nested: { x: 1 } }`);
+    },
+  );
+
+  await t.step("handles no attrs block (default mode)", () => {
+    const input = `ts main --level=2 tag`;
+
+    const out = rewrittenInstructions(input, {
+      onFlag: (flag) => (flag === "tag" ? "extract" : "retain"),
+    });
+
+    assertEquals(out, `ts main --level=2`);
+  });
+
+  await t.step("handles empty input", () => {
+    const input = `   `;
+    const out = rewrittenInstructions(input, { onFlag: () => "extract" });
+    assertEquals(out, ``);
+  });
+
+  await t.step(
+    "does not treat dashed value-like tokens as values for prior two-token flag (default mode)",
+    () => {
+      const input = `ts main --name -x { id: "x" }`;
+
+      const out = rewrittenInstructions(input, {
+        onFlag: (flag) => (flag === "name" ? "extract" : "retain"),
+      });
+
+      assertEquals(out, `ts main -x { id: "x" }`);
+    },
+  );
+
+  await t.step(
+    "passes occurrence index for repeated flags (default mode)",
+    () => {
+      const input = `ts --tag a --tag=b --tag c {}`;
+
+      const seen: Array<[string, unknown, number | undefined]> = [];
+      const out = rewrittenInstructions(input, {
+        onFlag: (flag, value, index) => {
+          seen.push([flag, value, index]);
+          return "retain";
+        },
+      });
+
+      assertEquals(out, input);
+      assertEquals(seen, [
+        ["tag", "a", 0],
+        ["tag", "b", 1],
+        ["tag", "c", 2],
+      ]);
+    },
+  );
+
+  await t.step(
+    "dashedOnly: leaves non-dashed tokens alone and only processes dashed flags (with cmd/lang)",
+    () => {
+      const input =
+        `ts PARTIAL main --level=2 --name "hello world" --verbose { id: "foo" }`;
+
+      const seen: Array<[string, unknown, number | undefined]> = [];
+      const out = rewrittenInstructions(
+        input,
+        {
+          onFlag: (flag, value, index) => {
+            seen.push([flag, value, index]);
+            return flag === "verbose" ? "extract" : "retain";
+          },
+          dashedOnly: true,
+        },
+      );
+
+      // Only --verbose removed; everything else unchanged, including non-dashed tokens.
+      assertEquals(
+        out,
+        `ts PARTIAL main --level=2 --name "hello world" { id: "foo" }`,
+      );
+      assertEquals(seen, [
+        ["level", 2, 0],
+        ["name", "hello world", 0],
+        ["verbose", true, 0],
+      ]);
+    },
+  );
+
+  await t.step(
+    "dashedOnly: works when there is no cmd/lang and preserves other tokens",
+    () => {
+      const input = `--level=2 --name "hello world" --verbose { id: "foo" }`;
+
+      const out = rewrittenInstructions(
+        input,
+        {
+          onFlag: (flag) => (flag === "level" ? "extract" : "retain"),
+          dashedOnly: true,
+        },
+      );
+
+      assertEquals(out, `--name "hello world" --verbose { id: "foo" }`);
+    },
+  );
+
+  await t.step(
+    "dashedOnly: does not call onFlag for bare words (they are always retained)",
+    () => {
+      const input = `ts main tag1 --x=1 tag2 {}`;
+
+      const seen: string[] = [];
+      const out = rewrittenInstructions(
+        input,
+        {
+          onFlag: (flag) => {
+            seen.push(flag);
+            return "retain";
+          },
+          dashedOnly: true,
+        },
+      );
+
+      assertEquals(out, input);
+      assertEquals(seen, ["x"]);
+    },
+  );
+
+  await t.step(
+    "dashedOnly: repeated dashed flags include occurrence index",
+    () => {
+      const input = `--tag a --tag=b --tag c {}`;
+
+      const seen: Array<[string, unknown, number | undefined]> = [];
+      const out = rewrittenInstructions(
+        input,
+        {
+          onFlag: (flag, value, index) => {
+            seen.push([flag, value, index]);
+            return "retain";
+          },
+          dashedOnly: true,
+        },
+      );
+
+      assertEquals(out, input);
+      assertEquals(seen, [
+        ["tag", "a", 0],
+        ["tag", "b", 1],
+        ["tag", "c", 2],
+      ]);
+    },
+  );
 });
