@@ -20,7 +20,9 @@ the `value`.
 
 ```contribute include --labeled --base ../sundry --dest INCLUDE
 csv **/*.csv
-sql *.sql . --interpolate --injectable
+sql **/!(*.partial).sql . --interpolate --injectable
+sql *.partial.sql . --directive PARTIAL --interpolate --injectable
+sql *.partial.sql . --directive PARTIAL --rewrite-path-find "(^|/)((?:[^/]+))\\.partial\\.sql$" --rewrite-path-replace "$1$2.sql" --interpolate --injectable
 ```
 
 💡 The `include` keyword as the name of the `contribute` cell is special

@@ -267,6 +267,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
       "SUNDRY/group1-allergies.csv",
       "SUNDRY/group1-care-plans.csv",
       "SUNDRY/group1-patients.csv",
+      "SUNDRY/header.partial.sql",
       "SUNDRY/pipe-separated-values.psv",
       "SUNDRY/plain-text.txt",
       "SUNDRY/plain.html",
@@ -324,6 +325,8 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
         ["csv", "INCLUDE/group1-care-plans.csv"],
         ["csv", "INCLUDE/group1-patients.csv"],
         ["sql", "sample.sql"],
+        ["sql", "header.partial.sql"],
+        ["sql", "header.sql"],
       ],
     );
     for (const node of includedCodeBlocks) {
@@ -335,6 +338,14 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     assertEquals(
       (includedCodeBlocks[4] as unknown as Code).meta,
       `sample.sql --interpolate --injectable`,
+    );
+    assertEquals(
+      (includedCodeBlocks[5] as unknown as Code).meta,
+      `PARTIAL header.partial.sql --interpolate --injectable`,
+    );
+    assertEquals(
+      (includedCodeBlocks[6] as unknown as Code).meta,
+      `PARTIAL header.sql --interpolate --injectable`,
     );
   });
 

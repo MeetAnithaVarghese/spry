@@ -30,6 +30,7 @@ import {
   InstructionsResult,
   mergeFlexibleText,
   queryPosixPI,
+  rewrittenInstructions,
 } from "../../universal/posix-pi.ts";
 import {
   ContributeSpecLine,
@@ -54,6 +55,7 @@ import {
   CodeDirectiveCandidate,
   isCodeDirectiveCandidate,
 } from "./code-directive-candidates.ts";
+import { createRegexRewriter } from "../../universal/text-utils.ts";
 
 export const contributePiFlagsSchema = z.object({
   base: flexibleTextSchema.optional(),
@@ -237,91 +239,92 @@ export function externalResource(
   }
 }
 
-export const prepareContributionSpecs: Plugin<[ContributeOptions?], Root> = (
-  options,
-) => {
-  const isSpecBlock = options?.isSpecBlock ?? defaultIsSpecBlock;
-  const interpolationCtx = options?.interpolationCtx;
+export const prepareExternalContributions: Plugin<[ContributeOptions?], Root> =
+  (
+    options,
+  ) => {
+    const isSpecBlock = options?.isSpecBlock ?? defaultIsSpecBlock;
+    const interpolationCtx = options?.interpolationCtx;
 
-  return (tree, vfile) => {
-    visit(tree, "code", (code: Code) => {
-      if (!isSpecBlock(code)) {
-        // we just want to process an include for a single code block
-        if (code.meta?.includes("--include")) {
-          externalResource(code, interpolationCtx?.(tree, vfile));
+    return (tree, vfile) => {
+      visit(tree, "code", (code: Code) => {
+        if (!isSpecBlock(code)) {
+          // we just want to process an include for a single code block
+          if (code.meta?.includes("--include")) {
+            externalResource(code, interpolationCtx?.(tree, vfile));
+          }
+          return;
         }
-        return;
-      }
 
-      if (isContributeSpec(code)) return;
+        if (isContributeSpec(code)) return;
 
-      const iCtx = interpolationCtx?.(tree, vfile);
+        const iCtx = interpolationCtx?.(tree, vfile);
 
-      const contributeFM = codeFrontmatter(code, {
-        cacheableInCodeNodeData: false,
-        transform: iCtx
-          ? ((lang, meta) => {
-            if (meta) meta = safeInterpolate(meta, { code, ...iCtx });
-            return { lang: lang ?? undefined, meta: meta ?? undefined };
-          })
-          : undefined,
-      });
-
-      if (!contributeFM) return;
-
-      const target = contributeFM.pi.pos[0];
-      if (!target) {
-        addIssue(code, {
-          severity: "error",
-          message:
-            `Contribute spec block is missing a target identity (expected \`\`\`${code.lang} <target>).`,
+        const contributeFM = codeFrontmatter(code, {
+          cacheableInCodeNodeData: false,
+          transform: iCtx
+            ? ((lang, meta) => {
+              if (meta) meta = safeInterpolate(meta, { code, ...iCtx });
+              return { lang: lang ?? undefined, meta: meta ?? undefined };
+            })
+            : undefined,
         });
-        return;
-      }
 
-      const cs = contributeSpecs(code, contributeFM, iCtx);
-      const directive = code as CodeDirectiveCandidate<
-        string,
-        typeof contributeKeyword
-      >;
-      directive.isCodeDirectiveCandidate = true;
-      directive.directive = contributeKeyword;
-      directive.identity = target;
-      directive.instructions = contributeFM as unknown as InstructionsResult;
-      assert(isCodeDirectiveCandidate(directive));
+        if (!contributeFM) return;
 
-      const node = code as ContributeSpec;
-      node.identity = target; // same as above, it's the same instance
-      node.contributeFM = cs.contributeFM;
-      node.contributeQPI = cs.contributeQPI;
-      node.contributeSF = cs.contributeSF;
-
-      node.contributables = (opts) => {
-        if (!cs.contributeSF.success) {
-          addIssue(node, {
-            message:
-              `Invalid codeFM ${node.lang} ${node.meta} (line ${node.position?.start.line})`,
+        const target = contributeFM.pi.pos[0];
+        if (!target) {
+          addIssue(code, {
             severity: "error",
-            error: cs.contributeSF.error,
+            message:
+              `Contribute spec block is missing a target identity (expected \`\`\`${code.lang} <target>).`,
           });
-          return [] as unknown as ReturnType<
-            ContributeSpec["contributables"]
-          >;
+          return;
         }
 
-        return resourceContributions(cs.specsSrc, {
-          labeled: opts?.labeled ?? cs.contributeSF.data.labeled ??
-            isIncludeSpecBlock(node),
-          fromBase: cs.contributeSF.data.base,
-          destPrefix: opts?.destPrefix ?? cs.contributeSF.data.dest,
-          allowUrls: opts?.allowUrls ?? false,
-          resolveBasePath: opts?.resolveBasePath,
-          transform: opts?.transform,
-        });
-      };
-    });
+        const cs = contributeSpecs(code, contributeFM, iCtx);
+        const directive = code as CodeDirectiveCandidate<
+          string,
+          typeof contributeKeyword
+        >;
+        directive.isCodeDirectiveCandidate = true;
+        directive.directive = contributeKeyword;
+        directive.identity = target;
+        directive.instructions = contributeFM as unknown as InstructionsResult;
+        assert(isCodeDirectiveCandidate(directive));
+
+        const node = code as ContributeSpec;
+        node.identity = target; // same as above, it's the same instance
+        node.contributeFM = cs.contributeFM;
+        node.contributeQPI = cs.contributeQPI;
+        node.contributeSF = cs.contributeSF;
+
+        node.contributables = (opts) => {
+          if (!cs.contributeSF.success) {
+            addIssue(node, {
+              message:
+                `Invalid codeFM ${node.lang} ${node.meta} (line ${node.position?.start.line})`,
+              severity: "error",
+              error: cs.contributeSF.error,
+            });
+            return [] as unknown as ReturnType<
+              ContributeSpec["contributables"]
+            >;
+          }
+
+          return resourceContributions(cs.specsSrc, {
+            labeled: opts?.labeled ?? cs.contributeSF.data.labeled ??
+              isIncludeSpecBlock(node),
+            fromBase: cs.contributeSF.data.base,
+            destPrefix: opts?.destPrefix ?? cs.contributeSF.data.dest,
+            allowUrls: opts?.allowUrls ?? false,
+            resolveBasePath: opts?.resolveBasePath,
+            transform: opts?.transform,
+          });
+        };
+      });
+    };
   };
-};
 
 export type IncludesSpec = Code & {
   includables: Iterable<Node>;
@@ -369,8 +372,12 @@ export interface IncludeNodeInsertOptions {
 const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
   const {
     rc: {
-      destPath,
-      origin: { label: lang, lineNumInRawInstructions: pathLine, meta },
+      destPath: destPathRaw,
+      origin: {
+        label: lang,
+        lineNumInRawInstructions: pathLine,
+        meta: metaRaw,
+      },
       provenance,
       strategy,
     },
@@ -383,10 +390,45 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
       offset: undefined,
     }
     : undefined;
+  let directive: string | undefined;
+  let rewritePathFind: string | undefined;
+  let rewritePathRepl: string | undefined;
+  const rewrittenMeta = rewrittenInstructions(metaRaw, {
+    onFlag: (flag, value) => {
+      switch (flag) {
+        case "directive": {
+          if (typeof value === "string") directive = value;
+          return "extract";
+        }
+        case "rewrite-path-find": {
+          if (typeof value === "string") rewritePathFind = value;
+          return "extract";
+        }
+        case "rewrite-path-replace": {
+          if (typeof value === "string") rewritePathRepl = value;
+          return "extract";
+        }
+        default:
+          return "retain";
+      }
+    },
+    dashedOnly: true,
+  });
+  const destPathRewriter = rewritePathFind && rewritePathRepl
+    ? createRegexRewriter(rewritePathFind, rewritePathRepl, { cache: true })
+    : undefined;
+  const destPath = destPathRewriter
+    ? destPathRewriter(destPathRaw)
+    : destPathRaw;
+  if (destPath !== destPathRaw) {
+    (ctx.rc.destPath as string) = destPath;
+  }
   const result: IncludedNode<Code> = {
     type: "code",
     lang,
-    meta: `${destPath} ${meta}`,
+    meta: directive
+      ? `${directive} ${destPath} ${rewrittenMeta}`
+      : `${destPath} ${metaRaw}`,
     value:
       `should be replaced by text value of ${provenance.path} (${provenance.mimeType})`,
     position: position ? { start: position, end: position } : undefined,

@@ -39,7 +39,7 @@ import {
   isExternalResource,
   isIncludeSpecBlock,
   isIncludesSpec,
-  prepareContributionSpecs,
+  prepareExternalContributions,
   prepareIncludedNodes,
 } from "../remark/code-contribute.ts";
 import codeDirectiveCandidates from "../remark/code-directive-candidates.ts";
@@ -88,7 +88,7 @@ export function mardownParserPipeline() {
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatter, { interpolate: true }) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
-    .use(prepareContributionSpecs, { interpolationCtx }) // find code cells which want to be "contributed" from local/remote files
+    .use(prepareExternalContributions, { interpolationCtx }) // find code cells which want to be "contributed" from local/remote files
     .use(prepareIncludedNodes, {
       consumeEdges,
       isSpecBlock: (spec, vfile) =>
@@ -208,8 +208,6 @@ export async function* markdownASTs<
         if (isIncludesSpec(code)) {
           await code.resolveIncludes();
         }
-      }
-      for (const code of selectAll("code", mdastRoot)) {
         if (isExternalResource(code) && !code.resourcesAcquired) {
           await code.acquireResources();
         }
