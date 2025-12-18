@@ -83,6 +83,27 @@ type Any = any;
 type ZodT = z.ZodType;
 
 /**
+ * Unwrap optional/nullable wrappers so traversal sees the underlying object/array.
+ *
+ * Unobvious: in Zod v4 (and deno-ts), optional/nullable are wrappers that block
+ * `instanceof ZodObject/ZodArray` checks unless you peel them off first.
+ */
+function unwrapZodType(t: ZodT): ZodT {
+  let cur: ZodT = t;
+
+  // Optional / Nullable in Zod have `.unwrap()`
+  // We guard both by instanceof and by presence of unwrap for toolchain compatibility.
+  while (
+    (cur instanceof z.ZodOptional || cur instanceof z.ZodNullable) &&
+    typeof (cur as Any).unwrap === "function"
+  ) {
+    cur = (cur as Any).unwrap();
+  }
+
+  return cur;
+}
+
+/**
  * Represents a field in the JSON structure.
  */
 export type TabularJsonShapeField<
@@ -314,17 +335,16 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
         schema: ZodT,
         fieldsPath: readonly TabularJsonShapeField<string, ZodT>[] = [],
       ) => {
-        // Unobvious: to correctly traverse nested structures, we must carry the current schema node
-        // (not just the root schema). Otherwise nested keys would be looked up on the wrong object.
+        const unwrappedSchema = unwrapZodType(schema);
+
+        // Unobvious: we must check against the unwrapped schema, not the wrapper.
         if (
-          !(schema instanceof ZodObject) || obj === null ||
+          !(unwrappedSchema instanceof ZodObject) || obj === null ||
           typeof obj !== "object"
         ) return;
 
         for (const key in obj) {
-          // Unobvious: in Zod v4, `shape.shape[key]` is typed as internal `$ZodType`.
-          // We treat it as `ZodT` because our `ZodT` alias is compatible with that toolchain.
-          const field = (schema.shape as Record<string, ZodT>)[key];
+          const field = (unwrappedSchema.shape as Record<string, ZodT>)[key];
           if (!field) continue;
 
           const currentField: TabularJsonShapeField<string, ZodT> = {
@@ -335,16 +355,17 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
           if (!column.isEmittable) continue;
 
           const value = obj[key];
+          const fieldUnwrapped = unwrapZodType(field);
 
           if (Array.isArray(value)) {
             if (options.flattenArrays) {
               value.forEach((item: Any, index: number) => {
-                // Unobvious: include index in the field-path name segment so default naming yields
-                // stable unique output keys (`history_0_date`, `history_1_date`, ...).
                 const indexedName = `${key}_${index}`;
-                const itemSchema = field instanceof ZodArray
-                  ? (field.element as ZodT)
-                  : field;
+
+                // Unobvious: if the schema is optional(array(...)), unwrap first so we get ZodArray.
+                const itemSchema = fieldUnwrapped instanceof ZodArray
+                  ? (fieldUnwrapped.element as ZodT)
+                  : fieldUnwrapped;
 
                 if (typeof item === "object" && item !== null) {
                   recurse(item, itemSchema, [
@@ -359,7 +380,8 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
               result[column.name] = value;
             }
           } else if (typeof value === "object" && value !== null) {
-            recurse(value, field, [...fieldsPath, currentField]);
+            // Unobvious: recurse into the unwrapped schema node so optional objects traverse.
+            recurse(value, fieldUnwrapped, [...fieldsPath, currentField]);
           } else {
             result[column.name] = value;
           }
@@ -381,9 +403,11 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
       shape: ZodT,
       fieldsPath: readonly TabularJsonShapeField<string, ZodT>[] = [],
     ) => {
-      if (shape instanceof ZodObject) {
-        for (const key in shape.shape) {
-          const field = (shape.shape as Record<string, ZodT>)[key];
+      const unwrappedShape = unwrapZodType(shape);
+
+      if (unwrappedShape instanceof ZodObject) {
+        for (const key in unwrappedShape.shape) {
+          const field = (unwrappedShape.shape as Record<string, ZodT>)[key];
           if (!field) continue;
 
           const currentField: TabularJsonShapeField<string, ZodT> = {
@@ -393,8 +417,6 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
           const column = this.jsonFieldColumn([...fieldsPath, currentField]);
           if (!column.isEmittable) continue;
 
-          // Unobvious: column-level supplier wins over instance-level supplier so that a single
-          // field can switch dialect or access strategy without impacting others.
           const jsonFieldAccessSupplier = column.sqlAccessJsonField ??
             this.jsonFieldAccessSqlSupplier;
 
@@ -404,20 +426,22 @@ export class TabularJson<Shape extends ZodObject<z.ZodRawShape>> {
           ]);
 
           if (column.sqlWrapExpr) {
-            // Unobvious: wrapping happens after field access so wrappers can CAST/NULLIF/etc.
-            // around the final extraction expression.
             columnExprSQL = column.sqlWrapExpr(columnExprSQL);
           }
 
-          if (field instanceof ZodObject || field instanceof ZodArray) {
-            recurse(field as unknown as ZodT, [...fieldsPath, currentField]);
+          const fieldUnwrapped = unwrapZodType(field);
+
+          if (
+            fieldUnwrapped instanceof ZodObject ||
+            fieldUnwrapped instanceof ZodArray
+          ) {
+            recurse(fieldUnwrapped, [...fieldsPath, currentField]);
           } else {
             columns.push({ ...column, columnExprSQL });
           }
         }
-      } else if (shape instanceof ZodArray) {
-        // Unobvious: arrays do not become columns themselves here; we recurse into element type.
-        recurse(shape.element as unknown as ZodT, fieldsPath);
+      } else if (unwrappedShape instanceof ZodArray) {
+        recurse(unwrappedShape.element as ZodT, fieldsPath);
       }
     };
 
