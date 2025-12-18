@@ -6,7 +6,10 @@ import {
   joinText,
   lines,
   mapJoin,
+  minWhitespaceIndent,
+  singleLineTrim,
   trimBlock,
+  unindentWhitespace,
   unless,
   when,
 } from "./tmpl-literal-aide.ts";
@@ -91,5 +94,34 @@ Deno.test("helpers", async (t) => {
     assertEquals(d, "");
     assertEquals(e, "A");
     assertEquals(f, "B");
+  });
+});
+
+Deno.test("Whitepsace", async (tc) => {
+  const goldenUnindented =
+    `This is a test to see if we can remove indentation properly.
+  First level
+    Second level`;
+
+  await tc.step("Unindent text value", () => {
+    const testIndented = `
+    This is a test to see if we can remove indentation properly.
+      First level
+        Second level`;
+
+    assertEquals(4, minWhitespaceIndent(testIndented));
+    assertEquals(goldenUnindented, unindentWhitespace(testIndented));
+  });
+
+  await tc.step("Multiple lines with whitespace as single line", () => {
+    const goldenSingleLine =
+      `select a, b, c from table where a = 'Value with spaces' and b = "Another set of spaces"`;
+    const testMultiline = `
+    select a, b, c
+      from table
+     where a = 'Value with spaces'
+       and b = "Another set of spaces"`;
+
+    assertEquals(goldenSingleLine, singleLineTrim(testMultiline));
   });
 });
