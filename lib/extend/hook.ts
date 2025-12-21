@@ -450,7 +450,7 @@ export type HookImpl<
 };
 
 export function hookDefn<
-  I extends readonly z.ZodTypeAny[],
+  const I extends readonly z.ZodTypeAny[],
   O extends z.ZodTypeAny,
   E extends HookEventMap = HookEventMap,
 >(
