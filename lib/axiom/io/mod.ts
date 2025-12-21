@@ -6,36 +6,27 @@
  * - Producing MDAST roots + mdText helpers for each markdown resource
  */
 
+import { basename, dirname, resolve } from "@std/path";
 import remarkDirective from "remark-directive";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
-import type { Node, Root, RootContent } from "types/mdast";
+import type { Code, Node, Root, RootContent } from "types/mdast";
 import { unified } from "unified";
 import { selectAll } from "unist-util-select";
-
-import docFrontmatter from "../remark/doc-frontmatter.ts";
-
+import { VFile } from "vfile";
 import {
   provenanceFromPaths,
   relativeTo,
   type ResourceProvenance,
   type ResourceStrategy,
 } from "../../universal/resource.ts";
-
-import {
-  isVFileResource,
-  type MarkdownProvenance,
-  vfileResourcesFactory,
-} from "./resource.ts";
-
-import { basename, dirname, resolve } from "@std/path";
-import { VFile } from "vfile";
 import { GraphEdge } from "../edge/mod.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { nodeSrcText } from "../mdast/node-src-text.ts";
 import actionableCodeCandidates from "../remark/actionable-code-candidates.ts";
 import {
+  isExtension,
   isExternalResource,
   isIncludeSpecBlock,
   isIncludesSpec,
@@ -43,7 +34,13 @@ import {
   prepareIncludedNodes,
 } from "../remark/code-contribute.ts";
 import codeDirectiveCandidates from "../remark/code-directive-candidates.ts";
+import docFrontmatter from "../remark/doc-frontmatter.ts";
 import nodeDecorator from "../remark/node-decorator.ts";
+import {
+  isVFileResource,
+  type MarkdownProvenance,
+  vfileResourcesFactory,
+} from "./resource.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -128,7 +125,18 @@ export interface MarkdownASTsOptions<
    * Find isIncludedNode content and inject it into the node;
    */
   readonly resolveIncludesContent?: boolean;
+
+  /**
+   * Find isExtension content and acquire extensions code (but don't execute the code)
+   */
+  readonly resolveExtensions?: boolean;
 }
+
+export type ExtensionInit = {
+  readonly vfile: VFile;
+  readonly tree: Root;
+  readonly container: Node;
+};
 
 /**
  * Async generator that:
@@ -160,6 +168,7 @@ export async function* markdownASTs<
   const pipeline = options.pipeline ?? mardownParserPipeline();
   const rf = options.factory ?? vfileResourcesFactory<P, S>({});
   const resolveIncludes = options.resolveIncludesContent ?? true;
+  const resolveExtensions = options.resolveExtensions ?? true;
 
   // ---------------------------------------------------------------------------
   // Normalize input → provenance iterable
@@ -201,10 +210,18 @@ export async function* markdownASTs<
     const nst = nodeSrcText(mdastRoot, text);
     const relTo = relativeTo(resource);
 
-    if (resolveIncludes) {
+    if (resolveIncludes || resolveExtensions) {
       // "includes" are "unresolved" during parsing and content acquisition is
       // required asynchronously (for remotes, etc.)
       for (const code of selectAll("code", mdastRoot)) {
+        if (isExtension<Code, ExtensionInit>(code)) {
+          const extn = await code.importExtension();
+          await extn?.entrypoint?.({
+            vfile: file,
+            tree: mdastRoot,
+            container: code,
+          });
+        }
         if (isIncludesSpec(code)) {
           await code.resolveIncludes();
         }

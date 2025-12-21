@@ -8,6 +8,7 @@ import { fixturesFactory } from "./fixture/mod.ts";
 import { nodeIssues } from "./mdast/node-issues.ts";
 import { graph, GraphEdge, graphToDot, MarkdownEncountered } from "./mod.ts";
 import { flexibleProjectionFromFiles } from "./projection/flexible.ts";
+import { playbooksFromFiles } from "./projection/playbook.ts";
 import {
   isMateriazableCodeCandidate,
   MaterializableCodeCandidate,
@@ -17,6 +18,7 @@ import {
   importKeyword,
   IncludedNode,
   isContributeSpec,
+  isExtension,
   isExternalResource,
   isIncludedNode,
 } from "./remark/code-contribute.ts";
@@ -33,6 +35,7 @@ const fixtures = {
   runbook3MdPath: ff.pmdPath("runbook-03.md"),
   contrib1MdPath: ff.pmdPath("contribute-01.md"),
   include1MdPath: ff.pmdPath("include-01.md"),
+  extension1MdPath: ff.pmdPath("extension-01.md"),
 };
 
 export function isIncludedMaterializableCodeCandidate(
@@ -566,6 +569,57 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
       ],
     );
   });
+});
+
+Deno.test("Extensions", async () => {
+  const { sources } = await playbooksFromFiles([fixtures.extension1MdPath]);
+  assert(sources.length);
+  const extnCodeBlocks = selectAll("code", sources[0].mdastRoot).filter(
+    isExtension<Code>,
+  );
+  assertEquals(extnCodeBlocks.length, 1);
+  const first = extnCodeBlocks[0];
+  assert(first);
+  assertFalse(nodeIssues.is(first)); // extension manager adds issues here
+  assert(first.extensionImported);
+  assert(first.extensionImported.specifier.includes("extension-01.ts"));
+
+  // we would never do this for real, but we're manually importing to verify
+  // functionality
+  const extnMod = await import("./fixture/pmd/extension-01.ts");
+  const hooks = await import("./io/hooks.ts");
+
+  // when the extension was loaded by markdownASTs() extensions are initialized
+  // and entrypoints are called so this should be set
+  assertEquals(extnMod.entryPointInit?.vfile.basename, "extension-01.md");
+  assertEquals(extnMod.treeHandlerHookCalls, 0);
+  assertEquals(first.extensionImported.hooks.length, 1);
+
+  // first test the managed extension import
+  const res = await hooks.mdastRootHook.collect(
+    first.extensionImported.module,
+    {
+      run: {
+        args: [extnMod.entryPointInit?.tree, extnMod.entryPointInit?.vfile],
+      },
+    },
+  );
+  assertEquals(res.implementations.length, 1);
+  assert(res.executed);
+  assertEquals(extnMod.treeHandlerHookCalls, 1);
+
+  // now test the statically imported extension
+  const res2 = await hooks.mdastRootHook.collect(
+    extnMod,
+    {
+      run: {
+        args: [extnMod.entryPointInit?.tree, extnMod.entryPointInit?.vfile],
+      },
+    },
+  );
+  assertEquals(res2.implementations.length, 1);
+  assert(res2.executed);
+  assertEquals(extnMod.treeHandlerHookCalls, 2); // called a second time
 });
 
 const headingsTreeGolden = `

@@ -1,8 +1,8 @@
 /**
  * code-contribute.ts
  *
- * A small family of Unified/Remark plugins that implement **spec-driven inclusion** and **inline inclusion**
- * of external text and binary resources into an mdast tree.
+ * A small family of Unified/Remark plugins that implement **spec-driven inclusion**, **inline inclusion**,
+ * and **extension imports** of external resources into an mdast tree.
  *
  * The goal is to keep Markdown source readable (short specs) while allowing the processor to:
  * - interpret fenced code blocks as *inclusion specifications* (` ```contribute ` / ` ```include ` / ` ```import `),
@@ -11,7 +11,9 @@
  * - inject new mdast nodes for each resolved resource,
  * - asynchronously acquire the resource text and replace placeholder values,
  * - allow binary resources to be cataloged but left to the caller for processing,
- * - preserve provenance and attach issues on nodes instead of throwing.
+ * - interpret regular code blocks as *extension specs* (`--extension <specifier>`),
+ * - dynamically import extension modules (TypeScript / JavaScript / WASM) via Deno `import(...)`,
+ * - make extension entrypoints available to downstream callers without mutating the tree.
  *
  * -----------------------------------------------------------------------------
  * Concepts
@@ -41,7 +43,21 @@
  *    This attaches `includeResource` + `acquireResources()` so that the node can replace its own `value`
  *    with the acquired external text later.
  *
- * 3) Included nodes (expansion)
+ * 3) Extension import (inline extension)
+ *    Any regular `code` node (including non-spec blocks) may opt into extension behavior if `code.meta` contains:
+ *      - `--extension <specifier>`
+ *
+ *    This attaches `extensionResource` + `importExtension()` so the caller can:
+ *      - dynamically import an external module via Deno `import(specifier)`,
+ *      - access its default export as an entrypoint (if `default` is a function),
+ *      - keep extension execution and side effects under the caller’s control.
+ *
+ *    Notes:
+ *    - Only `--extension` is supported (no shorthand).
+ *    - Loading/instantiation is delegated entirely to Deno dynamic import; this module does not
+ *      replicate TS/JS/WASM loading logic.
+ *
+ * 4) Included nodes (expansion)
  *    Each resolved `ResourceContribution` from a spec block can become an injected mdast node (default: `code`)
  *    that carries:
  *      - `include` (the `ResourceContribution`)
@@ -74,8 +90,9 @@
  *
  * Phase 1: **Annotate / Plan** (no tree edits)
  *   - `prepareExternalContributions` traverses the tree and attaches factories, provenance metadata,
- *     and directive-candidate markers.
+ *     directive-candidate markers, and inline behaviors (include/extension).
  *   - It does NOT inject nodes and does NOT fetch external content.
+ *   - It does NOT import/execute extensions unless the caller explicitly invokes `importExtension()`.
  *
  * Phase 2: **Inject** (tree edits)
  *   - `prepareIncludedNodes` consumes `ContributeSpec.contributables(...)`, creates generated nodes,
@@ -83,16 +100,20 @@
  *   - It attaches `resolveIncludes()` to the original spec node (as `IncludesSpec`) so acquisition can
  *     happen in a later async step.
  *
- * Phase 3: **Acquire** (async; performed by caller)
+ * Phase 3: **Acquire / Import** (async; performed by caller)
  *   - The caller (or a later pipeline stage) invokes:
  *       - `ExternalResource.acquireResources()` for inline includes, and/or
- *       - `IncludesSpec.resolveIncludes()` for spec expansions
+ *       - `IncludesSpec.resolveIncludes()` for spec expansions,
  *     to replace placeholder `code.value` with resolved text content.
+ *   - For extensions, the caller invokes:
+ *       - `Extension.importExtension()` for any node marked with `--extension`,
+ *     to dynamically import the module and obtain its entrypoint.
  *
  * This separation keeps traversal deterministic and makes it easy for downstream tooling to decide:
- * - when to fetch (build time vs preview time),
+ * - when to fetch/import (build time vs preview time),
  * - whether to keep or remove spec nodes,
- * - how to route/record inclusion edges for provenance.
+ * - how to route/record inclusion edges for provenance,
+ * - how and when to execute extension code.
  *
  * -----------------------------------------------------------------------------
  * Public types
@@ -109,6 +130,13 @@
  *     - `includeResource` (provenance)
  *     - `acquireResources()`
  *     - `resourcesAcquired`
+ *
+ * - `Extension<N>`:
+ *   A node that can expose an external executable module via `--extension`:
+ *     - `extensionResource` (provenance)
+ *     - `importExtension()` (Deno dynamic import)
+ *     - `extensionImported`
+ *     - `importedExtension` (optional cache)
  *
  * - `IncludesSpec`:
  *   A `Code` spec node after expansion planning:
@@ -141,9 +169,10 @@
  *       - `ContributeSpec` fields + `contributables(opts)` factory
  * - For non-spec blocks:
  *   - if `code.meta` includes `--include`, attach `ExternalResource` fields via `externalResource(...)`
+ *   - if `code.meta` includes `--extension`, attach `Extension` fields via `extension(...)`
  *
  * Result:
- * - The tree is annotated with "plans" for inclusion but remains structurally unchanged.
+ * - The tree is annotated with "plans" for inclusion and extension imports but remains structurally unchanged.
  *
  * 2) `prepareIncludedNodes(options)`
  *
@@ -163,38 +192,32 @@
  *   (controlled by `options.retainAfterInjections`)
  * - Optionally report graph edges (`options.consumeEdges`) for provenance/telemetry.
  *
- * Default node generation (`generatedCodeNode`) details:
- * - Builds a `code` node whose:
- *   - `lang` comes from the contribution label
- *   - `meta` begins with the destination path and may include extracted flags like `--directive`
- * - Supports optional destination rewrite via:
- *   - `--rewrite-path-find` + `--rewrite-path-replace`
- *   - implemented with a cached regex rewriter (`createRegexRewriter(..., { cache: true })`)
- * - Extracts certain meta flags while leaving other tokens alone:
- *   - uses `rewrittenInstructions(..., { dashedOnly: true })` so only `-`/`--` flags are processed
- * - Sets an approximate `position` based on the spec block’s position + line offsets for better diagnostics.
- * - `acquireContent()` only injects text if the strategy encoding is `utf8-text`; otherwise it records an info issue.
- *
  * -----------------------------------------------------------------------------
  * Typical pipeline usage
  * -----------------------------------------------------------------------------
  *
- * 1) Run `prepareExternalContributions()` to annotate spec blocks and inline includes.
+ * 1) Run `prepareExternalContributions()` to annotate spec blocks, inline includes, and extensions.
  * 2) Run `prepareIncludedNodes()` to inject generated nodes for spec blocks.
  * 3) After parsing (async), call:
  *    - `ExternalResource.acquireResources()` for inline `--include` nodes, and/or
  *    - `IncludesSpec.resolveIncludes()` for spec-expanded nodes,
  *    to replace placeholder values with fetched text.
- *
- * The net effect is a flexible, provenance-aware ingestion mechanism that turns compact Markdown specs into
- * concrete mdast nodes whose content originates from external resources.
+ * 4) When ready to load extensions, call:
+ *    - `Extension.importExtension()` for any node with `--extension`,
+ *    to obtain the imported module and optional entrypoint.
  */
+import { assert } from "@std/assert/assert";
 import z from "@zod/zod";
 import type { Code, Node, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
-
+import {
+  extensionHandle,
+  type ExtensionImportResult as ExtendImportResult,
+  type HookImplRecord,
+  IssueSink as ExtendIssueSink,
+} from "../../extend/extension.ts";
 import { safeInterpolate } from "../../universal/flexible-interpolator.ts";
 import {
   flexibleTextSchema,
@@ -208,25 +231,31 @@ import {
   ResourceContribution,
   resourceContributions,
 } from "../../universal/resource-contributions.ts";
-
-import { assert } from "@std/assert/assert";
 import {
   provenanceFromPath,
   provenanceResource,
   resourceFromPath,
   ResourceProvenance,
 } from "../../universal/resource.ts";
+import { createRegexRewriter } from "../../universal/text-utils.ts";
 import {
   type CodeFrontmatter,
   codeFrontmatter,
 } from "../mdast/code-frontmatter.ts";
 import { dataBag } from "../mdast/data-bag.ts";
-import { addIssue, addIssues } from "../mdast/node-issues.ts";
+import {
+  addIssue,
+  addIssues,
+  IssueSeverity as NodeIssueSeverity,
+  NodeIssue,
+} from "../mdast/node-issues.ts";
 import {
   CodeDirectiveCandidate,
   isCodeDirectiveCandidate,
 } from "./code-directive-candidates.ts";
-import { createRegexRewriter } from "../../universal/text-utils.ts";
+
+// deno-lint-ignore no-explicit-any
+type Any = any;
 
 export const contributePiFlagsSchema = z.object({
   base: flexibleTextSchema.optional(),
@@ -410,6 +439,140 @@ export function externalResource(
   }
 }
 
+export type ExtensionImportResult<
+  Ctx = unknown,
+  Api = unknown,
+  M extends Record<string, unknown> = Record<string, unknown>,
+> =
+  & Readonly<{ resource: ResourceProvenance }>
+  & Readonly<{
+    /** Raw imported module (typed for callers). */
+    module: M;
+    /** Optional default entrypoint export. */
+    entrypoint?: ExtendImportResult<Ctx, Api>["entrypoint"];
+    /** Discovered hook implementations (if any). */
+    hooks: readonly HookImplRecord[];
+    /** Original specifier (path/URL). */
+    specifier: string;
+  }>;
+
+export type Extension<
+  N extends Node,
+  Ctx = unknown,
+  Api = unknown,
+  M extends Record<string, unknown> = Record<string, unknown>,
+> = N & {
+  extensionResource: ResourceProvenance;
+  extensionImported?: ExtensionImportResult<Ctx, Api, M>;
+  importExtension: () => Promise<
+    ExtensionImportResult<Ctx, Api, M> | undefined
+  >;
+};
+
+export function isExtension<
+  N extends Node,
+  Ctx = unknown,
+  Api = unknown,
+  M extends Record<string, unknown> = Record<string, unknown>,
+>(node: Node): node is Extension<N, Ctx, Api, M> {
+  return !!(node && typeof node === "object" && "extensionResource" in node);
+}
+
+function toNodeIssueSeverity(
+  s: "info" | "warn" | "error",
+): NodeIssueSeverity {
+  // Your NodeIssueSeverity appears to use "warning" (not "warn")
+  if (s === "warn") return "warning" as NodeIssueSeverity;
+  return s as NodeIssueSeverity;
+}
+
+function fmtExtSuffix(i: { code: string; detail?: unknown; error?: unknown }) {
+  // Keep it compact but useful; avoids NodeIssue shape changes.
+  const bits: string[] = [`code=${i.code}`];
+  if (i.detail !== undefined) bits.push("detail=present");
+  if (i.error !== undefined) bits.push("error=present");
+  return `(${bits.join(", ")})`;
+}
+
+function adaptExtendIssuesToCode(code: Code, sink: ExtendIssueSink): void {
+  const mapped: NodeIssue[] = sink.list().map((i) => ({
+    severity: toNodeIssueSeverity(i.severity),
+    message: `${i.message} ${fmtExtSuffix(i)}`,
+    // NodeIssue *does* have error in your earlier usage; keep the original error object.
+    error: i.error,
+  }));
+
+  if (mapped.length) addIssues(code, mapped);
+}
+
+export function extension<
+  Ctx = unknown,
+  Api = unknown,
+  M extends Record<string, unknown> = Record<string, unknown>,
+>(
+  code: Code,
+  interpolationCtx?: Record<string, unknown>,
+) {
+  const originalMeta = code.meta;
+  if (!originalMeta) return;
+  if (!originalMeta.includes("--extension")) return;
+
+  if (interpolationCtx) {
+    code.meta = safeInterpolate(originalMeta, { code, ...interpolationCtx });
+  }
+
+  const fm = codeFrontmatter(code);
+  if (!fm) return;
+
+  const ext = fm.pi.flags["extension"];
+  if (typeof ext !== "string" || !ext.trim()) return;
+
+  const specifier = ext.trim();
+  const provenance = provenanceFromPath(specifier);
+
+  const node = code as unknown as Extension<Code, Ctx, Api, M>;
+  node.extensionResource = provenance;
+  node.extensionImported = undefined;
+
+  node.importExtension = async () => {
+    try {
+      if (node.extensionImported) return node.extensionImported;
+
+      // Use lib/extend/extension.ts
+      const issues = new ExtendIssueSink();
+      const handle = extensionHandle<Ctx, Api>(specifier, { issues });
+
+      const imported = await handle.import();
+      // Project any warnings/errors from extension scanning into the code node.
+      adaptExtendIssuesToCode(code, issues);
+
+      if (!imported) {
+        // import failed already recorded in issues
+        return undefined;
+      }
+
+      node.extensionImported = {
+        resource: provenance,
+        specifier: imported.specifier,
+        module: imported.module as M,
+        entrypoint: imported.entrypoint,
+        hooks: imported.hooks,
+      } satisfies ExtensionImportResult<Ctx, Api, M>;
+      return node.extensionImported;
+    } catch (err) {
+      addIssues(code, [
+        {
+          severity: "error",
+          message:
+            `Unable to import extension '${specifier}' (code=EXT_IMPORT_FAILED).`,
+          error: err,
+        } satisfies NodeIssue,
+      ]);
+      return undefined;
+    }
+  };
+}
+
 export const prepareExternalContributions: Plugin<[ContributeOptions?], Root> =
   (
     options,
@@ -423,6 +586,8 @@ export const prepareExternalContributions: Plugin<[ContributeOptions?], Root> =
           // we just want to process an include for a single code block
           if (code.meta?.includes("--include")) {
             externalResource(code, interpolationCtx?.(tree, vfile));
+          } else if (code.meta?.includes("--extension")) {
+            extension(code, interpolationCtx?.(tree, vfile));
           }
           return;
         }
