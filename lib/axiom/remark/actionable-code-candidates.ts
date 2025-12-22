@@ -181,6 +181,8 @@ export const actionableCodePiFlagsSchema = z.object({
   branch: flexibleTextSchema.optional(),
   injectedDep: flexibleTextSchema.optional(),
   injectable: z.boolean().optional(),
+  executable: z.boolean().optional(),
+  conf: z.string().optional(),
   notinjectable: z.boolean().optional(),
 
   // shortcuts
@@ -190,6 +192,7 @@ export const actionableCodePiFlagsSchema = z.object({
   /* graph/branch */ G: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
   /* injectable */ J: z.boolean().optional(),
+  /* executable */ X: z.boolean().optional(),
 }).transform((raw) => {
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
@@ -214,6 +217,9 @@ export const actionableCodePiFlagsSchema = z.object({
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
     capture: capture.length > 0 ? capture : undefined,
     interpolate: raw.I ?? raw.interpolate,
+    executable: raw.X ?? raw.executable ?? (raw.conf ? true : undefined) ??
+      undefined,
+    conf: raw.conf,
     noInterpolate: raw.noInterpolate,
     injectable: raw.J ?? raw.injectable,
     notInjectable: raw.notinjectable,
@@ -340,7 +346,9 @@ export const actionableCodeCandidates: Plugin<
           if (args.success) {
             const identity = codeFM.pi.pos[0];
             const nature: ActionableCodeCandidate["nature"] =
-              spawnableLangSpecs.find((l) => l.id == codeFM.langSpec?.id)
+              args.data.executable || spawnableLangSpecs.find((l) =>
+                  l.id == codeFM.langSpec?.id
+                )
                 ? "EXECUTABLE" as const
                 : "MATERIALIZABLE" as const;
 

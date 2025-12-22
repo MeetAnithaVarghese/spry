@@ -50,6 +50,7 @@ import { shell as createShell } from "./shell.ts";
  */
 export function catalogFromYaml(
   yaml: string | Record<string, unknown>,
+  into: LanguageInitCatalog<LanguageInitBase & EngineTagged> = {},
 ): LanguageInitCatalog<LanguageInitBase & EngineTagged> {
   const root = typeof yaml === "string"
     ? (parseYaml(yaml) as Record<string, unknown> | null)
@@ -69,10 +70,12 @@ export function catalogFromYaml(
     );
   }
 
-  const out: Record<string, LanguageInitBase & EngineTagged> = {};
+  const out = into;
 
   for (
-    const [name, raw] of Object.entries(catalogNode as Record<string, unknown>)
+    const [name, raw] of Object.entries(
+      catalogNode as Record<string, unknown>,
+    )
   ) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       throw new Error(
@@ -83,7 +86,6 @@ export function catalogFromYaml(
     const entry = raw as Record<string, unknown>;
     const engine = String(entry.engine ?? "").toLowerCase();
 
-    // Common init fields supported by LanguageInitBase
     const base: LanguageInitBase = {
       bin: typeof entry.bin === "string" ? entry.bin : undefined,
       cwd: typeof entry.cwd === "string" ? entry.cwd : undefined,
@@ -97,7 +99,7 @@ export function catalogFromYaml(
         port: asString(entry.port),
         user: asString(entry.user),
         dbname: asString(entry.dbname),
-        password: asString(entry.password), // optional; prefer env/pgpass/PGSERVICE
+        password: asString(entry.password),
       });
       continue;
     }
@@ -244,6 +246,20 @@ function engineFromCatalogEntry(
   throw new Error(
     "using(): catalog entry engineId does not match any known engine (psql/sqlite3/duckdb).",
   );
+}
+
+export function engineNameFromCatalogEntry(
+  entry: LanguageInitBase & EngineTagged,
+): string {
+  const id = entry.engineId;
+
+  if (!id) return "unknown";
+
+  if (id === psqlEngine.id) return "postgres";
+  if (id === sqlite3Engine.id) return "sqlite";
+  if (id === duckdbEngine.id) return "duckdb";
+
+  return "unknown";
 }
 
 // Simple quoted argv splitter (same behavior as shell.ts)

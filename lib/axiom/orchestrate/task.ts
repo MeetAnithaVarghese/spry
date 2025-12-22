@@ -45,10 +45,16 @@
  * operational runbook*. It makes the Markdown actionable: renderable,
  * executable, traceable, and repeatable.
  */
+import { catalogFromYaml, using } from "../../universal/code-shell-serde.ts";
+import {
+  EngineTagged,
+  LanguageInitBase,
+  LanguageInitCatalog,
+} from "../../universal/code-shell.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { renderer } from "../../universal/render.ts";
-import { shell, ShellBusEvents } from "../../universal/shell.ts";
 import { textInfoShellEventBus } from "../../universal/shell-bus.ts";
+import { shell, ShellBusEvents } from "../../universal/shell.ts";
 import {
   executeDAG,
   fail,
@@ -60,6 +66,14 @@ import {
 } from "../../universal/task.ts";
 import { codeInterpolationStrategy } from "../mdast/code-interpolate.ts";
 import { Directive, ExecutableTask } from "../projection/playbook.ts";
+
+export function codeShellConf(
+  directives: readonly Directive[],
+): LanguageInitCatalog<LanguageInitBase & EngineTagged> {
+  return directives.filter((d) =>
+    d.directive.match(/^(CODE-SHELL|CODESHELL|CODE_SHELL|CONNECTIONS)/)
+  ).reduce((c, d) => catalogFromYaml(d.value, c), {});
+}
 
 /**
  * Build a "runbook" facade around an executable task graph.
@@ -144,6 +158,7 @@ export function tasksRunbook<
   const interpolator = renderer(cis);
   const sh = shell({ bus: opts?.shellBus });
   const td = new TextDecoder();
+  const csConf = opts?.directives ? codeShellConf(opts.directives) : undefined;
 
   const execute = async (plan: TaskExecutionPlan<T>) =>
     await executeDAG(plan, async (task, ctx) => {
@@ -158,8 +173,14 @@ export function tasksRunbook<
         // if the task is a "memoize only" (no execution) then the interpolator
         // already handled the memoization and we won't run the task
         if (!task.memoizeOnly) {
-          const execResult = await sh.auto(rendered.text, undefined, task);
-          if (task.spawnableArgs.capture) {
+          const langSh = csConf && task.spawnableArgs.conf
+            ? using(csConf, task.spawnableArgs.conf)
+            : undefined;
+
+          const execResult = task.language.id == "shell"
+            ? await sh.auto(rendered.text, undefined, task)
+            : await langSh?.spawn({ kind: "text", text: rendered.text });
+          if (execResult && task.spawnableArgs.capture) {
             // before the task runs, "memoize" in interpolator.renderOne stores
             // the "source" (before execution) and now we need to overwrite that
             // "memoization" with the actual execution's stdout / result
@@ -172,6 +193,12 @@ export function tasksRunbook<
                 captureSpecs: task.spawnableArgs.capture,
               });
             }
+          }
+          if (!execResult) {
+            return fail(
+              ctx,
+              "execResult is NULL (don't know how to handle this executable block)",
+            );
           }
         }
         return ok(ctx);
@@ -286,6 +313,7 @@ export function exectutionReport<
   const interpolator = renderer(cis);
   const sh = shell({ bus: shellEventBus.bus });
   const td = new TextDecoder();
+  const csConf = opts?.directives ? codeShellConf(opts.directives) : undefined;
 
   const execute = async (plan: TaskExecutionPlan<T>) =>
     await executeDAG(plan, async (task, ctx) => {
@@ -300,8 +328,14 @@ export function exectutionReport<
         // if the task is a "memoize only" (no execution) then the interpolator
         // already handled the memoization and we won't run the task
         if (!task.memoizeOnly) {
-          const execResult = await sh.auto(rendered.text, undefined, task);
-          if (task.spawnableArgs.capture) {
+          const langSh = csConf && task.spawnableArgs.conf
+            ? using(csConf, task.spawnableArgs.conf)
+            : undefined;
+
+          const execResult = task.language.id == "shell"
+            ? await sh.auto(rendered.text, undefined, task)
+            : await langSh?.spawn({ kind: "text", text: rendered.text });
+          if (execResult && task.spawnableArgs.capture) {
             // before the task runs, "memoize" in interpolator.renderOne stores
             // the "source" (before execution) and now we need to overwrite that
             // "memoization" with the actual execution's stdout / result
@@ -316,9 +350,15 @@ export function exectutionReport<
             }
             // mutate the code cell value with the results of the output
             replaceContents(task, output, "execution-result");
-          } else {
+          } else if (execResult) {
             // even if the task was not run, mutate the interpolated code cell value
             replaceContents(task, rendered.text, "render-result");
+          } else {
+            replaceContents(
+              task,
+              "execResult is NULL (don't know how to handle this executable block)",
+              "render-result",
+            );
           }
         }
         return ok(ctx);
