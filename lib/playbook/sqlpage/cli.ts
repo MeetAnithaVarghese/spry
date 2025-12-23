@@ -148,14 +148,24 @@ export function upsertMissingAncestors<T>(
 
 export function projectPaths(projectHome = Deno.cwd()) {
   const cliModuleUrl = new URL(import.meta.url);
-  const isRemote = false;
+  const isRemote = cliModuleUrl.protocol === "http:" ||
+    cliModuleUrl.protocol === "https:";
+
   const absPathToSpryfileLocal = join(projectHome, "Spryfile.md");
 
-  const cliFsPath = fromFileUrl(cliModuleUrl);
-  let rel = relative(projectHome, cliFsPath).replaceAll("\\", "/");
-  if (!rel.startsWith(".") && !rel.startsWith("/")) rel = `./${rel}`;
-  const importSpecifierForSpry = rel;
-  const importSpecifierForSpryLatest = rel;
+  let importSpecifierForSpry: string;
+  let importSpecifierForSpryLatest: string;
+
+  if (isRemote) {
+    importSpecifierForSpry = cliModuleUrl.href;
+    importSpecifierForSpryLatest = cliModuleUrl.href;
+  } else {
+    const cliFsPath = fromFileUrl(cliModuleUrl);
+    let rel = relative(projectHome, cliFsPath).replaceAll("\\", "/");
+    if (!rel.startsWith(".") && !rel.startsWith("/")) rel = `./${rel}`;
+    importSpecifierForSpry = rel;
+    importSpecifierForSpryLatest = rel;
+  }
 
   return {
     projectHome,
