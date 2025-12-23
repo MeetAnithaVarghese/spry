@@ -146,55 +146,19 @@ export function upsertMissingAncestors<T>(
   return out;
 }
 
-export async function projectPaths(projectHome = Deno.cwd()) {
+export function projectPaths(projectHome = Deno.cwd()) {
   const cliModuleUrl = new URL(import.meta.url);
   const isRemote = cliModuleUrl.protocol === "http:" ||
     cliModuleUrl.protocol === "https:";
 
-  const absPathToSpryTsLocal = join(projectHome, "spry.ts");
   const absPathToSpryfileLocal = join(projectHome, "Spryfile.md");
-  const absPathToImportMapLocal = join(projectHome, "import_map.json");
 
   let importSpecifierForSpry: string;
   let importSpecifierForSpryLatest: string;
 
   if (isRemote) {
-    const CANONICAL =
-      "https://raw.githubusercontent.com/programmablemd/spry/refs/tags/v0.100.7/bin/spry.ts";
-
-    const headers: Record<string, string> = {
-      "Accept": "application/vnd.github+json",
-    };
-    const token = Deno.env.get("GITHUB_TOKEN");
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const latestTag = await (async () => {
-      const r1 = await fetch(
-        "https://api.github.com/repos/programmablemd/spry/releases/latest",
-        { headers },
-      );
-      if (r1.ok) {
-        const j = await r1.json();
-        const t = (j?.tag_name ?? "").toString().trim();
-        if (t) return t;
-      }
-      const r2 = await fetch(
-        "https://api.github.com/repos/programmablemd/spry/tags?per_page=1",
-        { headers },
-      );
-      if (r2.ok) {
-        const a = await r2.json();
-        const t = (a?.[0]?.name ?? "").toString().trim();
-        if (t) return t;
-      }
-      throw new Error(`Unable to retrieve latest tag for ${CANONICAL}`); // fallback
-    })();
-
-    importSpecifierForSpry = CANONICAL;
-    importSpecifierForSpryLatest = CANONICAL.replace(
-      "/refs/heads/main/",
-      `/refs/tags/${latestTag}/`,
-    );
+    importSpecifierForSpry = cliModuleUrl.href;
+    importSpecifierForSpryLatest = cliModuleUrl.href;
   } else {
     const cliFsPath = fromFileUrl(cliModuleUrl);
     let rel = relative(projectHome, cliFsPath).replaceAll("\\", "/");
@@ -205,9 +169,7 @@ export async function projectPaths(projectHome = Deno.cwd()) {
 
   return {
     projectHome,
-    absPathToSpryTsLocal,
     absPathToSpryfileLocal,
-    absPathToImportMapLocal,
     importSpecifierForSpry,
     importSpecifierForSpryLatest,
     isRemote,
