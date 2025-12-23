@@ -43,7 +43,16 @@
 import { Code, Node } from "types/mdast";
 import { visit } from "unist-util-visit";
 import { depsResolver } from "../../universal/depends.ts";
-import { markdownASTs, MarkdownEncountered } from "../io/mod.ts";
+import {
+  ResourceProvenance,
+  ResourceStrategy,
+} from "../../universal/resource.ts";
+import {
+  markdownASTs,
+  MarkdownASTsOptions,
+  MarkdownEncountered,
+} from "../io/mod.ts";
+import { MarkdownProvenance } from "../io/resource.ts";
 import { dataBag } from "../mdast/data-bag.ts";
 import { NodeIssue, nodeIssues } from "../mdast/node-issues.ts";
 import {
@@ -229,9 +238,13 @@ export type PlaybookProjection = {
  *   A fully populated `PlaybookProjection`, ready to be given to execution
  *   and interpolation layers.
  */
-export async function playbooksFromFiles(
-  markdownPaths: Parameters<typeof markdownASTs>[0],
+export async function playbooksFromFiles<
+  P extends ResourceProvenance = MarkdownProvenance,
+  S extends ResourceStrategy = ResourceStrategy,
+>(
+  markdownPaths: Parameters<typeof markdownASTs<P, S>>[0],
   init?: {
+    readonly mdAstOpts?: MarkdownASTsOptions<P, S>;
     readonly filter?: (task: Executable) => boolean;
     readonly onDuplicateExecutable?: (
       r: Executable,
@@ -262,7 +275,9 @@ export async function playbooksFromFiles(
   })[] = [];
 
   // Discover all executables, materializables and directives across all Markdown sources.
-  for await (const src of markdownASTs(markdownPaths)) {
+  for await (
+    const src of markdownASTs<P, S>(markdownPaths, init?.mdAstOpts ?? {})
+  ) {
     sources.push(src);
     encountered?.(src);
 

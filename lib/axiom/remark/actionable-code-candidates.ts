@@ -183,6 +183,7 @@ export const actionableCodePiFlagsSchema = z.object({
   injectable: z.boolean().optional(),
   executable: z.boolean().optional(),
   conf: z.string().optional(),
+  hook: flexibleTextSchema.optional(),
   notinjectable: z.boolean().optional(),
 
   // shortcuts
@@ -190,12 +191,14 @@ export const actionableCodePiFlagsSchema = z.object({
   /* branch/graph */ B: flexibleTextSchema.optional(),
   /* dep */ D: flexibleTextSchema.optional(),
   /* graph/branch */ G: flexibleTextSchema.optional(),
+  /* hook */ H: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
   /* injectable */ J: z.boolean().optional(),
   /* executable */ X: z.boolean().optional(),
 }).transform((raw) => {
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
+  const hooksRaw = mergeFlexibleText(raw.H, raw.hook);
   const injectedDep = mergeFlexibleText(raw.injectedDep);
 
   let capture: CaptureSpec[] = [];
@@ -225,6 +228,11 @@ export const actionableCodePiFlagsSchema = z.object({
     notInjectable: raw.notinjectable,
     graphs: graphRaw
       ? typeof graphRaw === "string" ? [graphRaw] : graphRaw
+      : undefined,
+    hooks: hooksRaw
+      ? typeof hooksRaw === "string"
+        ? [hooksRaw]
+        : (hooksRaw.length > 0 ? hooksRaw : undefined)
       : undefined,
     silent: raw.silent,
     injectedDep,
