@@ -146,68 +146,20 @@ export function upsertMissingAncestors<T>(
   return out;
 }
 
-export async function projectPaths(projectHome = Deno.cwd()) {
+export function projectPaths(projectHome = Deno.cwd()) {
   const cliModuleUrl = new URL(import.meta.url);
-  const isRemote = cliModuleUrl.protocol === "http:" ||
-    cliModuleUrl.protocol === "https:";
-
-  const absPathToSpryTsLocal = join(projectHome, "spry.ts");
+  const isRemote = false;
   const absPathToSpryfileLocal = join(projectHome, "Spryfile.md");
-  const absPathToImportMapLocal = join(projectHome, "import_map.json");
 
-  let importSpecifierForSpry: string;
-  let importSpecifierForSpryLatest: string;
-
-  if (isRemote) {
-    const CANONICAL =
-      "https://raw.githubusercontent.com/programmablemd/spry/refs/tags/v0.100.7/bin/spry.ts";
-
-    const headers: Record<string, string> = {
-      "Accept": "application/vnd.github+json",
-    };
-    const token = Deno.env.get("GITHUB_TOKEN");
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const latestTag = await (async () => {
-      const r1 = await fetch(
-        "https://api.github.com/repos/programmablemd/spry/releases/latest",
-        { headers },
-      );
-      if (r1.ok) {
-        const j = await r1.json();
-        const t = (j?.tag_name ?? "").toString().trim();
-        if (t) return t;
-      }
-      const r2 = await fetch(
-        "https://api.github.com/repos/programmablemd/spry/tags?per_page=1",
-        { headers },
-      );
-      if (r2.ok) {
-        const a = await r2.json();
-        const t = (a?.[0]?.name ?? "").toString().trim();
-        if (t) return t;
-      }
-      throw new Error(`Unable to retrieve latest tag for ${CANONICAL}`); // fallback
-    })();
-
-    importSpecifierForSpry = CANONICAL;
-    importSpecifierForSpryLatest = CANONICAL.replace(
-      "/refs/heads/main/",
-      `/refs/tags/${latestTag}/`,
-    );
-  } else {
-    const cliFsPath = fromFileUrl(cliModuleUrl);
-    let rel = relative(projectHome, cliFsPath).replaceAll("\\", "/");
-    if (!rel.startsWith(".") && !rel.startsWith("/")) rel = `./${rel}`;
-    importSpecifierForSpry = rel;
-    importSpecifierForSpryLatest = rel;
-  }
+  const cliFsPath = fromFileUrl(cliModuleUrl);
+  let rel = relative(projectHome, cliFsPath).replaceAll("\\", "/");
+  if (!rel.startsWith(".") && !rel.startsWith("/")) rel = `./${rel}`;
+  const importSpecifierForSpry = rel;
+  const importSpecifierForSpryLatest = rel;
 
   return {
     projectHome,
-    absPathToSpryTsLocal,
     absPathToSpryfileLocal,
-    absPathToImportMapLocal,
     importSpecifierForSpry,
     importSpecifierForSpryLatest,
     isRemote,
@@ -283,15 +235,13 @@ export class CLI<Project> {
       sfMD.p("POSIX-style example (bash/zsh):");
       sfMD.codeTag(
         `envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"`,
-      )`${
-        init?.dialect === SqlPageFilesUpsertDialect.SQLite
-          ? `export DB_NAME="sqlpage.db"\n`
-          : ``
-      }export SPRY_DB=${
-        init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
-          ? `"postgresql://<username>:<password>@<host>:<port>/<database>"`
-          : `"sqlite://$DB_NAME?mode=rwc"`
-      }\nexport PORT=9227`;
+      )`${init?.dialect === SqlPageFilesUpsertDialect.SQLite
+        ? `export DB_NAME="sqlpage.db"\n`
+        : ``
+      }export SPRY_DB=${init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+        ? `"postgresql://<username>:<password>@<host>:<port>/<database>"`
+        : `"sqlite://$DB_NAME?mode=rwc"`
+        }\nexport PORT=9227`;
       sfMD.p(
         "Then run `direnv allow` in this project directory to load the `.envrc` into your shell environment. direnv will evaluate `.envrc` only after you explicitly allow it.",
       );
@@ -328,11 +278,9 @@ export class CLI<Project> {
       );
       sfMD.codeTag(
         `bash deploy --descr "Generate sqlpage_files table upsert SQL and push them to ${init?.dialect}"`,
-      )`rm -rf dev-src.auto\nspry sp spc --package ${
-        init?.dialect ? `--dialect ${init?.dialect}` : ``
-      } --conf sqlpage/sqlpage.json | ${
-        init?.dialect === "postgres" ? `psql` : `sqlite3`
-      } ${init?.dialect === "postgres" ? "$SPRY_DB" : "$DB_NAME"}`;
+      )`rm -rf dev-src.auto\nspry sp spc --package ${init?.dialect ? `--dialect ${init?.dialect}` : ``
+      } --conf sqlpage/sqlpage.json | ${init?.dialect === "postgres" ? `psql` : `sqlite3`
+        } ${init?.dialect === "postgres" ? "$SPRY_DB" : "$DB_NAME"}`;
       sfMD.title(2, "Start the SQLPage server");
       sfMD.codeTag(
         `bash`,
@@ -394,10 +342,10 @@ export class CLI<Project> {
         v === "head_sql"
           ? green(v)
           : v === "tail_sql"
-          ? yellow(v)
-          : v === "sqlpage_file_upsert"
-          ? brightYellow(v)
-          : cyan(v),
+            ? yellow(v)
+            : v === "sqlpage_file_upsert"
+              ? brightYellow(v)
+              : cyan(v),
     };
   }
 
@@ -662,8 +610,7 @@ export class CLI<Project> {
       "run:begin",
       (ev) =>
         console.log(
-          `[watch] build ${ev.runIndex} begin with SQLPage: ${
-            opts.withSqlPage?.enabled ?? "no"
+          `[watch] build ${ev.runIndex} begin with SQLPage: ${opts.withSqlPage?.enabled ?? "no"
           }`,
         ),
     );
@@ -713,8 +660,7 @@ export class CLI<Project> {
     const { defaultFiles } = this.conf ?? {};
     return new Command()
       .example(
-        `default ${
-          (defaultFiles?.length ?? 0) > 0 ? `(${defaultFiles?.join(", ")})` : ""
+        `default ${(defaultFiles?.length ?? 0) > 0 ? `(${defaultFiles?.join(", ")})` : ""
         }`,
         `${cmdName} ${examplesCmd}`,
       )
