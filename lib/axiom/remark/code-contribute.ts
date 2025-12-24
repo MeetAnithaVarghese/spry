@@ -766,7 +766,7 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
       ? `${directive} ${destPath} ${rewrittenMeta}`
       : `${destPath} ${metaRaw}`,
     value:
-      `should be replaced by text value of ${provenance.path} (${provenance.mimeType})`,
+      `should be replaced by text value of ${destPath} (${provenance.mimeType})`,
     position: position ? { start: position, end: position } : undefined,
     include: ctx.rc,
     isContentAcquired: false,
