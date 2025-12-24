@@ -215,12 +215,7 @@ export async function* markdownASTs<
       // required asynchronously (for remotes, etc.)
       for (const code of selectAll("code", mdastRoot)) {
         if (isExtension<Code, ExtensionInit>(code)) {
-          const extn = await code.importExtension();
-          await extn?.entrypoint?.({
-            vfile: file,
-            tree: mdastRoot,
-            container: code,
-          });
+          await code.importExtension();
         }
         if (isIncludesSpec(code)) {
           await code.resolveIncludes();

@@ -22,6 +22,7 @@ import {
   isExternalResource,
   isIncludedNode,
 } from "./remark/code-contribute.ts";
+import { call, scanCallables } from "../extend/extension.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -587,38 +588,33 @@ Deno.test("Extensions", async () => {
   // we would never do this for real, but we're manually importing to verify
   // functionality
   const extnMod = await import("./fixture/pmd/extension-01.ts");
-  const hooks = await import("./io/hooks.ts");
+  const hooks = await import("./mdast/hooks.ts");
 
   // when the extension was loaded by markdownASTs() extensions are initialized
   // and entrypoints are called so this should be set
-  assertEquals(extnMod.entryPointInit?.vfile.basename, "extension-01.md");
   assertEquals(extnMod.treeHandlerHookCalls, 0);
-  assertEquals(first.extensionImported.hooks.length, 1);
+
+  const callables = scanCallables(first.extensionImported.module);
+  assertEquals(callables.length, 1);
 
   // first test the managed extension import
-  const res = await hooks.mdastRootHook.collect(
-    first.extensionImported.module,
-    {
-      run: {
-        args: [extnMod.entryPointInit?.tree, extnMod.entryPointInit?.vfile],
-      },
-    },
-  );
-  assertEquals(res.implementations.length, 1);
-  assert(res.executed);
+  const res = await call(first.extensionImported.module, [{
+    defn: hooks.mdastRootHook,
+    args: [sources[0].mdastRoot, sources[0].file],
+  }]);
+  assertEquals(res.length, 1);
+  assert(res[0].ok);
+  assertEquals(res[0].id, "spry.axiom.mdast.vfileTree");
   assertEquals(extnMod.treeHandlerHookCalls, 1);
 
   // now test the statically imported extension
-  const res2 = await hooks.mdastRootHook.collect(
-    extnMod,
-    {
-      run: {
-        args: [extnMod.entryPointInit?.tree, extnMod.entryPointInit?.vfile],
-      },
-    },
-  );
-  assertEquals(res2.implementations.length, 1);
-  assert(res2.executed);
+  const res2 = await call(extnMod, [{
+    defn: hooks.mdastRootHook,
+    args: [sources[0].mdastRoot, sources[0].file],
+  }]);
+  assertEquals(res2.length, 1);
+  assertEquals(res2[0].id, "spry.axiom.mdast.vfileTree");
+  assert(res2[0].ok);
   assertEquals(extnMod.treeHandlerHookCalls, 2); // called a second time
 });
 

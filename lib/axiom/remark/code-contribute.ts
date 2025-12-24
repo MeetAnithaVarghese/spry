@@ -212,12 +212,6 @@ import type { Code, Node, Root } from "types/mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
-import {
-  extensionHandle,
-  type ExtensionImportResult as ExtendImportResult,
-  type HookImplRecord,
-  IssueSink as ExtendIssueSink,
-} from "../../extend/extension.ts";
 import { safeInterpolate } from "../../universal/flexible-interpolator.ts";
 import {
   flexibleTextSchema,
@@ -243,12 +237,7 @@ import {
   codeFrontmatter,
 } from "../mdast/code-frontmatter.ts";
 import { dataBag } from "../mdast/data-bag.ts";
-import {
-  addIssue,
-  addIssues,
-  IssueSeverity as NodeIssueSeverity,
-  NodeIssue,
-} from "../mdast/node-issues.ts";
+import { addIssue, addIssues, NodeIssue } from "../mdast/node-issues.ts";
 import {
   CodeDirectiveCandidate,
   isCodeDirectiveCandidate,
@@ -440,74 +429,33 @@ export function externalResource(
 }
 
 export type ExtensionImportResult<
-  Ctx = unknown,
-  Api = unknown,
   M extends Record<string, unknown> = Record<string, unknown>,
 > =
   & Readonly<{ resource: ResourceProvenance }>
   & Readonly<{
-    /** Raw imported module (typed for callers). */
-    module: M;
-    /** Optional default entrypoint export. */
-    entrypoint?: ExtendImportResult<Ctx, Api>["entrypoint"];
-    /** Discovered hook implementations (if any). */
-    hooks: readonly HookImplRecord[];
     /** Original specifier (path/URL). */
     specifier: string;
+    /** Raw imported module (typed for callers). */
+    module: M;
   }>;
 
 export type Extension<
   N extends Node,
-  Ctx = unknown,
-  Api = unknown,
   M extends Record<string, unknown> = Record<string, unknown>,
 > = N & {
   extensionResource: ResourceProvenance;
-  extensionImported?: ExtensionImportResult<Ctx, Api, M>;
-  importExtension: () => Promise<
-    ExtensionImportResult<Ctx, Api, M> | undefined
-  >;
+  extensionImported?: ExtensionImportResult<M>;
+  importExtension: () => Promise<ExtensionImportResult<M> | undefined>;
 };
 
 export function isExtension<
   N extends Node,
-  Ctx = unknown,
-  Api = unknown,
   M extends Record<string, unknown> = Record<string, unknown>,
->(node: Node): node is Extension<N, Ctx, Api, M> {
+>(node: Node): node is Extension<N, M> {
   return !!(node && typeof node === "object" && "extensionResource" in node);
 }
 
-function toNodeIssueSeverity(
-  s: "info" | "warn" | "error",
-): NodeIssueSeverity {
-  // Your NodeIssueSeverity appears to use "warning" (not "warn")
-  if (s === "warn") return "warning" as NodeIssueSeverity;
-  return s as NodeIssueSeverity;
-}
-
-function fmtExtSuffix(i: { code: string; detail?: unknown; error?: unknown }) {
-  // Keep it compact but useful; avoids NodeIssue shape changes.
-  const bits: string[] = [`code=${i.code}`];
-  if (i.detail !== undefined) bits.push("detail=present");
-  if (i.error !== undefined) bits.push("error=present");
-  return `(${bits.join(", ")})`;
-}
-
-function adaptExtendIssuesToCode(code: Code, sink: ExtendIssueSink): void {
-  const mapped: NodeIssue[] = sink.list().map((i) => ({
-    severity: toNodeIssueSeverity(i.severity),
-    message: `${i.message} ${fmtExtSuffix(i)}`,
-    // NodeIssue *does* have error in your earlier usage; keep the original error object.
-    error: i.error,
-  }));
-
-  if (mapped.length) addIssues(code, mapped);
-}
-
 export function extension<
-  Ctx = unknown,
-  Api = unknown,
   M extends Record<string, unknown> = Record<string, unknown>,
 >(
   code: Code,
@@ -530,7 +478,7 @@ export function extension<
   const specifier = ext.trim();
   const provenance = provenanceFromPath(specifier);
 
-  const node = code as unknown as Extension<Code, Ctx, Api, M>;
+  const node = code as unknown as Extension<Code, M>;
   node.extensionResource = provenance;
   node.extensionImported = undefined;
 
@@ -538,26 +486,14 @@ export function extension<
     try {
       if (node.extensionImported) return node.extensionImported;
 
-      // Use lib/extend/extension.ts
-      const issues = new ExtendIssueSink();
-      const handle = extensionHandle<Ctx, Api>(specifier, { issues });
-
-      const imported = await handle.import();
-      // Project any warnings/errors from extension scanning into the code node.
-      adaptExtendIssuesToCode(code, issues);
-
-      if (!imported) {
-        // import failed already recorded in issues
-        return undefined;
-      }
+      const mod = await import(specifier);
 
       node.extensionImported = {
         resource: provenance,
-        specifier: imported.specifier,
-        module: imported.module as M,
-        entrypoint: imported.entrypoint,
-        hooks: imported.hooks,
-      } satisfies ExtensionImportResult<Ctx, Api, M>;
+        specifier,
+        module: mod as M,
+      } satisfies ExtensionImportResult<M>;
+
       return node.extensionImported;
     } catch (err) {
       addIssues(code, [

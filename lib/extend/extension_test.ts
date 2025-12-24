@@ -1,228 +1,255 @@
 // lib/extend/extension_test.ts
 import { assert, assertEquals, assertMatch } from "@std/assert";
-import * as Defs from "./hook_test-fixture-defn.ts";
+import * as z from "@zod/zod";
+import * as Defs from "./extension_test-fixture-defn.ts";
 import {
-  ExtensionHandle,
-  extensionHandle,
-  IssueSink,
-  registerExtensionHooks,
+  call,
+  callable,
+  type CallableDefn,
+  callableDefn,
+  getCallableDefnMeta,
+  isCallableDefn,
+  loadCallablesFrom,
+  scanCallables,
+  scanDefns,
 } from "./extension.ts";
 
-Deno.test("0) ExtensionHandle: imports module + scans hook exports (basic)", async () => {
-  const issues = new IssueSink();
+// deno-lint-ignore no-explicit-any
+type Any = any;
 
-  const h = extensionHandle("./hook_test-fixture-impl.ts", {
-    issues,
-    warnIfEmpty: true,
+function isErrorLike(
+  e: unknown,
+): e is { name?: string; message?: string; issues?: unknown } {
+  return !!e && typeof e === "object" &&
+    ("name" in e || "message" in e || "issues" in e);
+}
+
+Deno.test("scanDefns auto-tags plain exported z.function() as callable definition", () => {
+  const index = scanDefns(Defs);
+
+  assert(index.get("plainZodFn"));
+  assert(isCallableDefn(Defs.plainZodFn));
+  const meta = getCallableDefnMeta(Defs.plainZodFn);
+  assertEquals(meta.id, "plainZodFn");
+  assertEquals(meta.name, "plainZodFn");
+});
+
+Deno.test("discovers callable implementations from module exports", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
+  const discovered = await loadCallablesFrom(implMod, {
+    moduleSpecifier: "mem",
   });
 
-  const imported = await h.import();
-  assert(imported);
-
-  assertEquals(imported.specifier, "./hook_test-fixture-impl.ts");
-  assert(imported.module);
-
-  // fixture module exports hook impls (and no default)
-  assertEquals(typeof imported.entrypoint, "undefined");
-  assert(imported.hooks.length >= 1);
-
-  // sanity check: should contain a known hook id
-  assert(
-    imported.hooks.some((x) => x.hookId === "spry.math.add" && x.exportName),
-  );
-
-  // no errors expected for a good import/scan
-  const errs = issues.list().filter((i) => i.severity === "error");
-  assertEquals(errs.length, 0);
+  const ids = discovered.map((d) => d.meta.id).sort();
+  assertEquals(ids, [
+    "spry.math.add",
+    "spry.playbook.minimalOnLoaded",
+    "spry.test.explode",
+  ]);
 });
 
-Deno.test("1) ExtensionHandle: hook records carry id/name/meta + exportName", async () => {
-  const issues = new IssueSink();
-  const h = new ExtensionHandle("./hook_test-fixture-impl.ts", { issues });
+Deno.test("discovered implementation executes correctly", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
+  const discovered = await loadCallablesFrom(implMod);
 
-  const imported = await h.import();
-  assert(imported);
-
-  const add = imported.hooks.find((x) => x.hookId === "spry.math.add");
-  assert(add);
-
-  assertEquals(add.exportName, "addImpl");
-  assertEquals(typeof add.impl, "function");
-  assert(add.meta);
-  assertEquals(add.meta.kind, "hookImpl");
-  assertEquals(add.meta.id, "spry.math.add");
+  const addRec = discovered.find((d) => d.meta.id === "spry.math.add");
+  assert(addRec);
+  assertEquals(addRec.impl(2, 3), 5);
 });
 
-Deno.test("2) ExtensionHandle: caches import result (same object reference)", async () => {
-  const issues = new IssueSink();
-  const h = new ExtensionHandle("./hook_test-fixture-impl.ts", { issues });
+Deno.test("runtime validation still applies via Zod", () => {
+  const add = callableDefn("t.add", {
+    input: [z.number(), z.number()],
+    output: z.number(),
+  });
+  const addImpl = callable(add, (a, b) => a + b);
 
-  const a = await h.import();
-  const b = await h.import();
-
-  assert(a);
-  assert(b);
-  assertEquals(a, b);
+  let threw = false;
+  try {
+    // @ts-expect-error runtime validation test
+    addImpl("x", "y");
+  } catch (e) {
+    threw = true;
+    assertMatch(String(e), /Invalid input/i);
+  }
+  assertEquals(threw, true);
 });
 
-Deno.test("3) ExtensionHandle: EXT_EMPTY warning when module has no hooks and no default", async () => {
-  const issues = new IssueSink();
+Deno.test("scanDefns builds an id->defn index", () => {
+  const index = scanDefns(Defs);
 
-  // No hooks, no default entrypoint
-  // deno-lint-ignore require-await
-  const importer = async (_specifier: string) => ({ hello: 123 });
+  assertEquals(Array.from(index.keys()).sort(), [
+    "plainZodFn",
+    "spry.math.add",
+    "spry.playbook.minimalOnLoaded",
+    "spry.test.explode",
+  ]);
 
-  const h = new ExtensionHandle("in-memory-empty", {
-    issues,
-    importer,
-    warnIfEmpty: true,
+  const plain = index.get("plainZodFn");
+  assert(plain);
+  assert(isCallableDefn(plain));
+  assertEquals(getCallableDefnMeta(plain).id, "plainZodFn");
+});
+
+Deno.test("host can implement a defn found by id from scanDefns()", () => {
+  const index = scanDefns(Defs);
+
+  const def = index.get("spry.math.add");
+  assert(def);
+
+  const addDef = def as unknown as CallableDefn<
+    [z.ZodNumber, z.ZodNumber],
+    z.ZodNumber
+  >;
+
+  const dyn = callable(addDef, (a, b) => a + b);
+
+  assertEquals(dyn(7, 8), 15);
+
+  let threw = false;
+  try {
+    // @ts-expect-error runtime validation test
+    dyn("x", "y");
+  } catch (e) {
+    threw = true;
+    const err = isErrorLike(e) ? e : { name: undefined, message: String(e) };
+    assert(
+      Array.isArray((err as { issues?: unknown }).issues) ||
+        /Invalid input/i.test(String(err)),
+    );
+  }
+  assertEquals(threw, true);
+});
+
+Deno.test("scanCallables discovers only implementations, not schemas", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
+  const discovered = scanCallables(implMod);
+
+  const ids = discovered.map((d) => d.meta.id).sort();
+  assertEquals(ids, [
+    "spry.math.add",
+    "spry.playbook.minimalOnLoaded",
+    "spry.test.explode",
+  ]);
+
+  // defs module exports schemas; it should discover no implementations
+  const none = scanCallables(Defs);
+  assertEquals(none.length, 0);
+});
+
+Deno.test("callable() can run as long as the defn is tagged", () => {
+  const def = callableDefn("x.add", {
+    input: [z.number(), z.number()],
+    output: z.number(),
   });
 
-  const imported = await h.import();
-  assert(imported);
+  const fn = callable(def, (a, b) => a + b);
+  assertEquals(fn(1, 2), 3);
 
-  assertEquals(imported.hooks.length, 0);
-  assertEquals(typeof imported.entrypoint, "undefined");
-
-  const warns = issues.list().filter((i) => i.severity === "warn");
-  assert(warns.some((w) => w.code === "EXT_EMPTY"));
+  let threw = false;
+  try {
+    // @ts-expect-error runtime validation test
+    fn("x", "y");
+  } catch {
+    threw = true;
+  }
+  assertEquals(threw, true);
 });
 
-Deno.test("4) ExtensionHandle: no EXT_EMPTY when warnIfEmpty=false", async () => {
-  const issues = new IssueSink();
-  // deno-lint-ignore require-await
-  const importer = async (_specifier: string) => ({ hello: 123 });
+Deno.test("call executes discovered implementations by id", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
 
-  const h = new ExtensionHandle("in-memory-empty", {
-    issues,
-    importer,
-    warnIfEmpty: false,
+  const results = await call(implMod, [
+    { id: "spry.math.add", args: [2, 3] },
+    { id: "spry.playbook.minimalOnLoaded", args: [{ file: "x" }] },
+  ]);
+
+  assertEquals(results.length, 2);
+
+  const r0 = results[0]!;
+  assertEquals(r0.id, "spry.math.add");
+  assertEquals(r0.ok, true);
+  if (r0.ok) assertEquals(r0.value, 5);
+
+  const r1 = results[1]!;
+  assertEquals(r1.id, "spry.playbook.minimalOnLoaded");
+  assertEquals(r1.ok, true);
+});
+
+Deno.test("call supports defn-based requests too", async () => {
+  // Ensure the defn is tagged (callableDefn does this).
+  const inc = callableDefn("t.inc", {
+    input: [z.number()],
+    output: z.number(),
   });
 
-  const imported = await h.import();
-  assert(imported);
+  const incImpl = callable(inc, (n) => n + 1);
+  const mod = { incImpl };
 
-  const emptyWarns = issues.list().filter((i) => i.code === "EXT_EMPTY");
-  assertEquals(emptyWarns.length, 0);
+  const results = await call(mod, [{
+    defn: inc as unknown as Any,
+    args: [41],
+  }]);
+
+  assertEquals(results.length, 1);
+
+  const r = results[0]!;
+  assertEquals(r.id, "t.inc");
+  assertEquals(r.ok, true);
+  if (r.ok) assertEquals(r.value, 42);
 });
 
-Deno.test("5) ExtensionHandle: importer failure yields EXT_IMPORT_FAILED error and undefined result", async () => {
-  const issues = new IssueSink();
-  // deno-lint-ignore require-await
-  const importer = async (_specifier: string) => {
-    throw new Error("nope");
-  };
+Deno.test("call returns an error result when id is not found", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
 
-  const h = new ExtensionHandle("in-memory-fail", { issues, importer });
+  const results = await call(implMod, [
+    { id: "does.not.exist", args: [] },
+  ]);
 
-  const imported = await h.import();
-  assertEquals(imported, undefined);
+  assertEquals(results.length, 1);
 
-  const errs = issues.list().filter((i) => i.severity === "error");
-  assert(errs.some((e) => e.code === "EXT_IMPORT_FAILED"));
-
-  // Deno may stringify Error as {} unless we explicitly check message/name.
-  const messages = errs.map((e) => {
-    const err = e.error as { message?: unknown; name?: unknown } | undefined;
-    const msg = typeof err?.message === "string" ? err.message : "";
-    const name = typeof err?.name === "string" ? err.name : "";
-    return `${name}:${msg}:${e.message}`;
-  }).join("\n");
-
-  assertMatch(messages, /nope/);
+  const r = results[0]!;
+  assertEquals(r.id, "does.not.exist");
+  assertEquals(r.ok, false);
+  if (!r.ok) assertMatch(String(r.error), /No callable implementation/i);
 });
 
-Deno.test("6) Registry integration: registerExtensionHooks registers each scanned hook", async () => {
-  const issues = new IssueSink();
+Deno.test("call returns an error result when runtime validation fails", async () => {
+  const implMod = await import("./extension_test-fixture-impl.ts");
 
-  const h = extensionHandle("./hook_test-fixture-impl.ts", { issues });
-  const imported = await h.import();
-  assert(imported);
+  const results = await call(implMod, [
+    { id: "spry.math.add", args: ["x", "y"] },
+  ]);
 
-  const calls: Array<{
-    hookId: string;
-    exportName: string;
-    specifier: string;
-    hookName?: string;
-  }> = [];
+  assertEquals(results.length, 1);
 
-  const registry = {
-    register: (
-      hookId: string,
-      _impl: unknown,
-      info?: { exportName: string; specifier: string; hookName?: string },
-    ) => {
-      calls.push({
-        hookId,
-        exportName: info?.exportName ?? "",
-        specifier: info?.specifier ?? "",
-        hookName: info?.hookName,
-      });
-    },
-  };
-
-  registerExtensionHooks(imported, registry);
-
-  assertEquals(calls.length, imported.hooks.length);
-  assert(calls.some((c) => c.hookId === "spry.math.add"));
-  assert(calls.every((c) => c.specifier === "./hook_test-fixture-impl.ts"));
+  const r = results[0]!;
+  assertEquals(r.id, "spry.math.add");
+  assertEquals(r.ok, false);
+  if (!r.ok) {
+    assert(
+      /Invalid input/i.test(String(r.error)) ||
+        (isErrorLike(r.error) &&
+          Array.isArray((r.error as { issues?: unknown }).issues)),
+    );
+  }
 });
 
-Deno.test("7) Registry integration: registry throws -> EXT_REGISTER_FAILED warning (but continues)", async () => {
-  const issues = new IssueSink();
+Deno.test("call supports sync implementations via async API surface", async () => {
+  const inc = callableDefn("t.inc2", {
+    input: [z.number()],
+    output: z.number(),
+  });
 
-  const h = extensionHandle("./hook_test-fixture-impl.ts", { issues });
-  const imported = await h.import();
-  assert(imported);
+  const incImpl = callable(inc, (n) => n + 1);
+  const mod = { incImpl };
 
-  let seen = 0;
-  const registry = {
-    register: (_hookId: string) => {
-      seen++;
-      throw new Error("registry boom");
-    },
-  };
+  const results = await call(mod, [{ id: "t.inc2", args: [41] }]);
 
-  registerExtensionHooks(imported, registry, issues);
+  assertEquals(results.length, 1);
 
-  // should attempt to register all hooks
-  assertEquals(seen, imported.hooks.length);
-
-  const warns = issues.list().filter((i) => i.severity === "warn");
-  assert(warns.some((w) => w.code === "EXT_REGISTER_FAILED"));
-
-  // extension.ts stores thrown error under detail.err; Error stringification may be {}.
-  const messages = warns
-    .filter((w) => w.code === "EXT_REGISTER_FAILED")
-    .map((w) => {
-      const d = w.detail as { hookId?: unknown; err?: unknown } | undefined;
-      const err = d?.err as { message?: unknown; name?: unknown } | undefined;
-      const msg = typeof err?.message === "string" ? err.message : "";
-      const name = typeof err?.name === "string" ? err.name : "";
-      return `${d?.hookId ?? ""}:${name}:${msg}:${w.message}`;
-    })
-    .join("\n");
-
-  assertMatch(messages, /registry boom/);
-});
-
-Deno.test("8) End-to-end sanity: scanned hook impls actually execute via HookDefn.collect()", async () => {
-  const h = extensionHandle("./hook_test-fixture-impl.ts");
-  const imported = await h.import();
-  assert(imported);
-
-  // Use the imported module object directly with the hook defns
-  Defs.add.issues.clear();
-  const res = await Defs.add.collect(
-    imported.module as Record<string, unknown>,
-    {
-      run: { args: [10, 20] },
-    },
-  );
-
-  assertEquals(res.implementations.length, 1);
-  assert(res.executed);
-  assertEquals(res.executed[0].status, "fulfilled");
-  assertEquals(res.executed[0].value, 30);
-  assertEquals(Defs.add.issues.list().length, 0);
+  const r = results[0]!;
+  assertEquals(r.id, "t.inc2");
+  assertEquals(r.ok, true);
+  if (r.ok) assertEquals(r.value, 42);
 });

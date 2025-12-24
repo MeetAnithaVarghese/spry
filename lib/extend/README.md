@@ -1,314 +1,270 @@
-# Spry Hooks, Plugins, and Extensions
+## Spry Extensions
 
-This module provides a **minimal, runtime-safe extension system** for Spry. It
-is built around two cooperating pieces:
+Spry Extensions provide a **minimal, runtime-safe capability system** for Spry.
+They allow systems to define, discover, and execute named capabilities without
+frameworks, registries, decorators, or hidden runtime magic.
 
-- `hook.ts` — defining, validating, discovering, and executing hooks
-- `extension.ts` — importing extension modules and discovering hook
-  implementations
+Extensions are designed to be:
 
-The design deliberately avoids decorators, frameworks, AST scanning, or global
-registries. Everything is explicit, inspectable, and testable.
+- Explicit
+- Inspectable
+- Testable
+- Safe at runtime
+- Friendly to plugins, automation, and AI-driven orchestration
 
-Use `lib/extend` when you need:
+The system is intentionally small. Most of the real documentation lives in the
+tests, which serve as executable specifications.
 
-- Plugin systems
-- Extension points
-- Safe third-party code execution
-- Structured observability
-- Zero framework lock-in
+## What Spry Extensions Are (and Are Not)
 
-At the highest level:
+Spry Extensions are **not** a framework.
 
-1. **The host defines hook contracts** (using `hookDefn`)
-2. **Extensions implement hooks** (using `hook` or `hook.async`)
-3. **The host loads extensions** (using `ExtensionHandle`)
-4. **Hooks are discovered, validated, and optionally executed**
+They do not require:
 
-Hooks are just **typed functions with metadata**, and extensions are just
-**modules**.
+- Global registries
+- Dependency injection containers
+- Decorators or AST scanning
+- Configuration files
+- Build-time tooling
 
-## The Simplest Possible Hook
+Instead:
 
-### Defining a Hook
+- Extensions are just ES modules
+- Capabilities are just functions
+- Safety comes from Zod runtime validation
+- Discovery happens by scanning exports
 
-A hook definition is a **contract**: an ID plus a Zod function signature.
+## Core Concepts
+
+Spry Extensions revolve around two simple ideas:
+
+### 1. Callable Definitions (Contracts)
+
+A callable definition describes **what a capability is**, not how it is
+implemented.
+
+It consists of:
+
+- A stable string identifier
+- A runtime-validated function signature (inputs and output)
 
 ```ts
 import * as z from "@zod/zod";
-import { hookDefn } from "./hook.ts";
+import { callableDefn } from "./extension.ts";
 
-export const add = hookDefn(
+export const add = callableDefn(
   "spry.math.add",
   { input: [z.number(), z.number()], output: z.number() },
 );
 ```
 
-This defines:
+This defines a contract:
 
-- A unique hook ID (`spry.math.add`)
-- A runtime-validated function shape
-- An isolated issue sink owned by the hook
+- ID: `spry.math.add`
+- Inputs: two numbers
+- Output: a number
 
-No implementations yet. Just a contract.
+There is no implementation yet. No execution happens at this stage.
 
-### Implementing the Hook (in an Extension)
+Definitions are intentionally decoupled from:
 
-An extension author implements the hook with **no generics and no types**.
+- Export names
+- Module paths
+- Execution strategy
+
+This allows refactoring without breaking callers.
+
+### 2. Callable Implementations (Behavior)
+
+A callable implementation provides **how the capability works**.
+
+Implementations are created by wrapping a definition with logic:
 
 ```ts
-import { hook } from "./hook.ts";
-import { add } from "./hook_defs.ts";
+import { callable } from "./extension.ts";
+import { add } from "./defs.ts";
 
-export const addImpl = hook(add, (a, b) => a + b);
+export const addImpl = callable(add, (a, b) => a + b);
 ```
 
 What happens automatically:
 
-- Input/output validated via Zod
-- Errors are captured into the hook’s IssueSink
-- Metadata is attached using a non-enumerable symbol
+- Inputs are validated before execution
+- Outputs are validated after execution
+- The implementation is tagged with metadata
+- The function becomes discoverable by ID
 
-The result is a **HookImpl function**, safe to scan reflectively.
+Only wrapped implementations are discoverable. Raw functions are ignored
+intentionally.
 
-### Discovering and Running the Hook
+## Extensions Are Just Modules
+
+An extension is simply an ES module that exports callable implementations.
+
+There is no required base class, decorator, or registration step.
 
 ```ts
-const mod = await import("./my-extension.ts");
-
-const res = await add.collect(mod, {
-  run: { args: [2, 3] },
-});
-
-res.executed?.[0].value; // 5
+export const addImpl = callable(add, (a, b) => a + b);
+export const subImpl = callable(sub, (a, b) => a - b);
 ```
 
-At this level, you already have:
+That is a complete extension.
 
-- Safe discovery
-- Safe execution
-- Structured results
-- Zero framework assumptions
+## Discovery and Execution
 
-## Hooks with Context Objects
+### Discovery
 
-Hooks often take a **single context object** instead of positional args.
+Discovery is done by **scanning module exports**.
 
 ```ts
-const CtxSchema = z.object({
-  file: z.string(),
-});
+import { scanCallables } from "./extension.ts";
 
-export const onLoaded = hookDefn(
-  "spry.playbook.onLoaded",
-  { input: [CtxSchema], output: z.void() },
-);
+const discovered = scanCallables(moduleExports);
 ```
 
-Implementation:
+Spry:
+
+- Iterates exports
+- Identifies wrapped implementations
+- Extracts metadata safely
+- Ignores malformed or unrelated exports
+
+Discovery never executes code.
+
+### Execution
+
+Execution is ID-based and defensive.
 
 ```ts
-export const onLoadedImpl = hook(onLoaded, (ctx) => {
-  console.log("Loaded", ctx.file);
-});
+import { call } from "./extension.ts";
+
+const results = await call(moduleExports, [
+  { id: "spry.math.add", args: [2, 3] },
+]);
 ```
 
-This pattern scales naturally as more capabilities are added.
+Execution guarantees:
 
-## Issues — Structured Error Reporting
+- Runtime validation via Zod
+- Per-call success or failure results
+- No uncaught errors escaping the call boundary
+- Optional handling of duplicate implementations
 
-Hooks can optionally accept an **IssueSink**.
+Results are structured:
 
 ```ts
-import { IssueSinkSchema } from "./hook.ts";
-
-const CtxSchema = z.object({
-  file: z.string(),
-  issues: IssueSinkSchema.optional(),
-});
+{ id, ok: true, value }
+{ id, ok: false, error }
 ```
 
-At runtime, the host can inject issues automatically:
+This makes extensions safe to run in:
+
+- Plugin systems
+- Automation pipelines
+- AI-driven orchestration
+- Multi-tenant environments
+
+## Optional Definition Indexing
+
+Some hosts need visibility into **what capabilities exist**, not just how to run
+them.
+
+For that purpose, Spry provides `scanDefns()`:
 
 ```ts
-await onLoaded.collect(mod, {
-  run: {
-    args: [{ file: "a.md" }],
-    injectIssuesIntoFirstArg: true,
-  },
-});
+import { scanDefns } from "./extension.ts";
+
+const defsById = scanDefns(definitionModule);
 ```
 
-Inside the implementation:
+This builds an in-memory map:
 
-```ts
-ctx.issues?.info("FILE_LOADED", `Loaded ${ctx.file}`);
+```
+id → callable definition
 ```
 
-Key properties:
+Use cases include:
 
-- Each hook owns its own issue store
-- Issues are timestamped and structured
-- Zod validation errors are captured with detail
+- Documentation generation
+- Tooling and UI
+- Host-side dynamic implementation
+- Validation and governance
 
-This makes hooks **observable without throwing**.
+There is still **no registry**. The index is just a Map created when needed.
 
-## Event Bus — Typed, Optional, Decoupled
+## Plain Zod Functions (Optional Convenience)
 
-Hooks may opt into an **event bus**.
-
-```ts
-type Events = {
-  note: { message: string };
-  warn: { code: string };
-};
-
-export const onLoadedWithBus = hookDefn(
-  "spry.playbook.onLoadedWithBus",
-  { input: [CtxSchema], output: z.void() },
-  { bus: true },
-);
-```
-
-Implementations can emit events:
+If a module exports a plain `z.function(...)`, it can be auto-tagged when
+scanned:
 
 ```ts
-ctx.bus?.emit("note", { message: "hello" });
-```
-
-Hosts can listen:
-
-```ts
-onLoadedWithBus.bus?.on("note", (d) => {
-  console.log(d.message);
+export const plain = z.function({
+  input: [z.number()],
+  output: z.number(),
 });
 ```
 
-Properties:
+When `scanDefns()` runs, Spry will:
 
-- Fully type-safe
-- Built on `EventTarget`
-- Optional and injectable
-- Supports `AbortSignal`
+- Assign `id = exportName`
+- Attach callable metadata
+- Make it usable like any other definition
 
-This allows hooks to communicate **without coupling**.
+This supports rapid experimentation without losing safety.
 
-## AbortSignal and Lifecycle Control
+## Error Handling Philosophy
 
-Hooks may also accept `AbortSignal`:
+Spry Extensions favor **defensive execution**.
 
-```ts
-const CtxSchema = z.object({
-  file: z.string(),
-  signal: z.custom<AbortSignal>().optional(),
-});
-```
+- Validation errors are returned, not thrown
+- Implementation errors are captured per call
+- Hosts decide whether to propagate or ignore failures
+- Batch execution is safe by default
 
-This enables:
+This is critical for plugin-heavy and third-party environments.
 
-- Cancellation
-- Long-running or async hooks
-- Host-controlled lifecycle
+## Design Principles
 
-No special framework required.
+Spry Extensions are built on a few deliberate principles:
 
-## Defensive Execution
+- Runtime truth over compile-time illusion
+- Explicit metadata over hidden magic
+- Functions over classes
+- Modules over frameworks
+- WeakMaps over global state
+- Tests as executable documentation
 
-All hook implementations are **defensively wrapped**.
+The system is intentionally boring, predictable, and auditable.
 
-If an implementation throws:
+## How to Learn the Details
 
-```ts
-export const explodeImpl = hook(explode, () => {
-  throw new Error("boom");
-});
-```
+The best way to understand Spry Extensions is **not this document**.
 
-Then:
+It is the tests.
 
-- The error is captured into issues
-- Execution result is marked `rejected`
-- The host decides whether to throw
+The tests in `extension_test.ts` demonstrate:
 
-This makes hooks safe in **plugin-heavy environments**.
+- Definition patterns
+- Implementation patterns
+- Discovery behavior
+- Execution semantics
+- Error handling
+- Duplicate resolution
+- Sync and async behavior
 
-## Extension Modules (`extension.ts`)
+They are designed to be read as documentation and trusted as specification.
 
-Hooks live inside **extension modules**, which are just ES modules.
+## In Summary
 
-### Loading an Extension
+Spry Extensions provide a practical foundation for:
 
-```ts
-import { extensionHandle } from "./extension.ts";
+- Plugin systems
+- Extension points
+- AI-driven capability routing
+- Governed execution environments
+- Long-lived, evolvable platforms
 
-const ext = extensionHandle("./my-extension.ts");
-const imported = await ext.import();
-```
+They deliberately stay out of your way while enforcing safety where it matters
+most: at runtime.
 
-The result contains:
-
-- `module` — the imported module
-- `entrypoint` — optional default export which can initialize or perform global
-  setup
-- `hooks` — discovered hook implementations
-
-### How Hook Discovery Works
-
-`extension.ts`:
-
-- Iterates over module exports
-- Uses `isHookImpl` to identify valid hook implementations
-- Extracts metadata via `getHookImplMeta`
-- Records issues instead of throwing
-
-Malformed exports are skipped safely.
-
-### Default Entrypoint (Optional)
-
-Extensions may also export a default function:
-
-```ts
-export default function entry(ctx) {
-  return { api: "something" };
-}
-```
-
-This is orthogonal to hooks and entirely optional.
-
-## Registering Hooks into a Host System
-
-Discovered hooks can be registered into any registry:
-
-```ts
-registerExtensionHooks(imported, registry);
-```
-
-The registry decides:
-
-- Routing
-- Dispatch
-- Execution order
-- Composition
-
-Spry deliberately does **not** impose a registry model.
-
-## Design Principles (Why It’s Built This Way)
-
-- No decorators → predictable runtime behavior
-- Zod → runtime safety, not compile-time illusions
-- Symbols → non-intrusive metadata
-- Issues over throws → resilience
-- Optional surfaces → progressive adoption
-- No global state → testability
-
-This module is **infrastructure**, not a framework.
-
-## Typical Usage Pattern
-
-1. Host defines hooks (`hookDefn`)
-2. Extensions implement hooks (`hook`)
-3. Host loads extensions (`ExtensionHandle`)
-4. Hooks are discovered and registered
-5. Hooks are executed via `collect`
-
-Each step is explicit and independently testable.
+This is infrastructure, not a framework.
