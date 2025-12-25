@@ -10,8 +10,8 @@ import {
 } from "@std/fmt/colors";
 import { eventBus } from "../universal/event-bus.ts";
 import { MarkdownDoc } from "../universal/fluent-md.ts";
-import { ShellBusEvents } from "../universal/shell.ts";
 import { indent } from "../universal/tmpl-literal-aide.ts";
+import { ShellBusEvents } from "./shell.ts";
 
 /**
  * Create a verbose info bus for Shell events.

@@ -175,7 +175,7 @@
  * parse, analyze, or transform code content itself.
  */
 import type { LanguageSpec } from "../universal/code.ts";
-import { shell as createShell } from "../universal/shell.ts";
+import { shell as createShell } from "./shell.ts";
 
 /* --------------------------------- Core --------------------------------- */
 

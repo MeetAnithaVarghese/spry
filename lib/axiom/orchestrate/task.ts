@@ -45,16 +45,18 @@
  * operational runbook*. It makes the Markdown actionable: renderable,
  * executable, traceable, and repeatable.
  */
-import { catalogFromYaml, using } from "../../universal/code-shell-serde.ts";
 import {
+  catalogFromYaml,
   EngineTagged,
   LanguageInitBase,
   LanguageInitCatalog,
-} from "../../universal/code-shell.ts";
+  shell,
+  ShellBusEvents,
+  textInfoShellEventBus,
+  using,
+} from "../../spawn/mod.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { renderer } from "../../universal/render.ts";
-import { textInfoShellEventBus } from "../../universal/shell-bus.ts";
-import { shell, ShellBusEvents } from "../../universal/shell.ts";
 import {
   executeDAG,
   fail,

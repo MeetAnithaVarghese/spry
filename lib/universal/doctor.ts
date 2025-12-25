@@ -35,7 +35,7 @@
  * ```
  */
 
-import { shell as makeShell } from "./shell.ts";
+import { shell as makeShell } from "../spawn/shell.ts";
 
 /* ──────────────────────────────────────────────────────────────────────────── */
 /* Public result & report types                                                */

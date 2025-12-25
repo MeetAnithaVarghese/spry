@@ -19,18 +19,19 @@ import { toMarkdown } from "mdast-util-to-markdown";
 import { Code, Node, Root } from "types/mdast";
 import { select } from "unist-util-select";
 
+import {
+  errorOnlyShellEventBus,
+  markdownShellEventBus,
+  shell,
+  ShellBusEvents,
+  verboseInfoShellEventBus,
+} from "../../spawn/mod.ts";
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
 import { MarkdownDoc } from "../../universal/fluent-md.ts";
 import {
   ColumnDef,
   ListerBuilder,
 } from "../../universal/lister-tabular-tui.ts";
-import {
-  errorOnlyShellEventBus,
-  markdownShellEventBus,
-  verboseInfoShellEventBus,
-} from "../../universal/shell-bus.ts";
-import { shell, ShellBusEvents } from "../../universal/shell.ts";
 import {
   executionPlanVisuals,
   ExecutionPlanVisualStyle,
