@@ -228,6 +228,59 @@ export function defineLanguageInitCatalog<const M extends LanguageInitCatalog>(
   return m;
 }
 
+// lib/spawn/code-shell.ts
+// PATCH: add in-process execution hook support
+
+export type InProcessExecutionContext<I extends LanguageInitBase> = {
+  bin: string; // kept for symmetry; not used by function engines for now
+  init?: I;
+  input: LanguageInput;
+  runtimeArgs?: readonly string[];
+  programArgs?: readonly string[];
+  mode: Exclude<ExecutionMode, "auto">;
+};
+
+export type InProcessExecutionResult<Baggage = unknown> = {
+  code: number;
+  success: boolean;
+  stdout: Uint8Array;
+  stderr: Uint8Array;
+  durationMs?: number;
+  argv?: readonly string[];
+  baggage?: Baggage;
+};
+
+export interface LanguageEngine<
+  L extends LanguageSpec = LanguageSpec,
+  I extends LanguageInitBase = LanguageInitBase,
+> {
+  readonly kind: "language-engine";
+  readonly language: L;
+  readonly id: object;
+  readonly defaultBins: readonly string[];
+  readonly capabilities: ModeCapabilities;
+  readonly preferredMode?: Exclude<ExecutionMode, "auto">;
+
+  resolveInit(
+    input: LanguageInitRef<I> | undefined,
+    catalog: LanguageInitCatalog<LanguageInitBase & EngineTagged> | undefined,
+  ): ResolvedInit<I>;
+
+  planInvocation(ctx: PlanContext<I>): Promise<InvocationPlan> | InvocationPlan;
+
+  mapEnv?(
+    init: { init?: I; env?: Record<string, string | undefined> },
+  ): Record<string, string | undefined> | undefined;
+
+  /**
+   * Optional in-process execution hook.
+   * If present, LanguageSpawnShell will call this instead of spawning a process.
+   */
+  execute?(
+    ctx: InProcessExecutionContext<I>,
+  ): Promise<InProcessExecutionResult> | InProcessExecutionResult;
+}
+
 /* ------------------------------ Invocation model ------------------------------ */
 
 export type ExecutionMode = "stdin" | "file" | "eval" | "auto";
@@ -372,6 +425,9 @@ export interface LanguageShell<Baggage = unknown> {
   ): Promise<LanguageSpawnResult<Baggage>>;
 }
 
+// lib/spawn/code-shell.ts
+// PATCH: modify LanguageSpawnShell.spawn() to use engine.execute when present
+
 export class LanguageSpawnShell<Baggage = unknown>
   implements LanguageShell<Baggage> {
   readonly kind = "language-shell" as const;
@@ -390,11 +446,8 @@ export class LanguageSpawnShell<Baggage = unknown>
     );
 
     const init = resolved.init;
-
     const bin = resolveBin(req.bin, init?.bin, req.engine.defaultBins);
 
-    // NOTE: shell.ts applies cwd/env from shell construction time.
-    // Keep these for future extension / validation only.
     const _cwd = req.cwd ?? init?.cwd;
 
     const baseEnv = mergeEnvMaps(init?.env, req.env);
@@ -407,6 +460,29 @@ export class LanguageSpawnShell<Baggage = unknown>
       preferred: req.engine.preferredMode,
     });
 
+    // If engine has an in-process executor, use it.
+    if (req.engine.execute) {
+      const started = performance.now();
+      const r = await req.engine.execute({
+        bin,
+        init,
+        input: req.input,
+        runtimeArgs: req.runtimeArgs,
+        programArgs: req.programArgs,
+        mode,
+      });
+      const durationMs = r.durationMs ?? (performance.now() - started);
+      return {
+        code: r.code,
+        success: r.success,
+        stdout: r.stdout,
+        stderr: r.stderr,
+        baggage: req.baggage,
+        durationMs,
+        argv: r.argv,
+      };
+    }
+
     const plan = await req.engine.planInvocation({
       bin,
       init,
@@ -415,10 +491,6 @@ export class LanguageSpawnShell<Baggage = unknown>
       programArgs: req.programArgs,
       mode,
     });
-
-    // plan.env/plan.cwd are reserved for a future shell.ts extension.
-    // const _planEnv = mergeEnvMaps(_env, plan.env);
-    // const _planCwd = plan.cwd ?? _cwd;
 
     try {
       const result = await this.shell.spawnArgv(

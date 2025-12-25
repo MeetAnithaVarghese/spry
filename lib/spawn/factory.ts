@@ -5,12 +5,10 @@
  * YAML (or plain objects) and produce a ready-to-use executor bound to a named
  * catalog entry.
  *
- * This module is currently focused on SQL runtimes (psql, sqlite3, duckdb)
- * because those engines are provided by ./sql-shell/mod.ts. The design is
- * intentionally generic: the catalog shape, engine tagging pattern, and the
- * `using()` abstraction are not SQL-specific. As additional LanguageEngines are
- * added (for other languages and runtimes), this factory can expand to map
- * catalog entries to those engines in the same way it does for SQL today.
+ * The design is intentionally generic: catalog shape, engine tagging pattern and
+ * the `using()` abstraction should accomodate a variety of use cases. As more
+ * LanguageEngines are added (for other languages and runtimes), this factory can
+ * expand to map catalog entries to those engines.
  *
  * What it provides
  *
@@ -94,6 +92,26 @@ import {
   sqlite3Engine,
   sqliteInit,
 } from "./sql-shell/mod.ts";
+import {
+  bashEngine,
+  bashInit,
+  cmdEngine,
+  cmdInit,
+  fishEngine,
+  fishInit,
+  pwshEngine,
+  pwshInit,
+  shEngine,
+  shInit,
+  zshEngine,
+  zshInit,
+} from "./os-shell.ts";
+import {
+  envEngine,
+  envInit,
+  envrcEngine,
+  envrcInit,
+} from "./function-shell.ts";
 
 /**
  * Parse a YAML catalog definition (or already-parsed object) into a
@@ -109,11 +127,9 @@ import {
  *     port: "5432"
  *     user: app
  *     dbname: appdb
- *     # optional:
- *     password: ${NOT_RECOMMENDED_IN_MD}
  *     env:
- *       PGSERVICE: warehouse          # libpq/psql will honor this
- *       PGPASSFILE: /path/to/pgpass   # libpq/psql will honor this
+ *       PGSERVICE: warehouse
+ *       PGPASSFILE: /path/to/pgpass
  *
  *   sqlite1:
  *     engine: sqlite
@@ -122,6 +138,19 @@ import {
  *   duckdb1:
  *     engine: duckdb
  *     file: ":memory:"
+ *
+ *   bash1:
+ *     engine: bash
+ *     # optional:
+ *     bin: /usr/local/bin/bash
+ *     flags: ["-euo", "pipefail"]  # recommended to keep as separate flags when possible
+ *     env:
+ *       FOO: bar
+ *
+ *   pwsh1:
+ *     engine: pwsh
+ *     harden: true
+ *     bypassExecutionPolicy: true
  * ```
  */
 export function catalogFromYaml(
@@ -149,9 +178,7 @@ export function catalogFromYaml(
   const out = into;
 
   for (
-    const [name, raw] of Object.entries(
-      catalogNode as Record<string, unknown>,
-    )
+    const [name, raw] of Object.entries(catalogNode as Record<string, unknown>)
   ) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       throw new Error(
@@ -167,6 +194,20 @@ export function catalogFromYaml(
       cwd: typeof entry.cwd === "string" ? entry.cwd : undefined,
       env: normalizeEnv(entry.env),
     };
+
+    // ----------------------------- function engines -----------------------------
+
+    if (engine === "env") {
+      out[name] = envInit({ ...base });
+      continue;
+    }
+
+    if (engine === "envrc") {
+      out[name] = envrcInit({ ...base });
+      continue;
+    }
+
+    // ----------------------------- SQL engines -----------------------------
 
     if (engine === "postgres" || engine === "psql" || engine === "pg") {
       out[name] = pgInit({
@@ -196,9 +237,49 @@ export function catalogFromYaml(
       continue;
     }
 
+    // -------------------------- OS shell engines ---------------------------
+
+    const flags = normalizeStringArray(entry.flags);
+
+    if (engine === "bash") {
+      out[name] = bashInit({ ...base, flags, shell: "bash" });
+      continue;
+    }
+
+    if (engine === "sh") {
+      out[name] = shInit({ ...base, flags, shell: "sh" });
+      continue;
+    }
+
+    if (engine === "zsh") {
+      out[name] = zshInit({ ...base, flags, shell: "zsh" });
+      continue;
+    }
+
+    if (engine === "fish") {
+      out[name] = fishInit({ ...base, flags, shell: "fish" });
+      continue;
+    }
+
+    if (engine === "pwsh" || engine === "powershell") {
+      out[name] = pwshInit({
+        ...base,
+        flags,
+        shell: "pwsh",
+        harden: asBool(entry.harden),
+        bypassExecutionPolicy: asBool(entry.bypassExecutionPolicy),
+      });
+      continue;
+    }
+
+    if (engine === "cmd") {
+      out[name] = cmdInit({ ...base, flags, shell: "cmd" });
+      continue;
+    }
+
     throw new Error(
       `catalogFromYaml: entry '${name}' has unknown engine '${engine}'. ` +
-        `Expected postgres|sqlite|duckdb.`,
+        `Expected postgres|sqlite|duckdb|bash|sh|zsh|fish|pwsh|cmd.`,
     );
   }
 
@@ -210,6 +291,34 @@ function asString(v: unknown): string | undefined {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   return undefined;
+}
+
+function asBool(v: unknown): boolean | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v !== 0;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    if (["true", "t", "yes", "y", "1", "on"].includes(s)) return true;
+    if (["false", "f", "no", "n", "0", "off"].includes(s)) return false;
+  }
+  return undefined;
+}
+
+function normalizeStringArray(v: unknown): readonly string[] | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (!Array.isArray(v)) {
+    throw new Error("catalogFromYaml: flags must be an array of strings.");
+  }
+  const out: string[] = [];
+  for (const raw of v) {
+    const s = asString(raw);
+    if (s === undefined) {
+      throw new Error("catalogFromYaml: flags entries must be string-like.");
+    }
+    out.push(s);
+  }
+  return out.length ? out : undefined;
 }
 
 function normalizeEnv(
@@ -311,16 +420,29 @@ function engineFromCatalogEntry(
   const id = entry.engineId;
   if (!id) {
     throw new Error(
-      "using(): catalog entry is missing engineId; ensure it was created via pgInit/sqliteInit/duckdbInit (or equivalent).",
+      "using(): catalog entry is missing engineId; ensure it was created via an engine init helper (pgInit/sqliteInit/duckdbInit/bashInit/pwshInit/etc).",
     );
   }
 
+  // in-process functions
+  if (id === envEngine.id) return envEngine;
+  if (id === envrcEngine.id) return envrcEngine;
+
+  // SQL
   if (id === psqlEngine.id) return psqlEngine;
   if (id === sqlite3Engine.id) return sqlite3Engine;
   if (id === duckdbEngine.id) return duckdbEngine;
 
+  // OS shells
+  if (id === bashEngine.id) return bashEngine;
+  if (id === shEngine.id) return shEngine;
+  if (id === zshEngine.id) return zshEngine;
+  if (id === fishEngine.id) return fishEngine;
+  if (id === pwshEngine.id) return pwshEngine;
+  if (id === cmdEngine.id) return cmdEngine;
+
   throw new Error(
-    "using(): catalog entry engineId does not match any known engine (psql/sqlite3/duckdb).",
+    "using(): catalog entry engineId does not match any known engine.",
   );
 }
 
@@ -331,9 +453,22 @@ export function engineNameFromCatalogEntry(
 
   if (!id) return "unknown";
 
+  // in-process engines
+  if (id === envEngine.id) return "env";
+  if (id === envrcEngine.id) return "envrc";
+
+  // SQL
   if (id === psqlEngine.id) return "postgres";
   if (id === sqlite3Engine.id) return "sqlite";
   if (id === duckdbEngine.id) return "duckdb";
+
+  // OS shells
+  if (id === bashEngine.id) return "bash";
+  if (id === shEngine.id) return "sh";
+  if (id === zshEngine.id) return "zsh";
+  if (id === fishEngine.id) return "fish";
+  if (id === pwshEngine.id) return "pwsh";
+  if (id === cmdEngine.id) return "cmd";
 
   return "unknown";
 }

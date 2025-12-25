@@ -1,5 +1,4 @@
-// code-shell-serde_test.ts
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals, assertMatch } from "@std/assert";
 import { catalogFromYaml, using } from "./factory.ts";
 
 import {
@@ -10,7 +9,29 @@ import {
   sqlite3Engine,
   type SqliteInit,
 } from "./sql-shell/mod.ts";
+
+import { bashEngine, cmdEngine, pwshEngine, shEngine } from "./os-shell.ts";
+
+import { envEngine, envrcEngine } from "./function-shell.ts";
+
 import { duckdbAvailable } from "./mod_test.ts";
+
+const td = new TextDecoder();
+
+async function binAvailable(argv0: string): Promise<boolean> {
+  try {
+    const cmd = new Deno.Command(argv0, {
+      args: ["--version"],
+      stdout: "null",
+      stderr: "null",
+    });
+    const r = await cmd.output();
+    // Even if --version returns non-zero, the binary exists.
+    return typeof r.code === "number";
+  } catch {
+    return false;
+  }
+}
 
 Deno.test({
   name: "code-shell-serde: YAML from string (subtests)",
@@ -115,6 +136,50 @@ duckdb1:
       },
     );
 
+    await t.step("parses OS shells + function engines (env/envrc)", () => {
+      const yaml = `
+catalog:
+  bash1:
+    engine: bash
+    env:
+      X: 1
+
+  sh1:
+    engine: sh
+
+  pwsh1:
+    engine: pwsh
+    harden: true
+    bypassExecutionPolicy: true
+
+  cmd1:
+    engine: cmd
+
+  env1:
+    engine: env
+
+  envrc1:
+    engine: envrc
+`;
+
+      const catalog = catalogFromYaml(yaml);
+
+      assert(catalog.bash1);
+      assert(catalog.sh1);
+      assert(catalog.pwsh1);
+      assert(catalog.cmd1);
+      assert(catalog.env1);
+      assert(catalog.envrc1);
+
+      assertEquals(catalog.bash1.engineId, bashEngine.id);
+      assertEquals(catalog.sh1.engineId, shEngine.id);
+      assertEquals(catalog.pwsh1.engineId, pwshEngine.id);
+      assertEquals(catalog.cmd1.engineId, cmdEngine.id);
+
+      assertEquals(catalog.env1.engineId, envEngine.id);
+      assertEquals(catalog.envrc1.engineId, envrcEngine.id);
+    });
+
     await t.step("throws on unknown engine", () => {
       const yaml = `
 catalog:
@@ -183,8 +248,7 @@ catalog:
         const res = await db.spawn({ kind: "text", text: sql });
         assert(res.success);
 
-        const out = new TextDecoder().decode(res.stdout);
-        // sqlite3 output is simple; just confirm computed value shows up.
+        const out = td.decode(res.stdout);
         assert(out.includes("42"));
       },
     );
@@ -211,8 +275,152 @@ catalog:
         const res = await db.spawn({ kind: "text", text: sql });
         assert(res.success);
 
-        const out = new TextDecoder().decode(res.stdout);
+        const out = td.decode(res.stdout);
         assert(out.includes("42"));
+      },
+    });
+
+    await t.step(
+      "exec env function-engine mirrors input to stdout",
+      async () => {
+        const yaml = `
+catalog:
+  env1:
+    engine: env
+`;
+        const catalog = catalogFromYaml(yaml);
+        const fn = using(catalog, "env1");
+
+        const input = "A=1\nB=two\n";
+        const res = await fn.spawn({ kind: "text", text: input });
+
+        assert(res.success);
+        assertEquals(res.code, 0);
+        assertEquals(td.decode(res.stdout), input);
+        assertEquals(res.stderr.length, 0);
+      },
+    );
+
+    await t.step(
+      "exec envrc function-engine mirrors input to stdout",
+      async () => {
+        const yaml = `
+catalog:
+  envrc1:
+    engine: envrc
+`;
+        const catalog = catalogFromYaml(yaml);
+        const fn = using(catalog, "envrc1");
+
+        const input = "export HELLO=world\n";
+        const res = await fn.spawn({ kind: "text", text: input });
+
+        assert(res.success);
+        assertEquals(res.code, 0);
+        assertEquals(td.decode(res.stdout), input);
+        assertEquals(res.stderr.length, 0);
+      },
+    );
+
+    await t.step({
+      name: "exec bash from catalog (eval mode)",
+      ignore: Deno.build.os === "windows",
+      fn: async () => {
+        const has = await binAvailable("bash");
+        if (!has) return;
+
+        const yaml = `
+catalog:
+  bash1:
+    engine: bash
+`;
+        const catalog = catalogFromYaml(yaml);
+        const sh = using(catalog, "bash1");
+
+        const res = await sh.spawn(
+          { kind: "text", text: "echo 42" },
+          { mode: "eval" },
+        );
+
+        assert(res.success);
+        assertMatch(td.decode(res.stdout).trim(), /^42$/);
+      },
+    });
+
+    await t.step({
+      name: "exec sh from catalog (eval mode)",
+      ignore: Deno.build.os === "windows",
+      fn: async () => {
+        const has = await binAvailable("sh");
+        if (!has) return;
+
+        const yaml = `
+catalog:
+  sh1:
+    engine: sh
+`;
+        const catalog = catalogFromYaml(yaml);
+        const sh = using(catalog, "sh1");
+
+        const res = await sh.spawn(
+          { kind: "text", text: "echo 42" },
+          { mode: "eval" },
+        );
+
+        assert(res.success);
+        assertMatch(td.decode(res.stdout).trim(), /^42$/);
+      },
+    });
+
+    await t.step({
+      name: "exec pwsh from catalog (eval mode)",
+      fn: async () => {
+        const has = await binAvailable("pwsh") ||
+          await binAvailable("powershell");
+        if (!has) return;
+
+        const yaml = `
+catalog:
+  pwsh1:
+    engine: pwsh
+    harden: true
+    bypassExecutionPolicy: true
+`;
+        const catalog = catalogFromYaml(yaml);
+        const sh = using(catalog, "pwsh1");
+
+        const res = await sh.spawn(
+          { kind: "text", text: "Write-Output 42" },
+          { mode: "eval" },
+        );
+
+        assert(res.success);
+        assertMatch(td.decode(res.stdout).trim(), /^42$/);
+      },
+    });
+
+    await t.step({
+      name: "exec cmd from catalog (eval mode)",
+      ignore: Deno.build.os !== "windows",
+      fn: async () => {
+        const has = await binAvailable("cmd");
+        if (!has) return;
+
+        const yaml = `
+catalog:
+  cmd1:
+    engine: cmd
+`;
+        const catalog = catalogFromYaml(yaml);
+        const sh = using(catalog, "cmd1");
+
+        const res = await sh.spawn(
+          { kind: "text", text: "echo 42" },
+          { mode: "eval" },
+        );
+
+        assert(res.success);
+        assertMatch(td.decode(res.stdout).trim(), /^42$/);
       },
     });
   },
@@ -241,6 +449,19 @@ Deno.test({
             file: ":memory:",
             env: { SOME_FLAG: true },
           },
+          env1: {
+            engine: "env",
+          },
+          envrc1: {
+            engine: "envrc",
+          },
+          bash1: {
+            engine: "bash",
+          },
+          pwsh1: {
+            engine: "pwsh",
+            harden: true,
+          },
         },
       };
 
@@ -264,6 +485,12 @@ Deno.test({
 
       assert(duck.env);
       assertEquals(duck.env.SOME_FLAG, "true");
+
+      assertEquals(catalog.env1.engineId, envEngine.id);
+      assertEquals(catalog.envrc1.engineId, envrcEngine.id);
+
+      assertEquals(catalog.bash1.engineId, bashEngine.id);
+      assertEquals(catalog.pwsh1.engineId, pwshEngine.id);
     });
 
     await t.step(
@@ -285,6 +512,12 @@ Deno.test({
             engine: "duckdb",
             file: "/tmp/example.duckdb",
           },
+          env1: {
+            engine: "env",
+          },
+          bash1: {
+            engine: "bash",
+          },
         };
 
         const catalog = catalogFromYaml(obj);
@@ -304,11 +537,13 @@ Deno.test({
 
         assertEquals(sqlite.file, "/tmp/example.db");
         assertEquals(duck.file, "/tmp/example.duckdb");
+
+        assertEquals(catalog.env1.engineId, envEngine.id);
+        assertEquals(catalog.bash1.engineId, bashEngine.id);
       },
     );
 
     await t.step("throws when object does not contain a catalog object", () => {
-      // Root is an array, not an object.
       const obj = [] as unknown as Record<string, unknown>;
       let threw = false;
       try {
@@ -338,8 +573,25 @@ Deno.test({
       const res = await db.spawn({ kind: "text", text: sql });
       assert(res.success);
 
-      const out = new TextDecoder().decode(res.stdout);
+      const out = td.decode(res.stdout);
       assert(out.includes("ok"));
+    });
+
+    await t.step("exec env function-engine from object catalog", async () => {
+      const obj = {
+        catalog: {
+          env1: { engine: "env" },
+        },
+      };
+
+      const catalog = catalogFromYaml(obj);
+      const fn = using(catalog, "env1");
+
+      const input = "K=V\n";
+      const res = await fn.spawn({ kind: "text", text: input });
+
+      assert(res.success);
+      assertEquals(td.decode(res.stdout), input);
     });
 
     await t.step({
@@ -364,7 +616,7 @@ Deno.test({
         const res = await db.spawn({ kind: "text", text: sql });
         assert(res.success);
 
-        const out = new TextDecoder().decode(res.stdout);
+        const out = td.decode(res.stdout);
         assert(out.includes("ok"));
       },
     });
