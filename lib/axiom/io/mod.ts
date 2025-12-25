@@ -196,8 +196,13 @@ export async function* markdownASTs<
   const strategies = rf.strategies(provenanceIter);
   const rawResources = rf.resources(strategies);
   const resources = rf.uniqueResources(rawResources);
+  // TODO: create resource plugin: if force extension r.provenance.path ".ts"
+  // exists, yield it
 
   for await (const r of resources) {
+    // TODO: if r.provenance.path.endsWith(".ts") assume it's an extension and
+    // import it;
+    // TODO: if r.provenance.path.endsWith(".md") is false, don't continue
     if (!isVFileResource<P, S>(r)) continue;
 
     const resource = r;
@@ -223,6 +228,10 @@ export async function* markdownASTs<
         if (isExternalResource(code) && !code.resourcesAcquired) {
           await code.acquireResources();
         }
+
+        // TODO: add an option to "cleanup" and remove functions like
+        // importExtension, resolveIncludes and acquireResources because mdast
+        // inspect module does not like functions in mdast nodes.
       }
     }
 
