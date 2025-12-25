@@ -71,7 +71,6 @@ export type LsTaskRow = {
     isInterpolated: boolean;
     isSilent: boolean;
     isCaptured: CaptureSpec | false;
-    isCaptureOnly: boolean;
     isGitIgnored: boolean;
     hasIssues: boolean;
   };
@@ -509,7 +508,7 @@ export class CLI {
               deps: task.taskDeps().join(", "),
               descr: args.description ?? "",
               origin: task.provenance.fileRef(task),
-              engine: task.memoizeOnly
+              engine: task.using
                 ? {
                   engine: "memoize-only",
                   label: "Memoize Only",
@@ -519,7 +518,6 @@ export class CLI {
               flags: {
                 isInterpolated: args.interpolate ? true : false,
                 isCaptured: args.capture ? args.capture[0] : false,
-                isCaptureOnly: task.memoizeOnly ?? false,
                 isGitIgnored: args.capture && args.capture.filter((c) =>
                     c.nature === "relFsPath"
                   ).find((c) =>

@@ -37,10 +37,10 @@ Deno.test({
   name: "code-shell-serde: YAML from string (subtests)",
   fn: async (t) => {
     await t.step(
-      "parses `catalog:` wrapper with postgres/sqlite/duckdb entries",
+      "parses `spawnables:` wrapper with postgres/sqlite/duckdb entries",
       () => {
         const yaml = `
-catalog:
+spawnables:
   pg_local:
     engine: postgres
     host: 127.0.0.1
@@ -97,7 +97,7 @@ catalog:
     );
 
     await t.step(
-      "parses when entries are top-level (no `catalog:` wrapper)",
+      "parses when entries are top-level (no `spawnables:` wrapper)",
       () => {
         const yaml = `
 pg_local:
@@ -138,7 +138,7 @@ duckdb1:
 
     await t.step("parses OS shells + function engines (env/envrc)", () => {
       const yaml = `
-catalog:
+spawnables:
   bash1:
     engine: bash
     env:
@@ -182,7 +182,7 @@ catalog:
 
     await t.step("throws on unknown engine", () => {
       const yaml = `
-catalog:
+spawnables:
   bad1:
     engine: mysql
     host: localhost
@@ -198,7 +198,7 @@ catalog:
 
     await t.step("throws when a catalog entry is not an object", () => {
       const yaml = `
-catalog:
+spawnables:
   pg_local: "not-an-object"
 `;
       let threw = false;
@@ -212,7 +212,7 @@ catalog:
 
     await t.step("throws when env is not an object", () => {
       const yaml = `
-catalog:
+spawnables:
   pg_local:
     engine: postgres
     host: 127.0.0.1
@@ -231,7 +231,7 @@ catalog:
       "exec sqlite3 :memory: from catalog (single spawn)",
       async () => {
         const yaml = `
-catalog:
+spawnables:
   sqlite1:
     engine: sqlite
     file: ":memory:"
@@ -258,7 +258,7 @@ catalog:
       ignore: !duckdbAvailable,
       fn: async () => {
         const yaml = `
-catalog:
+spawnables:
   duckdb1:
     engine: duckdb
     file: ":memory:"
@@ -284,7 +284,7 @@ catalog:
       "exec env function-engine mirrors input to stdout",
       async () => {
         const yaml = `
-catalog:
+spawnables:
   env1:
     engine: env
 `;
@@ -305,7 +305,7 @@ catalog:
       "exec envrc function-engine mirrors input to stdout",
       async () => {
         const yaml = `
-catalog:
+spawnables:
   envrc1:
     engine: envrc
 `;
@@ -330,7 +330,7 @@ catalog:
         if (!has) return;
 
         const yaml = `
-catalog:
+spawnables:
   bash1:
     engine: bash
 `;
@@ -355,7 +355,7 @@ catalog:
         if (!has) return;
 
         const yaml = `
-catalog:
+spawnables:
   sh1:
     engine: sh
 `;
@@ -380,7 +380,7 @@ catalog:
         if (!has) return;
 
         const yaml = `
-catalog:
+spawnables:
   pwsh1:
     engine: pwsh
     harden: true
@@ -407,7 +407,7 @@ catalog:
         if (!has) return;
 
         const yaml = `
-catalog:
+spawnables:
   cmd1:
     engine: cmd
 `;
@@ -429,9 +429,9 @@ catalog:
 Deno.test({
   name: "code-shell-serde: YAML from object (subtests)",
   fn: async (t) => {
-    await t.step("parses object with `catalog:` wrapper", () => {
+    await t.step("parses object with `spawnables:` wrapper", () => {
       const obj = {
-        catalog: {
+        spawnables: {
           pg_local: {
             engine: "postgres",
             host: "127.0.0.1",
@@ -494,7 +494,7 @@ Deno.test({
     });
 
     await t.step(
-      "parses object with top-level entries (no `catalog:` wrapper)",
+      "parses object with top-level entries (no `spawnables:` wrapper)",
       () => {
         const obj = {
           pg_local: {
@@ -556,7 +556,7 @@ Deno.test({
 
     await t.step("exec sqlite3 :memory: from object catalog", async () => {
       const obj = {
-        catalog: {
+        spawnables: {
           sqlite1: { engine: "sqlite", file: ":memory:" },
         },
       };
@@ -579,7 +579,7 @@ Deno.test({
 
     await t.step("exec env function-engine from object catalog", async () => {
       const obj = {
-        catalog: {
+        spawnables: {
           env1: { engine: "env" },
         },
       };
@@ -599,7 +599,7 @@ Deno.test({
       ignore: !duckdbAvailable,
       fn: async () => {
         const obj = {
-          catalog: {
+          spawnables: {
             duckdb1: { engine: "duckdb", file: ":memory:" },
           },
         };

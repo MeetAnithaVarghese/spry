@@ -137,7 +137,7 @@ import type { Code, Root } from "types/mdast";
 import type { Node } from "types/unist";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import { languageRegistry, languageSpecSchema } from "../../universal/code.ts";
+import { languageSpecSchema } from "../../universal/code.ts";
 import {
   flexibleFlagOrTextSchema,
   flexibleTextSchema,
@@ -181,25 +181,22 @@ export const actionableCodePiFlagsSchema = z.object({
   branch: flexibleTextSchema.optional(),
   injectedDep: flexibleTextSchema.optional(),
   injectable: z.boolean().optional(),
-  executable: z.boolean().optional(),
-  conf: z.string().optional(),
-  hook: flexibleTextSchema.optional(),
   notinjectable: z.boolean().optional(),
+  executable: z.union([z.string(), z.boolean()]).optional(),
 
   // shortcuts
   /* capture */ C: flexibleFlagOrTextSchema.optional(),
   /* branch/graph */ B: flexibleTextSchema.optional(),
   /* dep */ D: flexibleTextSchema.optional(),
   /* graph/branch */ G: flexibleTextSchema.optional(),
-  /* hook */ H: flexibleTextSchema.optional(),
   /* interpolate */ I: z.boolean().optional(),
   /* injectable */ J: z.boolean().optional(),
-  /* executable */ X: z.boolean().optional(),
+  /* executable */ X: z.union([z.string(), z.boolean()]).optional(),
 }).transform((raw) => {
   const depRaw = mergeFlexibleText(raw.D, raw.dep);
   const graphRaw = mergeFlexibleText(raw.G, raw.graph);
-  const hooksRaw = mergeFlexibleText(raw.H, raw.hook);
   const injectedDep = mergeFlexibleText(raw.injectedDep);
+  const executable = mergeFlexibleFlagOrText(raw.X, raw.executable);
 
   let capture: CaptureSpec[] = [];
   const capRaw = mergeFlexibleFlagOrText(raw.C, raw.capture);
@@ -220,19 +217,12 @@ export const actionableCodePiFlagsSchema = z.object({
     deps: depRaw ? typeof depRaw === "string" ? [depRaw] : depRaw : undefined,
     capture: capture.length > 0 ? capture : undefined,
     interpolate: raw.I ?? raw.interpolate,
-    executable: raw.X ?? raw.executable ?? (raw.conf ? true : undefined) ??
-      undefined,
-    conf: raw.conf,
+    executable: executable ? executable : undefined,
     noInterpolate: raw.noInterpolate,
     injectable: raw.J ?? raw.injectable,
     notInjectable: raw.notinjectable,
     graphs: graphRaw
       ? typeof graphRaw === "string" ? [graphRaw] : graphRaw
-      : undefined,
-    hooks: hooksRaw
-      ? typeof hooksRaw === "string"
-        ? [hooksRaw]
-        : (hooksRaw.length > 0 ? hooksRaw : undefined)
       : undefined,
     silent: raw.silent,
     injectedDep,
@@ -244,9 +234,9 @@ export type ActionableCodePiFlags = z.infer<typeof actionableCodePiFlagsSchema>;
 export const actionableCodeSchema = z.discriminatedUnion("nature", [
   z.object({
     nature: z.literal("EXECUTABLE"),
-    memoizeOnly: z.boolean().optional(), // don't execute, just capture interpolation results
     spawnableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema,
+    using: z.string().optional(),
     spawnableArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
   }).strict(),
   z.object({
@@ -299,22 +289,6 @@ export function isMateriazableCodeCandidate(
     : false;
 }
 
-export const spawnableLangIds = ["shell", "envrc", "env"] as const;
-export const captureOnlySpawnableLangIds = ["envrc", "env"] as const; // these are not "run", just "captured"
-export type SpawnableLangIds = typeof spawnableLangIds[number];
-export const spawnableLangSpecs = spawnableLangIds.map((lid) => {
-  const langSpec = languageRegistry.get(lid);
-  if (!langSpec) throw new Error("this should never happen");
-  return langSpec;
-});
-export const memoizeOnlySpawnableLangSpecs = captureOnlySpawnableLangIds.map(
-  (lid) => {
-    const langSpec = languageRegistry.get(lid);
-    if (!langSpec) throw new Error("this should never happen");
-    return langSpec;
-  },
-);
-
 export interface ActionableCodeCandidatesOptions {
   readonly codeFmDefaults?: CodeFrontmatterPresetsFactory;
 }
@@ -354,9 +328,7 @@ export const actionableCodeCandidates: Plugin<
           if (args.success) {
             const identity = codeFM.pi.pos[0];
             const nature: ActionableCodeCandidate["nature"] =
-              args.data.executable || spawnableLangSpecs.find((l) =>
-                  l.id == codeFM.langSpec?.id
-                )
+              args.data.executable || codeFM.langSpec?.id == "shell"
                 ? "EXECUTABLE" as const
                 : "MATERIALIZABLE" as const;
 
@@ -370,11 +342,11 @@ export const actionableCodeCandidates: Plugin<
                 actionable.spawnableIdentity = identity;
                 actionable.language = codeFM.langSpec!;
                 actionable.spawnableArgs = args.data;
-                actionable.memoizeOnly = memoizeOnlySpawnableLangSpecs.find(
-                    (l) => l.id == codeFM.langSpec?.id,
-                  )
-                  ? true
-                  : false;
+                if (args.data.executable && args.data.executable.texts.length) {
+                  actionable.using = args.data.executable.texts[0];
+                } else {
+                  actionable.using = undefined;
+                }
                 break;
               }
 

@@ -3,6 +3,7 @@ import { dirname, resolve } from "@std/path";
 import { Code, Node } from "types/mdast";
 import { inspect } from "unist-util-inspect";
 import { selectAll } from "unist-util-select";
+import { call, scanCallables } from "../extend/extension.ts";
 import { graphEdgesTree, headingsTreeText } from "./edge/mod.ts";
 import { fixturesFactory } from "./fixture/mod.ts";
 import { nodeIssues } from "./mdast/node-issues.ts";
@@ -22,7 +23,6 @@ import {
   isExternalResource,
   isIncludedNode,
 } from "./remark/code-contribute.ts";
-import { call, scanCallables } from "../extend/extension.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -361,12 +361,12 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const gr = graph(root);
 
     assertEquals(gr.relCounts, {
-      isImportant: 1,
       containedInSection: 76,
       frontmatter: 3,
+      isImportant: 1,
+      isCode: 40,
       hasIssues: 14,
       isActionableCodeCandidate: 37,
-      isCode: 40,
       isDirectiveCandidate: 2,
     });
 

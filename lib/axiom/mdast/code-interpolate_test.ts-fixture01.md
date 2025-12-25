@@ -20,15 +20,17 @@ directive parsed by `actionable-code-candidates.ts` Remark plugin.
 
 ## Code nodes
 
-This is an actionable (executable) code node with a name `init`.
+This is an actionable (executable) code node with a name `init` because `bash`
+is `shell` language spec in `lib/universal/code.ts`.
 
 ```bash init
 echo "init script"
 ```
 
-This is an actionable (executable) code node with a name `prime`.
+This is an actionable (executable) code node with a name `prime` because
+explicitly marked it as executable.
 
-```env prime
+```env prime --executable
 KEY=VALUE
 ```
 

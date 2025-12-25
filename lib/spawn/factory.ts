@@ -16,7 +16,7 @@
  *    Converts a YAML string (or already-parsed object) into a
  *    LanguageInitCatalog that is compatible with code-shell.ts engines.
  *
- *    - Accepts either a top-level map of entries or a `catalog:` wrapper node.
+ *    - Accepts either a top-level map of entries or a `spawnables:` wrapper node.
  *    - Normalizes env values so they are always string|undefined, matching the
  *      expectations of LanguageInitBase.env.
  *    - Creates engine-tagged init entries using the engine-specific helpers
@@ -44,7 +44,7 @@
  * usage patterns and the edge cases this module is designed to handle:
  *
  * - YAML parsing from both forms:
- *     a) a `catalog:` wrapper object
+ *     a) a `spawnables:` wrapper object
  *     b) top-level entries without a wrapper
  *
  * - Engine identity tagging:
@@ -72,6 +72,7 @@
  * @module factory
  */
 import { parse as parseYaml } from "@std/yaml";
+import { LanguageSpec } from "../universal/code.ts";
 import {
   defineLanguageInitCatalog,
   type EngineTagged,
@@ -83,15 +84,12 @@ import {
   type LanguageSpawnResult,
   LanguageSpawnShell,
 } from "./code-shell.ts";
-import { shell as createShell } from "./shell.ts";
 import {
-  duckdbEngine,
-  duckdbInit,
-  pgInit,
-  psqlEngine,
-  sqlite3Engine,
-  sqliteInit,
-} from "./sql-shell/mod.ts";
+  envEngine,
+  envInit,
+  envrcEngine,
+  envrcInit,
+} from "./function-shell.ts";
 import {
   bashEngine,
   bashInit,
@@ -106,21 +104,24 @@ import {
   zshEngine,
   zshInit,
 } from "./os-shell.ts";
+import { shell as createShell } from "./shell.ts";
 import {
-  envEngine,
-  envInit,
-  envrcEngine,
-  envrcInit,
-} from "./function-shell.ts";
+  duckdbEngine,
+  duckdbInit,
+  pgInit,
+  psqlEngine,
+  sqlite3Engine,
+  sqliteInit,
+} from "./sql-shell/mod.ts";
 
 /**
  * Parse a YAML catalog definition (or already-parsed object) into a
  * LanguageInitCatalog compatible with code-shell.ts engines.
  *
- * Expected YAML shape (either top-level or nested under `catalog:`):
+ * Expected YAML shape (either top-level or nested under `spawnables:`):
  *
  * ```yaml
- * catalog:
+ * spawnables:
  *   pg_local:
  *     engine: postgres
  *     host: 127.0.0.1
@@ -156,6 +157,9 @@ import {
 export function catalogFromYaml(
   yaml: string | Record<string, unknown>,
   into: LanguageInitCatalog<LanguageInitBase & EngineTagged> = {},
+  options?: {
+    readonly catalogKey: string;
+  },
 ): LanguageInitCatalog<LanguageInitBase & EngineTagged> {
   const root = typeof yaml === "string"
     ? (parseYaml(yaml) as Record<string, unknown> | null)
@@ -165,13 +169,14 @@ export function catalogFromYaml(
     throw new Error("catalogFromYaml: YAML did not parse to an object.");
   }
 
-  const catalogNode = (root as Record<string, unknown>).catalog ?? root;
+  const catalogKey = options?.catalogKey ?? "spawnables";
+  const catalogNode = (root as Record<string, unknown>)[catalogKey] ?? root;
   if (
     !catalogNode || typeof catalogNode !== "object" ||
     Array.isArray(catalogNode)
   ) {
     throw new Error(
-      "catalogFromYaml: expected an object at `catalog:` (or top-level).",
+      `catalogFromYaml: expected an object at '${catalogKey}:' (or top-level).`,
     );
   }
 
@@ -381,12 +386,12 @@ export function using<Baggage = unknown>(
   if (!entry) throw new Error(`using(): catalog entry '${using}' not found`);
 
   const engine = engineFromCatalogEntry(entry);
-  const runtimeArgs = args ? splitArgvLine(args) : undefined;
 
   const sh = init?.shell ?? createShell<Baggage>({
     cwd: init?.cwd,
     env: init?.env,
   });
+  const runtimeArgs = args ? sh.splitArgvLine(args) : undefined;
 
   const languageShell = new LanguageSpawnShell<Baggage>(sh);
 
@@ -473,43 +478,90 @@ export function engineNameFromCatalogEntry(
   return "unknown";
 }
 
-// Simple quoted argv splitter (same behavior as shell.ts)
-function splitArgvLine(line: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let quote: '"' | "'" | null = null;
-  let esc = false;
+function normalizeLanguageId(ls: string | LanguageSpec): string {
+  return typeof ls === "string" ? ls.toLowerCase() : ls.id.toLowerCase();
+}
 
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (esc) {
-      cur += ch;
-      esc = false;
-      continue;
-    }
-    if (ch === "\\") {
-      esc = true;
-      continue;
-    }
-    if (quote) {
-      if (ch === quote) quote = null;
-      else cur += ch;
-      continue;
-    }
-    if (ch === "'" || ch === '"') {
-      quote = ch as '"' | "'";
-      continue;
-    }
-    if (/\s/.test(ch)) {
-      if (cur) {
-        out.push(cur);
-        cur = "";
-      }
-      continue;
-    }
-    cur += ch;
+function engineFromLanguageSpec(
+  ls: string | LanguageSpec,
+): LanguageEngine {
+  const key = normalizeLanguageId(ls);
+
+  const engines: readonly LanguageEngine[] = [
+    // function engines
+    envEngine,
+    envrcEngine,
+
+    // SQL engines
+    psqlEngine,
+    sqlite3Engine,
+    duckdbEngine,
+
+    // OS shells
+    bashEngine,
+    shEngine,
+    zshEngine,
+    fishEngine,
+    pwshEngine,
+    cmdEngine,
+  ];
+
+  for (const e of engines) {
+    if (e.language.id === key) return e;
+    if (e.language.aliases?.includes(key)) return e;
   }
 
-  if (cur) out.push(cur);
-  return out;
+  throw new Error(
+    `usingLanguage(): unknown language '${key}'`,
+  );
+}
+
+export function usingLanguage<Baggage = unknown>(
+  ls: string | LanguageSpec,
+  runtimeArgs?: string[],
+  init?: {
+    shell?: ReturnType<typeof createShell<Baggage>>;
+    mode?: ExecutionMode;
+    cwd?: string;
+    env?: Record<string, string | undefined>;
+    init?: LanguageInitBase;
+  },
+): UsingShell<Baggage> {
+  const engine = engineFromLanguageSpec(ls);
+
+  const sh = init?.shell ?? createShell<Baggage>({
+    cwd: init?.cwd,
+    env: init?.env,
+  });
+
+  const languageShell = new LanguageSpawnShell<Baggage>(sh);
+
+  // Inline init, tagged directly with engineId
+  const inlineInit = init?.init
+    ? { init: { ...init.init, engineId: engine.id } }
+    : undefined;
+
+  const usingName = typeof ls === "string" ? ls : ls.id;
+
+  return {
+    kind: "using-shell",
+    using: usingName,
+    engine,
+    catalog: {}, // intentionally empty; no catalog semantics
+    initRef: { ref: usingName }, // informational only
+    runtimeArgs,
+
+    spawn: (input, opts) =>
+      languageShell.spawn({
+        engine,
+        input,
+        init: inlineInit,
+        runtimeArgs,
+        mode: opts?.mode ?? init?.mode,
+        cwd: opts?.cwd,
+        env: opts?.env,
+        programArgs: opts?.programArgs,
+        baggage: opts?.baggage,
+      }),
+  };
 }

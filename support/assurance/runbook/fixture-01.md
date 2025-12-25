@@ -35,7 +35,7 @@ rm -f .gitignore
 rm -f .envrc
 ```
 
-```envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
+```envrc prepare-env -C ./.envrc --gitignore -X --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
 export SPRY_DB="sqlite://scf-2025.3.sqlite.db?mode=rwc"
 export PORT=9227
 ```

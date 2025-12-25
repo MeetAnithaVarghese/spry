@@ -8,7 +8,7 @@ sql * --interpolate --injectable --executable --capture
 ```
 
 ```yaml CONNECTIONS
-catalog:
+spawnables:
   prime:
     engine: sqlite
     file: "prime.sqlite.db"
@@ -18,7 +18,7 @@ catalog:
 rm -f prime.sqlite.db
 ```
 
-```sql migrations --conf prime --migratable
+```sql migrations -X prime --migratable
 DROP TABLE IF EXISTS billing_payments;
 DROP TABLE IF EXISTS billing_invoices;
 DROP TABLE IF EXISTS sales_orders;
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS billing_payments (
 
 Seed the database.
 
-```sql seed --conf prime
+```sql seed --executable prime
 DELETE FROM billing_payments;
 DELETE FROM billing_invoices;
 DELETE FROM sales_orders;
@@ -105,7 +105,7 @@ VALUES
   (6, 4, 100.00, CURRENT_DATE); -- partial payment (invoice = 150)
 ```
 
-```sql validate-idempotency --conf prime
+```sql validate-idempotency -X prime
 INSERT OR IGNORE INTO sales_customers (
     customer_id,
     customer_name,
@@ -134,7 +134,7 @@ FROM sales_customers
 WHERE email = 'pradeep@test.com';
 ```
 
-```sql validate-invoice-payment --conf prime
+```sql validate-invoice-payment --executable prime
 SELECT
     c.customer_name,
     o.order_id,
