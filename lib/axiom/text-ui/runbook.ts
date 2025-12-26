@@ -61,8 +61,8 @@ export type LsTaskRow = {
   name: string;
   origin: string;
   engine: ReturnType<ReturnType<typeof shell>["strategy"]> | {
-    engine: "memoize-only";
-    label: "Memoize Only";
+    engine: "using";
+    label: string;
     linesOfCode: string[];
   };
   descr: string;
@@ -129,7 +129,7 @@ function lsCmdEngineField<Row extends LsTaskRow>(): Partial<
           return green(v.label);
         case "deno-task":
           return cyan(v.label);
-        case "memoize-only":
+        case "using":
           return gray(v.label);
       }
     },
@@ -510,8 +510,8 @@ export class CLI {
               origin: task.provenance.fileRef(task),
               engine: task.using
                 ? {
-                  engine: "memoize-only",
-                  label: "Memoize Only",
+                  engine: "using",
+                  label: task.using,
                   linesOfCode: [],
                 }
                 : sh.strategy(task.value),
