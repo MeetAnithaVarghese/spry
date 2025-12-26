@@ -1,10 +1,16 @@
 SQLfolio end-to-end (`e2e`) assurance example.
 
-- `sql` blocks are obvious
-- `--migratable` wraps the SQL into "guarded" CTEs
+- `code DEFAULTS` sets up the presets for how to treat fenced code blocks
+  - `sql` blocks are obvious
+  - `-X prime` looks up the `prime` spawnable engine (`-X` and `--executable`
+    are synonyms) and indicate that the fenced code cell is an executable task
+- `yaml CONNECTIONS` sets up the executable cells' shared configuration
+- Like all the `sql` cells, `bash clean` is a task but `--graph` indicates that
+  it's part of the "housekeeping" group of tasks so it won't be run in the main
+  block (it would have to be called specifically)
 
 ```code DEFAULTS
-sql * --interpolate --injectable --executable --capture
+sql * --interpolate --injectable -X prime --capture
 ```
 
 ```yaml CONNECTIONS
@@ -18,7 +24,7 @@ spawnables:
 rm -f prime.sqlite.db
 ```
 
-```sql migrations -X prime --migratable
+```sql migrations
 DROP TABLE IF EXISTS billing_payments;
 DROP TABLE IF EXISTS billing_invoices;
 DROP TABLE IF EXISTS sales_orders;
@@ -65,7 +71,7 @@ CREATE TABLE IF NOT EXISTS billing_payments (
 
 Seed the database.
 
-```sql seed --executable prime
+```sql seed
 DELETE FROM billing_payments;
 DELETE FROM billing_invoices;
 DELETE FROM sales_orders;
@@ -105,7 +111,7 @@ VALUES
   (6, 4, 100.00, CURRENT_DATE); -- partial payment (invoice = 150)
 ```
 
-```sql validate-idempotency -X prime
+```sql validate-idempotency
 INSERT OR IGNORE INTO sales_customers (
     customer_id,
     customer_name,
@@ -134,7 +140,7 @@ FROM sales_customers
 WHERE email = 'pradeep@test.com';
 ```
 
-```sql validate-invoice-payment --executable prime
+```sql validate-invoice-payment
 SELECT
     c.customer_name,
     o.order_id,
