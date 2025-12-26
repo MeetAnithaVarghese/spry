@@ -85,7 +85,7 @@ in this directory.
 
 POSIX-style example (bash/zsh):
 
-```envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
+```envrc prepare-env -C ./.envrc -X --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"
 export SPRY_DB="sqlite://scf-2025.3.sqlite.db?mode=rwc"
 export PORT=9227
 ```
