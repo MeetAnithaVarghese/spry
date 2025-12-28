@@ -65,14 +65,12 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
 
   console.log = originalLog;
 
-  const actual = normalizeAbsolutePaths(logs.join("\n"));
-
   // the "golden" file was created using the following command
   // ./spry.ts sp spc --package --md Spryfile.md > mod_test.golden.sql
-  const goldenRaw = await Deno.readTextFile(
-    goldenPath("./mod_test.golden.sql"),
+  assertEquals(
+    normalizeAbsolutePaths(logs.join("\n")),
+    await Deno.readTextFile(
+      goldenPath("./mod_test.golden.sql"),
+    ),
   );
-  const golden = normalizeAbsolutePaths(goldenRaw);
-
-  assertEquals(actual, golden);
 });

@@ -109252,7 +109252,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
         }
       },
       "provenance": {
-        "path": "/home/snshah/workspaces/github.com/programmablemd/spry/support/assurance/scf/sqlpage/templates/shell-empty.handlebars",
+        "path": "ABSOLUTE_PATH/sqlpage/templates/shell-empty.handlebars",
         "label": "**/*",
         "mimeType": "text/plain"
       },
@@ -109267,7 +109267,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
       "destPrefix": "templates",
       "origin": "[Circular]",
       "provenance": {
-        "path": "/home/snshah/workspaces/github.com/programmablemd/spry/support/assurance/scf/sqlpage/templates/shell.handlebars",
+        "path": "ABSOLUTE_PATH/sqlpage/templates/shell.handlebars",
         "label": "**/*",
         "mimeType": "text/plain"
       },
