@@ -34,11 +34,20 @@
  * This style of test is intentionally black-box: it does not inspect internal
  * state or APIs, only the observable output that real users depend on.
  */
+import { assertEquals } from "@std/assert";
 import { fromFileUrl } from "@std/path";
 import { CLI } from "../../../bin/spry.ts";
-import { assertEquals } from "@std/assert";
 
 const goldenPath = (rel: string) => fromFileUrl(import.meta.resolve(rel));
+
+const normalizeAbsolutePaths = (text: string) => {
+  const cwd = Deno.cwd();
+  const cwdFileUrl = fromFileUrl(new URL(`file://${cwd}/`));
+
+  return text
+    .replaceAll(cwd, "ABSOLUTE_PATH")
+    .replaceAll(cwdFileUrl, "ABSOLUTE_PATH");
+};
 
 Deno.test("End-to-end (e2e) Regression Test", async () => {
   const originalLog = console.log;
@@ -54,10 +63,16 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
     "--package",
   ]);
 
+  console.log = originalLog;
+
+  const actual = normalizeAbsolutePaths(logs.join("\n"));
+
   // the "golden" file was created using the following command
   // ./spry.ts sp spc --package --md Spryfile.md > mod_test.golden.sql
-  const golden = await Deno.readTextFile(goldenPath("./mod_test.golden.sql"));
-  assertEquals(logs.join("\n"), golden);
+  const goldenRaw = await Deno.readTextFile(
+    goldenPath("./mod_test.golden.sql"),
+  );
+  const golden = normalizeAbsolutePaths(goldenRaw);
 
-  console.log = originalLog;
+  assertEquals(actual, golden);
 });
