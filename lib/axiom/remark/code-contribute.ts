@@ -206,7 +206,7 @@
  *    - `Extension.importExtension()` for any node with `--extension`,
  *    to obtain the imported module and optional entrypoint.
  */
-import { assert } from "@std/assert/assert";
+import { assert } from "@std/assert";
 import z from "@zod/zod";
 import type { Code, Node, Root } from "types/mdast";
 import type { Plugin } from "unified";
