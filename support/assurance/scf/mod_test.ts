@@ -41,13 +41,16 @@ import { CLI } from "../../../bin/spry.ts";
 const goldenPath = (rel: string) => fromFileUrl(import.meta.resolve(rel));
 
 const normalizeAbsolutePaths = (text: string) => {
+  const rootUrl = import.meta.resolve("../../../");
+  const rootPath = fromFileUrl(rootUrl);
   const cwd = Deno.cwd();
   const cwdFileUrl = fromFileUrl(new URL(`file://${cwd}/`));
 
   return text
     .replaceAll(cwd, "ABSOLUTE_PATH")
     .replaceAll(cwdFileUrl, "ABSOLUTE_PATH")
-    .replace(/CURRENT_TIMESTAMP/g, "FIXED_TIMESTAMP");
+    .replaceAll(rootUrl, "ABSOLUTE_PATH/")
+    .replaceAll(rootPath, "ABSOLUTE_PATH/");
 };
 
 Deno.test("End-to-end (e2e) Regression Test", async () => {
@@ -62,8 +65,6 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
     "sp",
     "spc",
     "--package",
-    "--md",
-    "Spryfile.md",
   ]);
 
   console.log = originalLog;
