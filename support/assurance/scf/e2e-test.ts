@@ -41,12 +41,16 @@ import { CLI } from "../../../bin/spry.ts";
 const goldenPath = (rel: string) => fromFileUrl(import.meta.resolve(rel));
 
 const normalizeAbsolutePaths = (text: string) => {
+  const rootUrl = import.meta.resolve("../../../");
+  const rootPath = fromFileUrl(rootUrl);
   const cwd = Deno.cwd();
   const cwdFileUrl = fromFileUrl(new URL(`file://${cwd}/`));
 
   return text
     .replaceAll(cwd, "ABSOLUTE_PATH")
-    .replaceAll(cwdFileUrl, "ABSOLUTE_PATH");
+    .replaceAll(cwdFileUrl, "ABSOLUTE_PATH")
+    .replaceAll(rootUrl, "ABSOLUTE_PATH/")
+    .replaceAll(rootPath, "ABSOLUTE_PATH/");
 };
 
 Deno.test("End-to-end (e2e) Regression Test", async () => {
@@ -67,10 +71,17 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
 
   // the "golden" file was created using the following command
   // ./spry.ts sp spc --package --md Spryfile.md > mod_test.golden.sql
-  assertEquals(
-    normalizeAbsolutePaths(logs.join("\n")),
-    await Deno.readTextFile(
-      goldenPath("./mod_test.golden.sql"),
-    ),
-  );
+  const actual = normalizeAbsolutePaths(logs.join("\n"));
+  const expected = normalizeAbsolutePaths(await Deno.readTextFile(
+    goldenPath("./mod_test.golden.sql"),
+  ));
+
+  // For large outputs, compare hashes instead of full strings to avoid memory issues
+  const actualHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(actual));
+  const expectedHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(expected));
+
+  const actualHashHex = Array.from(new Uint8Array(actualHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const expectedHashHex = Array.from(new Uint8Array(expectedHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  assertEquals(actualHashHex, expectedHashHex);
 });
