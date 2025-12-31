@@ -27,6 +27,7 @@ jobs:
         shell: bash        
         run: |
           sudo apt-get install -y direnv
+          direnv allow
           direnv exec support/assurance/scf/ bash -c "cd support/assurance/scf && deno test -A e2e-test.ts"
 
       - name: Run tests
