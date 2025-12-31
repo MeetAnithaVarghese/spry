@@ -26,7 +26,7 @@ jobs:
       - name: Run SCF tests
         shell: bash
         env:
-          SPRY_DB: "sqlite://${{ github.workspace }}/support/assurance/scf/scf-2025.3.sqlite.db?mode=rwc"
+          SPRY_DB: "sqlite://scf-2025.3.sqlite.db?mode=rwc"
           PORT: 9227
         run: |
           cd support/assurance/scf
