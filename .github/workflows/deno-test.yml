@@ -26,10 +26,10 @@ jobs:
       - name: Run SCF tests
         shell: bash        
         run: |
-          sudo apt-get install -y direnv          
+          sudo apt-get install -y direnv
           cd support/assurance/scf
-          direnv allow
-          deno test -A e2e-test.ts
+          direnv allow .
+          direnv exec . deno test -A e2e-test.ts
 
       - name: Run tests
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
