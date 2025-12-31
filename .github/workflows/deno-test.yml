@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - "sj/scf/regression_test"
   pull_request:
     branches:
       - "main"
@@ -24,3 +25,6 @@ jobs:
 
       - name: Run tests
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
+
+      - name: Run SCF tests
+        run: cd support/assurance/scf/ && deno test -A ./e2e-test.ts
