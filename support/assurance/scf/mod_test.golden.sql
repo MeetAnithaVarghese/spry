@@ -107047,29 +107047,28 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
 ]', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/route/forest.schema.auto.json', '{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Forest: array of root nodes (top-level entries after synthesis/sort).",
   "type": "array",
   "items": {
     "$ref": "#/$defs/__schema0"
   },
+  "description": "Forest: array of root nodes (top-level entries after synthesis/sort).",
   "$defs": {
     "__schema0": {
-      "description": "Path tree node (container or file).",
       "type": "object",
       "properties": {
         "path": {
           "type": "string"
         },
         "basename": {
-          "description": "Last segment of the path (no delimiter). Root uses the delimiter.",
-          "type": "string"
+          "type": "string",
+          "description": "Last segment of the path (no delimiter). Root uses the delimiter."
         },
         "children": {
-          "description": "Child nodes under this container or file node.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/__schema0"
-          }
+          },
+          "description": "Child nodes under this container or file node."
         },
         "payloads": {
           "description": "Zero or more original payload items for this exact node path.",
@@ -107089,7 +107088,8 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
         "basename",
         "children"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Path tree node (container or file)."
     }
   }
 }', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
@@ -108462,16 +108462,13 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
 }', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/route/breadcrumbs.schema.auto.json', '{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Map breadcrumb trail (path: root → … → owning container).",
   "type": "object",
   "propertyNames": {
     "type": "string"
   },
   "additionalProperties": {
-    "description": "Ordered breadcrumb trail (root → … → owning container).",
     "type": "array",
     "items": {
-      "description": "Single breadcrumb from root to the item''s owning container.",
       "type": "object",
       "properties": {
         "node": {
@@ -108479,54 +108476,56 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
           "$ref": "#/$defs/__schema0"
         },
         "hrefs": {
-          "description": "Link variants used by different routers.",
           "type": "object",
           "properties": {
             "canonical": {
-              "description": "Container path as-is (preferred canonical link for the container).",
-              "type": "string"
+              "type": "string",
+              "description": "Container path as-is (preferred canonical link for the container)."
             },
             "index": {
               "description": "First index child path if present (e.g., ''index.sql'').",
               "type": "string"
             },
             "trailingSlash": {
-              "description": "Container path with a trailing slash (root remains ''/'').",
-              "type": "string"
+              "type": "string",
+              "description": "Container path with a trailing slash (root remains ''/'')."
             }
           },
           "required": [
             "canonical",
             "trailingSlash"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "Link variants used by different routers."
         }
       },
       "required": [
         "node",
         "hrefs"
       ],
-      "additionalProperties": false
-    }
+      "additionalProperties": false,
+      "description": "Single breadcrumb from root to the item''s owning container."
+    },
+    "description": "Ordered breadcrumb trail (root → … → owning container)."
   },
+  "description": "Map breadcrumb trail (path: root → … → owning container).",
   "$defs": {
     "__schema0": {
-      "description": "Path tree node (container or file).",
       "type": "object",
       "properties": {
         "path": {
           "type": "string"
         },
         "basename": {
-          "description": "Last segment of the path (no delimiter). Root uses the delimiter.",
-          "type": "string"
+          "type": "string",
+          "description": "Last segment of the path (no delimiter). Root uses the delimiter."
         },
         "children": {
-          "description": "Child nodes under this container or file node.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/__schema0"
-          }
+          },
+          "description": "Child nodes under this container or file node."
         },
         "payloads": {
           "description": "Zero or more original payload items for this exact node path.",
@@ -108546,7 +108545,8 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
         "basename",
         "children"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Path tree node (container or file)."
     }
   }
 }', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
@@ -108586,27 +108586,27 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/r
 ]', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/route/edges.schema.auto.json', '{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Flat list of route edges derived from the forest.",
   "type": "array",
   "items": {
-    "description": "Directed edge linking canonical parent route to a child route.",
     "type": "object",
     "properties": {
       "parent": {
-        "description": "Canonical parent route (no leading ''/''). Often a directory''s index route.",
-        "type": "string"
+        "type": "string",
+        "description": "Canonical parent route (no leading ''/''). Often a directory''s index route."
       },
       "child": {
-        "description": "Child route (no leading ''/''). Either a directory''s index or a file route.",
-        "type": "string"
+        "type": "string",
+        "description": "Child route (no leading ''/''). Either a directory''s index or a file route."
       }
     },
     "required": [
       "parent",
       "child"
     ],
-    "additionalProperties": false
-  }
+    "additionalProperties": false,
+    "description": "Directed edge linking canonical parent route to a child route."
+  },
+  "description": "Flat list of route edges derived from the forest."
 }', CURRENT_TIMESTAMP) ON CONFLICT(path) DO UPDATE SET contents = excluded.contents, last_modified = CURRENT_TIMESTAMP WHERE sqlpage_files.contents <> excluded.contents;
 INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/README.md', '# Spry Dropin Resources and Routes
 
