@@ -27,4 +27,8 @@ jobs:
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
 
       - name: Run SCF tests
-        run: cd support/assurance/scf/ && deno test -A ./e2e-test.ts
+        working-directory: support/assurance/scf/
+        env:
+          SPRY_DB: "sqlite://scf-2025.3.sqlite.db?mode=rwc"
+          PORT: 9227
+        run: deno test -A ./e2e-test.ts
