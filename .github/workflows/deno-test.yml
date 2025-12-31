@@ -24,21 +24,19 @@ jobs:
           deno-version: v2.x
 
       - name: Run SCF tests
-        shell: bash        
+        shell: bash
         run: |
           sudo apt-get install -y direnv
           cd support/assurance/scf
           direnv allow .
           direnv exec . deno test -A e2e-test.ts
 
-      - name: Upload actual SQL
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mod_test.actual.sql
-          path: support/assurance/scf/mod_test.actual.sql
+      # - name: Upload actual SQL
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: mod_test.actual.sql
+      #     path: support/assurance/scf/mod_test.actual.sql
 
       - name: Run tests
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
-
-
