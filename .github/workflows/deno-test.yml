@@ -23,9 +23,11 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Run tests
-        run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
-
       - name: Run SCF tests
         working-directory: support/assurance/scf/        
         run: deno test -A ./e2e-test.ts
+
+      - name: Run tests
+        run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
+
+
