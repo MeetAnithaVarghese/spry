@@ -245,13 +245,15 @@ export class CLI<Project> {
       sfMD.p("POSIX-style example (bash/zsh):");
       sfMD.codeTag(
         `envrc prepare-env -C ./.envrc -X --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"`,
-      )`${init?.dialect === SqlPageFilesUpsertDialect.SQLite
+      )`${
+        init?.dialect === SqlPageFilesUpsertDialect.SQLite
           ? `export DB_NAME="sqlpage.db"\n`
           : ``
-        }export SPRY_DB=${init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
+      }export SPRY_DB=${
+        init?.dialect === SqlPageFilesUpsertDialect.PostgreSQL
           ? `"postgresql://<username>:<password>@<host>:<port>/<database>"`
           : `"sqlite://$DB_NAME?mode=rwc"`
-        }\nexport PORT=9227`;
+      }\nexport PORT=9227`;
       sfMD.p(
         "Then run `direnv allow` in this project directory to load the `.envrc` into your shell environment. direnv will evaluate `.envrc` only after you explicitly allow it.",
       );
@@ -288,9 +290,11 @@ export class CLI<Project> {
       );
       sfMD.codeTag(
         `bash deploy --descr "Generate sqlpage_files table upsert SQL and push them to ${init?.dialect}"`,
-      )`rm -rf dev-src.auto\nspry sp spc --package ${init?.dialect ? `--dialect ${init?.dialect}` : ``
-        } --conf sqlpage/sqlpage.json | ${init?.dialect === "postgres" ? `psql` : `sqlite3`
-        } ${init?.dialect === "postgres" ? "$SPRY_DB" : "$DB_NAME"}`;
+      )`rm -rf dev-src.auto\nspry sp spc --package ${
+        init?.dialect ? `--dialect ${init?.dialect}` : ``
+      } --conf sqlpage/sqlpage.json | ${
+        init?.dialect === "postgres" ? `psql` : `sqlite3`
+      } ${init?.dialect === "postgres" ? "$SPRY_DB" : "$DB_NAME"}`;
       sfMD.title(2, "Start the SQLPage server");
       sfMD.codeTag(
         `bash`,
@@ -352,10 +356,10 @@ export class CLI<Project> {
         v === "head_sql"
           ? green(v)
           : v === "tail_sql"
-            ? yellow(v)
-            : v === "sqlpage_file_upsert"
-              ? brightYellow(v)
-              : cyan(v),
+          ? yellow(v)
+          : v === "sqlpage_file_upsert"
+          ? brightYellow(v)
+          : cyan(v),
     };
   }
 
@@ -620,7 +624,8 @@ export class CLI<Project> {
       "run:begin",
       (ev) =>
         console.log(
-          `[watch] build ${ev.runIndex} begin with SQLPage: ${opts.withSqlPage?.enabled ?? "no"
+          `[watch] build ${ev.runIndex} begin with SQLPage: ${
+            opts.withSqlPage?.enabled ?? "no"
           }`,
         ),
     );
@@ -670,7 +675,8 @@ export class CLI<Project> {
     const { defaultFiles } = this.conf ?? {};
     return new Command()
       .example(
-        `default ${(defaultFiles?.length ?? 0) > 0 ? `(${defaultFiles?.join(", ")})` : ""
+        `default ${
+          (defaultFiles?.length ?? 0) > 0 ? `(${defaultFiles?.join(", ")})` : ""
         }`,
         `${cmdName} ${examplesCmd}`,
       )
