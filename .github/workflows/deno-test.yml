@@ -27,9 +27,7 @@ jobs:
         shell: bash        
         run: |
           sudo apt-get install -y direnv
-          cd support/assurance/scf
-          direnv allow .
-          direnv exec . deno test -A e2e-test.ts
+          direnv exec support/assurance/scf/ bash -c "cd support/assurance/scf && deno test -A e2e-test.ts"
 
       - name: Run tests
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
