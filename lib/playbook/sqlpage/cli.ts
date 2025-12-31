@@ -244,7 +244,7 @@ export class CLI<Project> {
       );
       sfMD.p("POSIX-style example (bash/zsh):");
       sfMD.codeTag(
-        `envrc prepare-env -C ./.envrc --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"`,
+        `envrc prepare-env -C ./.envrc -X --gitignore --descr "Generate .envrc file and add it to local .gitignore if it's not already there"`,
       )`${
         init?.dialect === SqlPageFilesUpsertDialect.SQLite
           ? `export DB_NAME="sqlpage.db"\n`
