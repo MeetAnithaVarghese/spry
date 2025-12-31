@@ -25,9 +25,12 @@ jobs:
 
       - name: Run SCF tests
         shell: bash
+        env:
+          SPRY_DB: "sqlite://${{ github.workspace }}/support/assurance/scf/scf-2025.3.sqlite.db?mode=rwc"
+          PORT: 9227
         run: |
-          sudo apt-get install -y direnv
-          direnv exec support/assurance/scf/ bash -c "cd support/assurance/scf && deno test -A e2e-test.ts"
+          cd support/assurance/scf
+          deno test -A e2e-test.ts
 
       - name: Run tests
         run: deno test --parallel --allow-all --v8-flags="--max-old-space-size=4096"
