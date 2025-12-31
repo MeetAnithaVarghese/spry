@@ -72,7 +72,7 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
   // the "golden" file was created using the following command
   // ./spry.ts sp spc --package --md Spryfile.md > mod_test.golden.sql
   const actual = normalizeAbsolutePaths(logs.join("\n"));
-  // Deno.writeTextFile("./mod_test.actual.sql", actual);
+  Deno.writeTextFile("./mod_test.actual.sql", actual);
   const expected = normalizeAbsolutePaths(await Deno.readTextFile(
     goldenPath("./mod_test.golden.sql"),
   ));
@@ -84,5 +84,9 @@ Deno.test("End-to-end (e2e) Regression Test", async () => {
   const actualHashHex = Array.from(new Uint8Array(actualHash)).map(b => b.toString(16).padStart(2, '0')).join('');
   const expectedHashHex = Array.from(new Uint8Array(expectedHash)).map(b => b.toString(16).padStart(2, '0')).join('');
 
+  if (actualHashHex !== expectedHashHex) {
+    console.log("ACTUAL (first 1000 chars):", actual.substring(0, 1000));
+    console.log("EXPECTED (first 1000 chars):", expected.substring(0, 1000));
+  }
   assertEquals(actualHashHex, expectedHashHex);
 });
