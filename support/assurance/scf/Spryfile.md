@@ -59,7 +59,9 @@ script.
 ```bash prepare-db --descr "Delete and recreate the SQLite database used by SQLPage"
 #!/usr/bin/env -S bash
 rm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`
-cat prepare.duckdb.sql | duckdb ":memory:"  # DuckDB processes in memory but creates SQLite DB
+#cat prepare.duckdb.sql | duckdb ":memory:"  # DuckDB processes in memory but creates SQLite DB
+surveilr admin init -d scf-2025.3.sqlite.db
+surveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db
 ```
 
 ## Environment variables and .envrc

@@ -27,6 +27,8 @@ jobs:
         shell: bash
         run: |
           sudo apt-get install -y direnv
+          wget https://github.com/surveilr/packages/releases/latest/download/surveilr_jammy.deb
+          sudo dpkg -i surveilr_jammy.deb
           cd support/assurance/scf
           direnv allow .
           direnv exec . deno test -A e2e-test.ts
