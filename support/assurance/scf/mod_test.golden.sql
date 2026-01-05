@@ -108148,7 +108148,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
       "provenance": {
         "label": "**/*",
         "mimeType": "text/plain",
-        "path": "ABSOLUTE_PATH/support/assurance/scf/sqlpage/templates/shell-empty.handlebars"
+        "path": "ABSOLUTE_PATH/sqlpage/templates/shell-empty.handlebars"
       },
       "strategy": {
         "encoding": "utf8-text",
@@ -108163,7 +108163,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
       "provenance": {
         "label": "**/*",
         "mimeType": "text/plain",
-        "path": "ABSOLUTE_PATH/support/assurance/scf/sqlpage/templates/shell.handlebars"
+        "path": "ABSOLUTE_PATH/sqlpage/templates/shell.handlebars"
       },
       "strategy": {
         "encoding": "utf8-text",
