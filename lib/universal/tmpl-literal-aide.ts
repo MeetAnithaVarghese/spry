@@ -9,6 +9,14 @@ export function safeJsonStringify(
       if (v && typeof v === "object") {
         if (seen.has(v)) return "[Circular]";
         seen.add(v);
+
+        if (!Array.isArray(v)) {
+          const newObj: Record<string, unknown> = {};
+          for (const key of Object.keys(v).sort()) {
+            newObj[key] = (v as Record<string, unknown>)[key];
+          }
+          return newObj;
+        }
       }
       return v;
     },
