@@ -29,6 +29,7 @@ import { docFrontmatterDataBag } from "../../axiom/remark/doc-frontmatter.ts";
 import * as axiomCLI from "../../axiom/text-ui/cli.ts";
 import * as runbookCLI from "../../axiom/text-ui/runbook.ts";
 import { collectAsyncGenerated } from "../../universal/collectable.ts";
+import { safeJsonStringify } from "../../universal/tmpl-literal-aide.ts";
 import { doctor } from "../../universal/doctor.ts";
 import { eventBus } from "../../universal/event-bus.ts";
 import { MarkdownDoc } from "../../universal/fluent-md.ts";
@@ -841,7 +842,7 @@ export class CLI<Project> {
                 await ensureDir(dirname(opts.conf));
                 await Deno.writeTextFile(
                   opts.conf,
-                  JSON.stringify(json, null, 2),
+                  safeJsonStringify(json, 2),
                 );
                 if (opts.verbose) {
                   console.log(opts.conf);
