@@ -315,7 +315,7 @@ partial "greet-user" arguments invalid: ✖ Invalid input: expected string, rece
 - mood: cheerful
 
 - full ctx (unsafe):
-{"siteName":"Synthetic1","md":{}}
+{"md":{},"siteName":"Synthetic1"}
 
 - captured/memoized (synonyms):
 -----

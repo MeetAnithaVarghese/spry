@@ -365,7 +365,8 @@ export async function* sqlPageFiles(
 
     const encountered = Array.from(contribs.provenance());
     yield jsonSPF(
-      `spry.d/auto/contribute/${contribSPFs.length > 1 ? `${c.identity}${contribsIndex}` : c.identity
+      `spry.d/auto/contribute/${
+        contribSPFs.length > 1 ? `${c.identity}${contribsIndex}` : c.identity
       }.auto.json`,
       safeJsonStringify({
         origin: {
@@ -384,7 +385,11 @@ export async function* sqlPageFiles(
     for await (const r of contribs.resources()) {
       const contents = r.strategy.encoding === "utf8-text"
         ? await r.safeText(
-          `Unable to read ${safeJsonStringify({ strategy: r.strategy, provenance: r.provenance })
+          `Unable to read ${
+            safeJsonStringify({
+              strategy: r.strategy,
+              provenance: r.provenance,
+            })
           }`,
         )
         : await r.stream();
