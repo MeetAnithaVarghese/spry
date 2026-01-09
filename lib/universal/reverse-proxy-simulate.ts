@@ -23,8 +23,6 @@
  * - This proxy will forward all requests from the specified port to the target base URL.
  */
 
-import { serve } from "https://deno.land/std@0.206.0/http/server.ts";
-
 // Ensure required arguments are provided
 if (Deno.args.length < 2) {
   console.error(
@@ -49,7 +47,7 @@ console.log(`Reverse proxy listening on: http://localhost:${proxyPort}`);
 console.log(`Proxying requests to: ${targetBaseURL}`);
 
 // Start the reverse proxy server
-serve(async (req: Request) => {
+Deno.serve({ port: parseInt(proxyPort, 10) }, async (req: Request) => {
   // Determine the full URL of the incoming request
   const incomingUrl = new URL(req.url);
 
@@ -87,4 +85,4 @@ serve(async (req: Request) => {
     console.error(`Error during proxying: ${String(error)}`);
     return new Response("Proxy error: " + String(error), { status: 502 });
   }
-}, { port: parseInt(proxyPort, 10) });
+});

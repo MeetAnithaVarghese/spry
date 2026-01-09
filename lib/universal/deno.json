@@ -1,0 +1,21 @@
+{
+    "name": "@spry/universal",
+    "version": "0.0.1",
+    "exports": "./mod.ts",
+    "imports": {
+        "@std/yaml": "jsr:@std/yaml@^1",
+        "@std/assert": "jsr:@std/assert@^1",
+        "@std/assert/equals": "jsr:@std/assert@^1/equals",
+        "@std/path": "jsr:@std/path@^1",
+        "@zod": "jsr:@zod/zod@4",
+        "@zod/zod": "jsr:@zod/zod@4",
+        "@std/async": "jsr:@std/async@^1",
+        "@std/fs": "jsr:@std/fs@^1",
+        "@std/media-types": "jsr:@std/media-types@^1",
+        "@std/fmt/colors": "jsr:@std/fmt@1/colors",
+        "json5": "npm:json5@^2"
+    },
+    "exclude": [
+        "pkg/"
+    ]
+}
