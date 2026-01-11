@@ -421,7 +421,7 @@ export class CLI {
             tasksBus: tapEB.bus,
           });
           await runbook.execute(plan);
-          const tc = emittableTapContent(tapEB.tapContent());
+          const tc = emittableTapContent(tapEB.tapContent(), opts.style);
           if (tc) {
             if (opts.save) {
               Deno.writeTextFileSync(opts.save, tc);

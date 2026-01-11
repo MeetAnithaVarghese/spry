@@ -787,6 +787,18 @@ export function tapContentDefaultMarkdownOptions<
   return { diagnosticsMarkdown, ...init };
 }
 
+export const looksLikeJson = (s: string): boolean => {
+  const t = s.trim();
+  if (!t) return false;
+  if (!(t.startsWith("{") || t.startsWith("["))) return false;
+  try {
+    JSON.parse(t);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export function tapContentMarkdown<
   Describable extends string,
   Diagnosable extends p.Diagnostics,
@@ -794,56 +806,188 @@ export function tapContentMarkdown<
   tapContent: p.TapContent<Describable, Diagnosable>,
   options = tapContentDefaultMarkdownOptions<Describable, Diagnosable>(),
 ) {
-  const { preamble, diagnosticsMarkdown } = options;
+  const { preamble } = options;
 
-  let markdown = preamble?.(tapContent) ?? "";
+  const lines: string[] = [];
 
-  markdown += processTestElements(tapContent.body);
+  const push = (...xs: (string | undefined)[]) => {
+    for (const x of xs) if (x != null) lines.push(x);
+  };
 
-  for (const footer of tapContent.footers) {
-    markdown += `---\n${footer.content}\n`;
+  const mdEscape = (s: string) =>
+    s
+      .replace(/\\/g, "\\\\")
+      .replace(/\|/g, "\\|")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+
+  const toText = (v: unknown): string => {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    if (
+      typeof v === "number" || typeof v === "boolean" || typeof v === "bigint"
+    ) return String(v);
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
+  };
+
+  // These render after the table as fenced blocks
+  const preAttrs = new Set([
+    "stdout",
+    "stderr",
+    "output",
+    "error",
+    "stack",
+    "trace",
+  ]);
+
+  const splitDiagnostics = (d: p.Diagnostics) => {
+    const tabular: Array<[string, string]> = [];
+    const pre: Array<[string, string]> = [];
+    for (const [k, v] of Object.entries(d ?? {})) {
+      const txt = toText(v);
+      if (preAttrs.has(k)) pre.push([k, txt]);
+      else tabular.push([k, txt]);
+    }
+    return { tabular, pre };
+  };
+
+  const renderDirectiveText = (dir: p.Directive) =>
+    `${mdEscape(dir.nature)}: ${mdEscape(dir.reason)}`;
+
+  const renderPreBlocks = (pairs: Array<[string, string]>) => {
+    for (const [k, v] of pairs) {
+      const normalized = v.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      const fence = looksLikeJson(normalized) ? "```json" : "```";
+
+      push(
+        "",
+        `**${mdEscape(k)}**:`,
+        "",
+        fence,
+        normalized,
+        "```",
+      );
+    }
+  };
+
+  // Header
+  const pre = preamble?.(tapContent);
+  if (pre && pre.trim().length) push(pre.trimEnd(), "");
+  push("# TAP test report");
+
+  if (tapContent.version) push(`- TAP version: ${tapContent.version.version}`);
+  if (tapContent.plan) {
+    const plan = tapContent.plan;
+    const planLine = plan.skip
+      ? `- Plan: ${plan.start}..${plan.end} (SKIP: ${
+        mdEscape(plan.skip.reason)
+      })`
+      : `- Plan: ${plan.start}..${plan.end}`;
+    push(planLine);
   }
 
-  return markdown;
+  push("", "## Results");
 
-  function processTestElements(
+  let topIndex = 0;
+
+  function renderBody(
     body: Iterable<p.TestSuiteElement<string, p.Diagnostics>>,
-    indent = "",
+    depth: number,
+    parentNum?: string,
   ) {
-    let contentMarkdown = "";
+    let localIndex = 0;
+    const headingForDepth = (d: number) => Math.min(6, 3 + d);
+
     for (const element of body) {
-      if (element.nature === "test-case") {
-        const test = element as p.TestCase<string, p.Diagnostics>;
-        const status = test.ok ? "✅" : "❌";
-        contentMarkdown += `${indent}- ${status} ${test.description}\n`;
+      if (element.nature === "comment") {
+        const c = element as p.CommentNode;
+        push("", `> ${mdEscape(c.content)}`);
+        continue;
+      }
 
-        if (test.directive) {
-          contentMarkdown +=
-            `${indent}  - [${test.directive.nature}] ${test.directive.reason}\n`;
+      if (element.nature !== "test-case") continue;
+
+      const test = element as p.TestCase<string, p.Diagnostics>;
+
+      const idx = parentNum ? ++localIndex : ++topIndex;
+      const num = parentNum ? `${parentNum}.${idx}` : `${idx}`;
+
+      const icon = test.ok ? "✅" : "❌";
+      const status = test.ok ? "PASS" : "FAIL";
+
+      const h = "#".repeat(headingForDepth(depth));
+      push("", `${h} ${icon} ${num} ${mdEscape(test.description)} (${status})`);
+
+      const hasDirective = !!test.directive;
+      const hasDiagnostics =
+        !!(test.diagnostics && Object.keys(test.diagnostics).length);
+
+      if (hasDirective || hasDiagnostics) {
+        push("", "| Attribute | Value |", "|---|---|");
+        if (hasDirective) {
+          push(`| Directive | ${renderDirectiveText(test.directive!)} |`);
         }
-
-        if (test.diagnostics) {
-          contentMarkdown += `${indent}  - Diagnostics:\n${indent}${
-            diagnosticsMarkdown(test.diagnostics).split("\n").map((line) =>
-              `    ${line}`
-            ).join("\n")
-          }\n`;
-        }
-
-        if (p.isParentTestCase(test)) {
-          if (test.subtests) {
-            contentMarkdown += `${indent}  - Subtests:\n${
-              processTestElements(test.subtests.body, indent + "    ")
-            }\n`;
+        if (hasDiagnostics) {
+          const { tabular, pre } = splitDiagnostics(test.diagnostics!);
+          if (tabular.length) {
+            // Put tabular diagnostics into the same table
+            for (const [k, v] of tabular) {
+              push(
+                `| ${mdEscape(k)} | ${mdEscape(v).replace(/\n/g, "<br/>")} |`,
+              );
+            }
           }
+          if (pre.length) {
+            push(`| Logs | See blocks below |`);
+          }
+          // Close table, then emit pre blocks
+          renderPreBlocks(pre);
         }
-      } else if (element.nature === "comment") {
-        const comment = element as p.CommentNode;
-        contentMarkdown += `${indent}<!-- ${comment.content} -->\n`;
+      }
+
+      if (p.isParentTestCase(test) && test.subtests) {
+        const sub = test.subtests;
+        const title = mdEscape(sub.title ?? test.description);
+
+        push("", `<details>`, `<summary>Subtests: ${title}</summary>`);
+
+        if (sub.plan) {
+          const sp = sub.plan;
+          const spLine = sp.skip
+            ? `Plan: ${sp.start}..${sp.end} (SKIP: ${mdEscape(sp.skip.reason)})`
+            : `Plan: ${sp.start}..${sp.end}`;
+          push("", `> ${spLine}`);
+        }
+
+        renderBody(
+          sub.body as Iterable<p.TestSuiteElement<string, p.Diagnostics>>,
+          depth + 1,
+          num,
+        );
+
+        push("", `</details>`);
       }
     }
-    return contentMarkdown;
   }
+
+  renderBody(
+    tapContent.body as Iterable<p.TestSuiteElement<string, p.Diagnostics>>,
+    0,
+  );
+
+  const footers = Array.from(tapContent.footers ?? []);
+  if (footers.length) {
+    push("", "## Notes");
+    for (const f of footers) push(`- ${mdEscape(f.content)}`);
+  }
+
+  // De-dupe adjacent blank lines and ensure trailing newline
+  const out = lines.filter((l, i, a) => !(l === "" && a[i - 1] === ""));
+  return out.join("\n") + "\n";
 }
 
 export function tapFormat<Canonical extends string, Aliases extends string>(
