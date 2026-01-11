@@ -242,7 +242,10 @@ export function errorOnlyShellEventBus<Baggage = unknown>(
     (ev) => {
       const { cmd, args, code, success, stderr, stdout } = ev;
       if (!emitStdOut || emitStdOut(ev)) {
-        console.info(decode(stdout));
+        const out = decode(stdout);
+        if (out && out.trim().length > 0) {
+          console.info(out);
+        }
       }
       if (!success) {
         console.error(
