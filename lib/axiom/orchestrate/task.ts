@@ -187,6 +187,19 @@ export function tasksRunbook<
             ? await sh.auto(rendered.text, undefined, task)
             : undefined);
 
+        if (execResult) {
+          const er = Array.isArray(execResult) ? execResult : [execResult];
+          if (er.length) {
+            const aggER = sh.aggregatedRunResults(er);
+            if (!aggER.success) {
+              const error = new Error(
+                `Shell execution failed (exitCode=${aggER.exitCode})`,
+              );
+              return fail(ctx, error, { disposition: "continue", ...aggER });
+            }
+          }
+        }
+
         if (execResult && task.spawnableArgs.capture) {
           // before the task runs, "memoize" in interpolator.renderOne stores
           // the "source" (before execution) and now we need to overwrite that
@@ -344,6 +357,19 @@ export function exectutionReport<
           : (task.language.id == "shell"
             ? await sh.auto(rendered.text, undefined, task)
             : undefined);
+
+        if (execResult) {
+          const er = Array.isArray(execResult) ? execResult : [execResult];
+          if (er.length) {
+            const aggER = sh.aggregatedRunResults(er);
+            if (!aggER.success) {
+              const error = new Error(
+                `Shell execution failed (exitCode=${aggER.exitCode})`,
+              );
+              return fail(ctx, error, { disposition: "continue", ...aggER });
+            }
+          }
+        }
 
         if (execResult && task.spawnableArgs.capture) {
           // before the task runs, "memoize" in interpolator.renderOne stores

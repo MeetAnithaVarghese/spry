@@ -367,6 +367,32 @@ export function shell<Baggage = unknown>(init?: {
     }
   };
 
+  function aggregatedRunResults(results: RunResult[]) {
+    const exitCode = results.find((r) => r.code !== 0)?.code ??
+      results.find((r) => !r.success)?.code ??
+      0;
+
+    const success = results.every((r) => r.success && r.code === 0);
+
+    const stdout = () =>
+      new Uint8Array(
+        results.flatMap((r) => Array.from(r.stdout ?? [])),
+      );
+
+    const stderr = () =>
+      new Uint8Array(
+        results.flatMap((r) => Array.from(r.stderr ?? [])),
+      );
+
+    return {
+      success,
+      exitCode,
+      stdout,
+      stderr,
+      results,
+    };
+  }
+
   return {
     spawnText,
     spawnArgv,
@@ -375,5 +401,6 @@ export function shell<Baggage = unknown>(init?: {
     auto,
     splitArgvLine,
     strategy,
+    aggregatedRunResults,
   };
 }
