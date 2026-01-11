@@ -1,6 +1,7 @@
 import z from "@zod/zod";
 import { Code } from "types/mdast";
 import {
+  DEFAULT_ESCAPE,
   SafeBracketSpec,
   safeInterpolateAsync,
   SafeInterpolationFunctionRegistry,
@@ -405,6 +406,7 @@ export function codeInterpolationStrategy(
         memoized,
       }, {
         brackets,
+        escape: DEFAULT_ESCAPE,
         onMissing: async (expr, info) => {
           switch (info.bracketID as CodeInterpBracketID) {
             case "safe":
