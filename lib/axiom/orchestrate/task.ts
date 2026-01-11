@@ -176,9 +176,9 @@ export function tasksRunbook<
       });
       if (!rendered.error) {
         const spawnable = spawnConf && task.using
-          ? using(spawnConf, task.using)
+          ? using(spawnConf, task.using, undefined, { shell: sh })
           : (task.language.id !== "shell"
-            ? usingLanguage(task.language)
+            ? usingLanguage(task.language, undefined, { shell: sh })
             : undefined);
 
         const execResult = spawnable
@@ -323,8 +323,8 @@ export function exectutionReport<
     ? spawnablesConf(opts.directives)
     : undefined;
 
-  const execute = async (plan: TaskExecutionPlan<T>) =>
-    await executeDAG(plan, async (task, ctx) => {
+  const execute = async (plan: TaskExecutionPlan<T>) => {
+    return await executeDAG<T, Context>(plan, async (task, ctx) => {
       const rendered = await interpolator.renderOne(task, {
         locals: (_, supplied) => ({
           ...supplied,
@@ -334,9 +334,9 @@ export function exectutionReport<
       });
       if (!rendered.error) {
         const spawnable = spawnConf && task.using
-          ? using(spawnConf, task.using)
+          ? using(spawnConf, task.using, undefined, { shell: sh })
           : (task.language.id !== "shell"
-            ? usingLanguage(task.language)
+            ? usingLanguage(task.language, undefined, { shell: sh })
             : undefined);
 
         const execResult = spawnable
@@ -375,8 +375,7 @@ export function exectutionReport<
         return fail(ctx, rendered.error);
       }
     }, { eventBus: tasksEventBus.bus });
-
-  // TODO: if there's a placeholder like `spry-results` then put the output in there
+  };
 
   return { execute, sh, cis, interpolator, shellEventBus, tasksEventBus };
 }
