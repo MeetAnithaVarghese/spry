@@ -21,13 +21,12 @@ import { select } from "unist-util-select";
 
 import {
   errorOnlyShellEventBus,
-  markdownShellEventBus,
   shell,
   ShellBusEvents,
   verboseInfoShellEventBus,
 } from "../../spawn/mod.ts";
+import { emittableTapContent, tapStyles } from "../../tap/mod.ts";
 import { languageRegistry, LanguageSpec } from "../../universal/code.ts";
-import { MarkdownDoc } from "../../universal/fluent-md.ts";
 import {
   ColumnDef,
   ListerBuilder,
@@ -40,6 +39,7 @@ import {
   errorOnlyTaskEventBus,
   executionPlan,
   executionSubplan,
+  testAnythingProtocolTaskEventBus,
   verboseInfoTaskEventBus,
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
@@ -139,7 +139,6 @@ function lsCmdEngineField<Row extends LsTaskRow>(): Partial<
 export enum VerboseStyle {
   Plain = "plain",
   Rich = "rich",
-  Markdown = "markdown",
 }
 
 export function informationalEventBuses<T extends ExecutableTask, Context>(
@@ -167,18 +166,6 @@ export function informationalEventBuses<T extends ExecutableTask, Context>(
         shellEventBus: verboseInfoShellEventBus({ style: "rich", emitStdOut }),
         tasksEventBus: verboseInfoTaskEventBus<T, Context>({ style: "rich" }),
       };
-
-    case VerboseStyle.Markdown: {
-      const md = new MarkdownDoc();
-      const mdSEB = markdownShellEventBus({ md });
-      return {
-        mdSEB,
-        shellEventBus: mdSEB.bus,
-        tasksEventBus: undefined, // TODO: add tasks to markdown
-        md,
-        emit: () => console.log(md.write()),
-      };
-    }
   }
 }
 
@@ -240,6 +227,7 @@ export class CLI {
         this.taskCommand(),
         this.runCommand(),
         this.issuesCommand(),
+        this.tapCommand(),
         this.reportCommand(),
       ]
     ) {
@@ -305,7 +293,7 @@ export class CLI {
           if (tasks.find((t) => t.taskId() == taskId)) {
             const ieb = informationalEventBuses<
               typeof tasks[number],
-              { runId: string }
+              { readonly runId: string }
             >(opts?.verbose);
             const runbook = tasksRunbook({
               directives,
@@ -315,7 +303,6 @@ export class CLI {
             const rbResults = await runbook.execute(
               executionSubplan(executionPlan(tasks), [taskId]),
             );
-            if (ieb.emit) ieb.emit();
             if (opts.summarize) {
               console.log(rbResults);
             }
@@ -374,10 +361,75 @@ export class CLI {
               tasksBus: ieb.tasksEventBus,
             });
             const rbResults = await runbook.execute(plan);
-            if (ieb.emit) ieb.emit();
             if (opts.summarize) {
               console.log(rbResults);
             }
+          }
+        },
+      );
+  }
+
+  tapCommand() {
+    return new Command()
+      .name("tap")
+      .description(`execute all code cells as DAG and emit TAP`)
+      .type("verboseStyle", verboseStyle)
+      .type("tapStyle", new EnumType(tapStyles))
+      .arguments("[paths...:string]")
+      .option(...verboseOpt)
+      .option("--style <style:tapStyle>", "TAP style to emit", {
+        default: "canonical",
+      })
+      .option(
+        "--save <path:string>",
+        "Write the output to a file instead of STDOUT",
+      )
+      .option(
+        "--graph <name:string>",
+        "Run only the nodes in provided graph(s)",
+        {
+          collect: true,
+        },
+      )
+      .action(
+        async (opts, ...paths: string[]) => {
+          const { tasks, directives, issues } = await playbooksFromFiles(
+            paths.length ? paths : this.conf?.defaultFiles ?? [],
+            {
+              filter: opts.graph?.length
+                ? ((task) =>
+                  task.spawnableArgs.graphs?.some((g) =>
+                      opts.graph!.includes(g)
+                    )
+                    ? true
+                    : false)
+                : ((task) => task.spawnableArgs.graphs?.length ? false : true),
+            },
+          );
+          this.preface({ issues });
+          const plan = executionPlan(tasks);
+          const tapEB = testAnythingProtocolTaskEventBus<
+            typeof tasks[number],
+            { runId: string }
+          >();
+          const runbook = tasksRunbook({
+            directives,
+            shellBus: errorOnlyShellEventBus<typeof tasks[number]>({
+              style: "rich",
+              emitStdOut: () => false,
+            }),
+            tasksBus: tapEB.bus,
+          });
+          await runbook.execute(plan);
+          const tc = emittableTapContent(tapEB.tapContent());
+          if (tc) {
+            if (opts.save) {
+              Deno.writeTextFileSync(opts.save, tc);
+            } else {
+              console.log(tc);
+            }
+          } else {
+            console.error("Unknown TAP style: " + opts.style);
           }
         },
       );
