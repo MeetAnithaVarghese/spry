@@ -81,15 +81,6 @@ export function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * Default escaping strategy: if you pass a SafeString, use as-is; otherwise
- * HTML-escape the value.
- */
-export function defaultEscape(value: unknown): string {
-  if (SafeString.isSafe(value)) return value.value;
-  return escapeHtml(value);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Core interpolation types
 ////////////////////////////////////////////////////////////////////////////////
@@ -262,7 +253,7 @@ export interface SafeInterpolationOptions {
    *
    * Can be overridden per bracket via SafeBracketSpec.escape.
    */
-  readonly escape?: (
+  readonly escape: (
     value: unknown,
     expr: string,
     context: SafeInterpolationContext,
@@ -1043,8 +1034,7 @@ export function renderCompiledTemplate(
   context: SafeInterpolationContext,
 ): string {
   const { parts, options } = compiled;
-  const globalEscape = options.escape ??
-    ((value: unknown): string => defaultEscape(value));
+  const globalEscape = options.escape;
   const globalOnMissing = options.onMissing ?? "leave";
 
   const chunks: string[] = [];
@@ -1157,8 +1147,7 @@ export async function renderCompiledTemplateAsync(
   context: SafeInterpolationContext,
 ): Promise<string> {
   const { parts, options } = compiled;
-  const globalEscape = options.escape ??
-    ((value: unknown): string => defaultEscape(value));
+  const globalEscape = options.escape;
   const globalOnMissing = options.onMissing ?? "leave";
 
   const chunks: string[] = [];
@@ -1280,8 +1269,7 @@ function safeInterpolateInternal(
   depth: number,
 ): string {
   const parts = scanTemplate(template, options.brackets);
-  const globalEscape = options.escape ??
-    ((value: unknown): string => defaultEscape(value));
+  const globalEscape = options.escape;
   const globalOnMissing = options.onMissing ?? "leave";
 
   let out = "";
@@ -1387,8 +1375,7 @@ async function safeInterpolateInternalAsync(
   depth: number,
 ): Promise<string> {
   const parts = scanTemplate(template, options.brackets);
-  const globalEscape = options.escape ??
-    ((value: unknown): string => defaultEscape(value));
+  const globalEscape = options.escape;
   const globalOnMissing = options.onMissing ?? "leave";
 
   let out = "";
@@ -1499,9 +1486,16 @@ async function safeInterpolateInternalAsync(
 // Public API: safeInterpolate() + safeInterpolateAsync()
 ////////////////////////////////////////////////////////////////////////////////
 
-const DEFAULT_BRACKETS: readonly SafeBracketSpec[] = Object.freeze([
+export const DEFAULT_BRACKETS: readonly SafeBracketSpec[] = Object.freeze([
   { id: "typical", prefix: "$", open: "{", close: "}" },
 ]);
+
+export const DEFAULT_ESCAPE = (value: unknown) => {
+  if (SafeString.isSafe(value)) return value.value;
+  return String(
+    value === null || typeof value === "undefined" ? "" : value,
+  );
+};
 
 /**
  * Synchronous interpolation.
@@ -1517,7 +1511,7 @@ export function safeInterpolate(
   return safeInterpolateInternal(
     template,
     context,
-    options ?? { brackets: DEFAULT_BRACKETS },
+    options ?? { brackets: DEFAULT_BRACKETS, escape: DEFAULT_ESCAPE },
     0,
   );
 }
@@ -1537,7 +1531,7 @@ export async function safeInterpolateAsync(
   return await safeInterpolateInternalAsync(
     template,
     context,
-    options ?? { brackets: DEFAULT_BRACKETS },
+    options ?? { brackets: DEFAULT_BRACKETS, escape: DEFAULT_ESCAPE },
     0,
   );
 }

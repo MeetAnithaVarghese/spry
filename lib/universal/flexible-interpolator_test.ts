@@ -1,17 +1,26 @@
 // deno-lint-ignore-file require-await
 import { assertEquals, assertNotEquals } from "@std/assert";
-import { instructionsFromText } from "./posix-pi.ts";
 import {
   compileSafeTemplate,
-  defaultEscape,
+  escapeHtml,
   renderCompiledTemplate,
   renderCompiledTemplateAsync,
   safeInterpolate,
   safeInterpolateAsync,
-  SafeInterpolationContext,
-  SafeInterpolationOptions,
+  type SafeInterpolationContext,
+  type SafeInterpolationOptions,
   SafeString,
 } from "./flexible-interpolator.ts";
+import { instructionsFromText } from "./posix-pi.ts";
+
+/**
+ * Default escaping strategy: if you pass a SafeString, use as-is; otherwise
+ * HTML-escape the value.
+ */
+export function safeStringOrHtmlEscape(value: unknown): string {
+  if (SafeString.isSafe(value)) return value.value;
+  return escapeHtml(value);
+}
 
 Deno.test("Safe Interpolator - simple ${} with HTML escaping", () => {
   const ctx: SafeInterpolationContext = {
@@ -33,7 +42,7 @@ Deno.test("Safe Interpolator - simple ${} with HTML escaping", () => {
     },
     escape: (value, _expr, _ctx, _bracket) => {
       // For this test, always HTML-escape
-      return defaultEscape(value);
+      return safeStringOrHtmlEscape(value);
     },
   };
 
@@ -66,7 +75,7 @@ Deno.test("Safe Interpolator - simple ${} with HTML escaping (async)", async () 
       len: async ([v]) => Array.isArray(v) ? v.length : 0,
     },
     escape: async (value, _expr, _ctx, _bracket) => {
-      return defaultEscape(value);
+      return safeStringOrHtmlEscape(value);
     },
   };
 
@@ -283,7 +292,7 @@ Deno.test("Safe Interpolator - SafeString is passed through escape", () => {
 
   const opts: SafeInterpolationOptions = {
     brackets: [{ id: "html", prefix: "$", open: "{", close: "}" }],
-    escape: (value) => defaultEscape(value),
+    escape: (value) => safeStringOrHtmlEscape(value),
     resolvedPath: ({ value, path }) => {
       if (path.join(".") === "raw") {
         return SafeString.from(String(value));
@@ -308,7 +317,7 @@ Deno.test("Safe Interpolator - SafeString is passed through escape (async)", asy
 
   const opts: SafeInterpolationOptions = {
     brackets: [{ id: "html", prefix: "$", open: "{", close: "}" }],
-    escape: async (value) => defaultEscape(value),
+    escape: async (value) => safeStringOrHtmlEscape(value),
     resolvedPath: async ({ value, path }) => {
       if (path.join(".") === "raw") {
         return SafeString.from(String(value));
