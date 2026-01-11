@@ -15,6 +15,10 @@ import { bashEngine, cmdEngine, pwshEngine, shEngine } from "./os-shell.ts";
 import { envEngine, envrcEngine } from "./function-shell.ts";
 
 import { duckdbAvailable } from "./mod_test.ts";
+import {
+  surveilrShellEngine,
+  type SurveilrShellInit,
+} from "./sql-shell/surveilr.ts";
 
 const td = new TextDecoder();
 
@@ -31,6 +35,23 @@ async function binAvailable(argv0: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// Add this helper near binAvailable(...)
+async function hasSurveilr(): Promise<boolean> {
+  // these are created in YAML during the tests
+  Deno.remove("/tmp/surveilr-factory-test.sqlite.db").catch();
+  Deno.remove("/tmp/surveilr-factory-test2.sqlite.db").catch();
+  return await binAvailable("surveilr");
+}
+const surveilrAvailable = await hasSurveilr();
+
+function parseJsonArray(text: string): unknown[] {
+  const v = JSON.parse(text);
+  if (!Array.isArray(v)) {
+    throw new Error("expected surveilr shell output to be a JSON array");
+  }
+  return v;
 }
 
 Deno.test({
@@ -423,6 +444,111 @@ spawnables:
         assertMatch(td.decode(res.stdout).trim(), /^42$/);
       },
     });
+
+    await t.step(
+      "parses surveilr shell entry (engine tagging + sqliteDynExtn array)",
+      () => {
+        const yaml = `
+spawnables:
+  surveilr1:
+    engine: surveilr
+    stateDbFsPath: /tmp/surveilr-test.sqlite.db
+`;
+        const catalog = catalogFromYaml(yaml);
+
+        assert(catalog.surveilr1);
+
+        const s1 = catalog.surveilr1 as SurveilrShellInit;
+
+        // Engine identity tagging should match the engine wrapper helper.
+        assertEquals(s1.engineId, surveilrShellEngine.id);
+
+        // Field survival
+        assertEquals(s1.stateDbFsPath, "/tmp/surveilr-test.sqlite.db");
+      },
+    );
+
+    await t.step("throws when surveilr sqliteDynExtn is not an array", () => {
+      const yaml = `
+spawnables:
+  surveilr1:
+    engine: surveilr
+    stateDbFsPath: /tmp/surveilr-test.sqlite.db
+    sqliteDynExtn: /tmp/ext1.so
+`;
+      let threw = false;
+      try {
+        catalogFromYaml(yaml);
+      } catch {
+        threw = true;
+      }
+      assertEquals(threw, true);
+    });
+
+    await t.step({
+      name: "exec surveilr shell from catalog (stdin, JSON output)",
+      ignore: !surveilrAvailable,
+      fn: async () => {
+        const yaml = `
+spawnables:
+  surveilr1:
+    engine: surveilr
+    # use a temp db file for isolation (surveilr has its own internal tables)
+    stateDbFsPath: /tmp/surveilr-factory-test.sqlite.db
+`;
+        const catalog = catalogFromYaml(yaml);
+        const db = using(catalog, "surveilr1");
+
+        const res = await db.spawn({
+          kind: "text",
+          text: "select 1 as n;",
+        });
+
+        assert(res.success);
+
+        const out = td.decode(res.stdout);
+        const rows = parseJsonArray(out);
+        assertEquals(rows.length, 1);
+        assertEquals((rows[0] as Record<string, unknown>).n, 1);
+      },
+    });
+
+    await t.step({
+      name:
+        "exec surveilr: DDL/DML then DQL in separate calls (documented constraint)",
+      ignore: !surveilrAvailable,
+      fn: async () => {
+        const yaml = `
+spawnables:
+  surveilr1:
+    engine: surveilr
+    stateDbFsPath: /tmp/surveilr-factory-test2.sqlite.db
+`;
+        const catalog = catalogFromYaml(yaml);
+        const db = using(catalog, "surveilr1");
+
+        // DDL/DML only
+        const ddlDml = [
+          "create table synthetic_table1(id integer primary key, name text not null, age int);",
+          "insert into synthetic_table1(name, age) values ('Asha', 31), ('Bilal', 27), ('Zoya', 5);",
+        ].join("\n");
+
+        const r1 = await db.spawn({ kind: "text", text: ddlDml });
+        assert(r1.success);
+
+        // DQL only
+        const dql =
+          "select name from synthetic_table1 where age >= 27 order by age desc;";
+        const r2 = await db.spawn({ kind: "text", text: dql });
+        assert(r2.success);
+
+        const rows = parseJsonArray(td.decode(r2.stdout));
+        assertEquals(rows.map((r) => (r as Record<string, unknown>).name), [
+          "Asha",
+          "Bilal",
+        ]);
+      },
+    });
   },
 });
 
@@ -620,5 +746,32 @@ Deno.test({
         assert(out.includes("ok"));
       },
     });
+
+    // In the second Deno.test (YAML from object), add this step:
+
+    await t.step(
+      "parses surveilr entry from object (engine tagging + sqliteDynExtn)",
+      () => {
+        const obj = {
+          spawnables: {
+            surveilr1: {
+              engine: "surveilr",
+              stateDbFsPath: "/tmp/surveilr-obj.sqlite.db",
+              output: "json",
+              sqliteDynExtn: ["/tmp/extA.so"],
+              noObservability: true,
+            },
+          },
+        };
+
+        const catalog = catalogFromYaml(obj);
+
+        const s1 = catalog.surveilr1 as SurveilrShellInit;
+        assertEquals(s1.engineId, surveilrShellEngine.id);
+        assertEquals(s1.stateDbFsPath, "/tmp/surveilr-obj.sqlite.db");
+        assertEquals(s1.sqliteDynExtn, ["/tmp/extA.so"]);
+        assertEquals(s1.output, "json");
+      },
+    );
   },
 });

@@ -113,6 +113,10 @@ import {
   sqlite3Engine,
   sqliteInit,
 } from "./sql-shell/mod.ts";
+import {
+  surveilrShellEngine,
+  SurveilrShellInit,
+} from "./sql-shell/surveilr.ts";
 
 /**
  * Parse a YAML catalog definition (or already-parsed object) into a
@@ -242,6 +246,47 @@ export function catalogFromYaml(
       continue;
     }
 
+    if (engine === "surveilr" || engine === "surveilr-shell") {
+      out[name] = SurveilrShellInit({
+        ...base,
+        // match surveilr CLI default; keep configurable
+        stateDbFsPath: asString(entry.stateDbFsPath) ??
+          asString(entry.state_db_fs_path) ??
+          asString(entry.stateDb) ??
+          asString(entry.file) ??
+          "resource-surveillance.sqlite.db",
+        surveilrShellEngine: asString(entry.surveilrShellEngine) as
+          | "duckdb"
+          | "rusqlite"
+          | "rhai"
+          | undefined, // rusqlite|duckdb|rhai (surveilr-side)
+        cmd: asString(entry.cmd),
+        output: asString(entry.output) as "json" | "line" | "table" | undefined, // json|line|table (surveilr-side)
+        silent: asBool(entry.silent),
+        noObservability: asBool(entry.noObservability) ??
+          asBool(entry.no_observability),
+        emitSessionId: asBool(entry.emitSessionId) ??
+          asBool(entry.emit_session_id),
+
+        // optional extras if your init type supports them
+        sqlpkg: asString(entry.sqlpkg),
+        sqliteDynExtn: normalizeStringArray(
+          entry.sqliteDynExtn ?? entry.sqlite_dyn_extn,
+        ),
+        importEnv: asString(entry.importEnv) ??
+          asString(entry.import_env),
+        sessionStateTableName: asString(entry.sessionStateTableName) ??
+          asString(entry.session_state_table_name),
+        rssdIdentifier: asString(entry.rssdIdentifier) ??
+          asString(entry.rssd_identifier),
+        rssdAttachSqlStmt: asString(entry.rssdAttachSqlStmt) ??
+          asString(entry.rssd_attach_sql_stmt),
+        rssdNoAttach: asBool(entry.rssdNoAttach) ??
+          asBool(entry.rssd_no_attach),
+      });
+      continue;
+    }
+
     // -------------------------- OS shell engines ---------------------------
 
     const flags = normalizeStringArray(entry.flags);
@@ -284,7 +329,7 @@ export function catalogFromYaml(
 
     throw new Error(
       `catalogFromYaml: entry '${name}' has unknown engine '${engine}'. ` +
-        `Expected postgres|sqlite|duckdb|bash|sh|zsh|fish|pwsh|cmd.`,
+        `Expected postgres|sqlite|duckdb|surveilr|bash|sh|zsh|fish|pwsh|cmd.`,
     );
   }
 
@@ -437,6 +482,7 @@ function engineFromCatalogEntry(
   if (id === psqlEngine.id) return psqlEngine;
   if (id === sqlite3Engine.id) return sqlite3Engine;
   if (id === duckdbEngine.id) return duckdbEngine;
+  if (id === surveilrShellEngine.id) return surveilrShellEngine;
 
   // OS shells
   if (id === bashEngine.id) return bashEngine;
@@ -466,6 +512,7 @@ export function engineNameFromCatalogEntry(
   if (id === psqlEngine.id) return "postgres";
   if (id === sqlite3Engine.id) return "sqlite";
   if (id === duckdbEngine.id) return "duckdb";
+  if (id === surveilrShellEngine.id) return "surveilr";
 
   // OS shells
   if (id === bashEngine.id) return "bash";
@@ -496,6 +543,7 @@ function engineFromLanguageSpec(
     psqlEngine,
     sqlite3Engine,
     duckdbEngine,
+    surveilrShellEngine,
 
     // OS shells
     bashEngine,
