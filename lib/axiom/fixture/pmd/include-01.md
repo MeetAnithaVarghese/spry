@@ -64,8 +64,10 @@ instructions which are "expanded" or "exploded" into their shells.
 REMARKS this will go into the body of each generated cell block
 sql mySQL1 --include "${mdSrcDirname}/../sundry/sample.sql"
 csv myCSV1 --include "${mdSrcDirname}/../sundry/comma-separated-values.csv"
-# this is a comment that will be ignore
+# this is a comment that will be ignored
 json myJSON1 --include https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json
+# the following file shows how to import multiple concatenated files
+csv myCSV2cat --include "${mdSrcDirname}/../sundry/comma-separated-values.csv" --include "${mdSrcDirname}/../sundry/group1-allergies.csv"
 ```
 
 The above "expands"

@@ -361,12 +361,12 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const gr = graph(root);
 
     assertEquals(gr.relCounts, {
-      containedInSection: 87,
+      containedInSection: 88,
       frontmatter: 4,
       isImportant: 1,
-      isCode: 44,
+      isCode: 45,
       hasIssues: 14,
-      isActionableCodeCandidate: 40,
+      isActionableCodeCandidate: 41,
       isDirectiveCandidate: 3,
     });
 
@@ -550,12 +550,12 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const externals = selectAll("code", root).filter(
       isExternalResource<Code>,
     );
-    assertEquals(externals.length, 6);
+    assertEquals(externals.length, 7);
     assertEquals(
       externals.map((c) =>
-        `${c.lang} ${
-          c.meta?.replace(/--include.*/, "--include YES")
-        } ${c.includeResource.mimeType} [${
+        `${c.lang} ${c.meta?.replace(/--include.*/, "--include YES")} ${
+          c.includeResources[0]?.mimeType ?? ""
+        } [${
           nodeIssues.is(c)
             ? (c.data.issues.map((i) =>
               `${i.severity}: ${i.message.match(re)?.[0]}`
@@ -570,6 +570,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
         "sql mySQL1 --include YES application/sql [0] (text: 1291)", // from "Style 4 variation of Style 3" Section
         "csv myCSV1 --include YES text/csv [0] (text: 8288)", // from "Style 4 variation of Style 3" Section
         "json myJSON1 --include YES application/json [0] (text: 63732)", // from "Style 4 variation of Style 3" Section
+        "csv myCSV2cat --include YES text/csv [0] (text: 151013)", // concatenated from "Style 4 variation of Style 3" Section
       ],
     );
   });

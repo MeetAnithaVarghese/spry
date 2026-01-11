@@ -1,8 +1,10 @@
 /**
  * code-contribute.ts
  *
- * A small family of Unified/Remark plugins that implement **spec-driven inclusion**, **inline inclusion**,
- * and **extension imports** of external resources into an mdast tree.
+ * A small family of Unified/Remark plugins that implement:
+ * - spec-driven inclusion (contribute/include/import spec blocks)
+ * - inline inclusion (a single code node can self-resolve one or more `--include` flags)
+ * - inline extension imports (a single code node can expose `--extension`)
  *
  * The goal is to keep Markdown source readable (short specs) while allowing the processor to:
  * - interpret fenced code blocks as *inclusion specifications* (` ```contribute ` / ` ```include ` / ` ```import `),
@@ -38,10 +40,12 @@
  *
  * 2) Single-node include (inline include)
  *    Any regular `code` node (not a spec block) may opt into inclusion if `code.meta` contains:
- *      - `--include <path-or-url>`
+ *      - one or more `--include <path-or-url>` flags
  *
- *    This attaches `includeResource` + `acquireResources()` so that the node can replace its own `value`
- *    with the acquired external text later.
+ *    This attaches:
+ *      - `includeResources: ResourceProvenance[]` (in appearance order)
+ *      - `acquireResources()` which loads all text resources and concatenates them into `code.value`
+ *      - `resourcesAcquired` boolean
  *
  * 3) Extension import (inline extension)
  *    Any regular `code` node (including non-spec blocks) may opt into extension behavior if `code.meta` contains:
@@ -364,7 +368,7 @@ function contributeSpecs(
 }
 
 export type ExternalResource<N extends Node> = N & {
-  includeResource: ResourceProvenance;
+  includeResources: ResourceProvenance[];
   acquireResources: () => Promise<void>;
   resourcesAcquired: boolean;
 };
@@ -372,9 +376,14 @@ export type ExternalResource<N extends Node> = N & {
 export function isExternalResource<N extends Node>(
   node: Node,
 ): node is ExternalResource<N> {
-  return node && "includeResource" in node && node.includeResource
-    ? true
-    : false;
+  const n = node as Any;
+  return !!(
+    n &&
+    typeof n === "object" &&
+    Array.isArray(n.includeResources) &&
+    n.includeResources.length > 0 &&
+    typeof n.acquireResources === "function"
+  );
 }
 
 export const interpolatedCodeMeta = dataBag<
@@ -382,6 +391,21 @@ export const interpolatedCodeMeta = dataBag<
   { original: string },
   Code
 >("isInterpolatedCodeMeta");
+
+function scanMetaForIncludes(meta: string): string[] {
+  // Supports:
+  //   --include path
+  //   --include=path
+  //   --include="path with spaces"
+  //   --include='path with spaces'
+  const re = /(?:^|\s)--include(?:=|\s+)(?:"([^"]+)"|'([^']+)'|([^\s]+))/g;
+  const out: string[] = [];
+  for (let m = re.exec(meta); m; m = re.exec(meta)) {
+    const v = (m[1] ?? m[2] ?? m[3] ?? "").trim();
+    if (v) out.push(v);
+  }
+  return out;
+}
 
 export function externalResource(
   code: Code,
@@ -394,28 +418,63 @@ export function externalResource(
     code.meta = safeInterpolate(originalMeta, { code, ...interpolationCtx });
     interpolatedCodeMeta.attach(code, { original: originalMeta });
   }
+
   const codeFM = codeFrontmatter(code);
-  const include = codeFM?.pi.flags["include"];
-  if (typeof include === "string") {
-    const erNode = code as ExternalResource<Code>;
-    const provenance = provenanceFromPath(include);
-    erNode.includeResource = provenance;
-    erNode.resourcesAcquired = false;
-    erNode.acquireResources = async () => {
-      const r = resourceFromPath(include);
+  if (!codeFM) return;
+
+  // Collect includes from PI flags (if repeated flags are preserved by the parser),
+  // then fallback to scanning meta to ensure repeated --include are captured.
+  const includes: string[] = [];
+
+  const piInclude = (codeFM.pi.flags as Any)?.["include"];
+  if (typeof piInclude === "string" && piInclude.trim()) {
+    includes.push(piInclude.trim());
+  } else if (Array.isArray(piInclude)) {
+    for (const v of piInclude) {
+      if (typeof v === "string" && v.trim()) includes.push(v.trim());
+    }
+  }
+
+  const metaToScan = code.meta ?? "";
+  if (metaToScan.includes("--include")) {
+    includes.push(...scanMetaForIncludes(metaToScan));
+  }
+
+  // De-dupe exact repeats while preserving order.
+  const seen = new Set<string>();
+  const includeList = includes.filter((p) => {
+    if (!p) return false;
+    if (seen.has(p)) return false;
+    seen.add(p);
+    return true;
+  });
+
+  if (!includeList.length) return;
+
+  const erNode = code as ExternalResource<Code>;
+  erNode.includeResources = includeList.map((p) => provenanceFromPath(p));
+  erNode.resourcesAcquired = false;
+
+  erNode.acquireResources = async () => {
+    const parts: string[] = [];
+    let allOk = true;
+
+    for (const includePath of includeList) {
+      const r = resourceFromPath(includePath);
+
       if (r.strategy.encoding !== "utf8-text") {
         addIssues(code, [{
           message:
             `MIME '${r.provenance.mimeType}' is not text, ${r.provenance.path} not injected into code[${code.lang}].value`,
           severity: "info",
         }]);
-        return;
+        allOk = false;
+        continue;
       }
 
       const text = await r.safeText();
       if (typeof text === "string") {
-        code.value = text;
-        erNode.resourcesAcquired = true;
+        parts.push(text);
       } else {
         addIssues(code, [{
           message:
@@ -423,9 +482,18 @@ export function externalResource(
           severity: "error",
           error: text,
         }]);
+        allOk = false;
       }
-    };
-  }
+    }
+
+    if (parts.length) {
+      // Simple concatenation with a single newline between parts.
+      code.value = parts.join("\n");
+      erNode.resourcesAcquired = allOk;
+    } else {
+      erNode.resourcesAcquired = false;
+    }
+  };
 }
 
 export type ExtensionImportResult<
@@ -519,7 +587,7 @@ export const prepareExternalContributions: Plugin<[ContributeOptions?], Root> =
     return (tree, vfile) => {
       visit(tree, "code", (code: Code) => {
         if (!isSpecBlock(code)) {
-          // we just want to process an include for a single code block
+          // Inline behaviors for a single code block.
           if (code.meta?.includes("--include")) {
             externalResource(code, interpolationCtx?.(tree, vfile));
           } else if (code.meta?.includes("--extension")) {
@@ -655,6 +723,7 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
     },
     specs,
   } = ctx;
+
   const position = specs.position
     ? {
       line: specs.position.start.line + pathLine,
@@ -662,9 +731,11 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
       offset: undefined,
     }
     : undefined;
+
   let directive: string | undefined;
   let rewritePathFind: string | undefined;
   let rewritePathRepl: string | undefined;
+
   const rewrittenMeta = rewrittenInstructions(metaRaw, {
     onFlag: (flag, value) => {
       switch (flag) {
@@ -686,15 +757,18 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
     },
     dashedOnly: true,
   });
+
   const destPathRewriter = rewritePathFind && rewritePathRepl
     ? createRegexRewriter(rewritePathFind, rewritePathRepl, { cache: true })
     : undefined;
+
   const destPath = destPathRewriter
     ? destPathRewriter(destPathRaw)
     : destPathRaw;
   if (destPath !== destPathRaw) {
     (ctx.rc.destPath as string) = destPath;
   }
+
   const result: IncludedNode<Code> = {
     type: "code",
     lang,
@@ -731,6 +805,7 @@ const generatedCodeNode: IncludeNodeInsertOptions["generatedNode"] = (ctx) => {
       }
     },
   };
+
   return result;
 };
 
@@ -754,6 +829,7 @@ export const prepareIncludedNodes: Plugin<[IncludeNodeInsertOptions], Root> = (
     visit(tree, "code", (code: Code, index, parent) => {
       if (parent == null || index == null) return;
       if (!isContributeSpec(code)) return;
+
       const isb = isSpecBlock(code, vfile, tree);
       if (!isb) return;
 
@@ -765,6 +841,7 @@ export const prepareIncludedNodes: Plugin<[IncludeNodeInsertOptions], Root> = (
 
       const generated: IncludedNode<Node>[] = [];
       const contrib = code.contributables(isb);
+
       for (const rc of contrib.provenance()) {
         const newNode = generatedNode({ rc, specs: code });
         generated.push(newNode);
