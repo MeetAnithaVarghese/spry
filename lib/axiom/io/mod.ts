@@ -41,6 +41,7 @@ import {
   type MarkdownProvenance,
   vfileResourcesFactory,
 } from "./resource.ts";
+import { contributeExpand } from "../remark/code-contribute-expand.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -67,15 +68,18 @@ export function mardownParserPipeline() {
     mdSrcDirname: dirname(resolve(vfile.path)),
   });
   const consumeEdges = (
-    edges: { generatedBy: Node; included: Node }[],
+    edges: ({ generatedBy: Node; included: Node } | {
+      generatedBy: Node;
+      expanded: Node;
+    })[],
     vfile: VFile,
   ) => {
     if (graphEdgesVFileDataBag.is(vfile)) {
       vfile.data.edges.push(...edges.map((e) => ({
-        rel: "isIncludedNode",
+        rel: "included" in e ? "isIncludedNode" : "isExpandedNode",
         from: e.generatedBy,
-        to: e.included,
-      } satisfies GraphEdge<"isIncludedNode">)));
+        to: "included" in e ? e.included : e.expanded,
+      } satisfies GraphEdge<"isIncludedNode" | "isExpandedNode">)));
     }
   };
 
@@ -85,6 +89,7 @@ export function mardownParserPipeline() {
     .use(remarkDirective) // creates directives from :[x] ::[x] and :::x
     .use(docFrontmatter, { interpolate: true }) // parses extracted YAML and stores at md AST root
     .use(remarkGfm) // support GitHub flavored markdown
+    .use(contributeExpand, { consumeEdges }) // // find code cells which want to be "expanded" from within (aliased cells)
     .use(prepareExternalContributions, { interpolationCtx }) // find code cells which want to be "contributed" from local/remote files
     .use(prepareIncludedNodes, {
       consumeEdges,

@@ -53,6 +53,23 @@ this should be replaced with the content of sundry/comma-separated-values.csv.
 this should be replaced with the content of https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json
 ```
 
+## Style 4 variation of Style 3
+
+The following shows includes which pull in text content (not binary) into
+defined `code` cells but do so more conveniently in a single cell. You can
+define multiple "empty" command shells like the above into single-line
+instructions which are "expanded" or "exploded" into their shells.
+
+```contribute expand --interpolate
+REMARKS this will go into the body of each generated cell block
+sql mySQL1 --include "${mdSrcDirname}/../sundry/sample.sql"
+csv myCSV1 --include "${mdSrcDirname}/../sundry/comma-separated-values.csv"
+# this is a comment that will be ignore
+json myJSON1 --include https://microsoftedge.github.io/Demos/json-dummy-data/64KB.json
+```
+
+The above "expands"
+
 ## Alternatives
 
 These are identical, `import` and `include` are shortcuts for

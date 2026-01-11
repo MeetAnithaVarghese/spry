@@ -361,13 +361,13 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const gr = graph(root);
 
     assertEquals(gr.relCounts, {
-      containedInSection: 76,
-      frontmatter: 3,
+      containedInSection: 87,
+      frontmatter: 4,
       isImportant: 1,
-      isCode: 40,
+      isCode: 44,
       hasIssues: 14,
-      isActionableCodeCandidate: 37,
-      isDirectiveCandidate: 2,
+      isActionableCodeCandidate: 40,
+      isDirectiveCandidate: 3,
     });
 
     const contributeCodeBlocks = selectAll("code", root).filter(
@@ -375,7 +375,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
         (n as Code).lang === contributeKeyword ||
         (n as Code).lang === importKeyword,
     ) as Code[];
-    assertEquals(contributeCodeBlocks.length, 2);
+    assertEquals(contributeCodeBlocks.length, 3);
 
     const [firstNode, secondNode] = contributeCodeBlocks;
     assertFalse(nodeIssues.is(secondNode));
@@ -550,7 +550,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     const externals = selectAll("code", root).filter(
       isExternalResource<Code>,
     );
-    assertEquals(externals.length, 3);
+    assertEquals(externals.length, 6);
     assertEquals(
       externals.map((c) =>
         `${c.lang} ${
@@ -564,9 +564,12 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
         }] (text: ${c.value.length})`
       ),
       [
-        "sql mySQL1 --include YES application/sql [0] (text: 1291)",
-        "csv myCSV1 --include YES text/csv [0] (text: 8288)",
-        "json myJSON1 --include YES application/json [0] (text: 63732)",
+        "sql mySQL1 --include YES application/sql [0] (text: 1291)", // from "Style 3" Section
+        "csv myCSV1 --include YES text/csv [0] (text: 8288)", // from "Style 3" Section
+        "json myJSON1 --include YES application/json [0] (text: 63732)", // from "Style 3" Section
+        "sql mySQL1 --include YES application/sql [0] (text: 1291)", // from "Style 4 variation of Style 3" Section
+        "csv myCSV1 --include YES text/csv [0] (text: 8288)", // from "Style 4 variation of Style 3" Section
+        "json myJSON1 --include YES application/json [0] (text: 63732)", // from "Style 4 variation of Style 3" Section
       ],
     );
   });
