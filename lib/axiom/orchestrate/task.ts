@@ -57,7 +57,7 @@ import {
   usingLanguage,
 } from "../../spawn/mod.ts";
 import { eventBus } from "../../universal/event-bus.ts";
-import { renderer } from "../../universal/render.ts";
+import { BodyInput, renderer } from "../../universal/render.ts";
 import {
   executeDAG,
   fail,
@@ -69,6 +69,76 @@ import {
 } from "../../universal/task.ts";
 import { codeInterpolationStrategy } from "../mdast/code-interpolate.ts";
 import { Directive, ExecutableTask } from "../projection/playbook.ts";
+
+class RecursionState {
+  static readonly MAX_RECURSIVE_ITERS = 9;
+
+  #iteration = 0;
+  #recursionBody: BodyInput | undefined;
+  #lastBody: BodyInput | undefined;
+
+  constructor(readonly count: number) {
+    if (count < 1) {
+      throw new Error(`RecursionState count must be >= 1, got ${count}`);
+    }
+    if (count > RecursionState.MAX_RECURSIVE_ITERS) {
+      throw new Error(
+        `Recursion count ${count} exceeds max ${RecursionState.MAX_RECURSIVE_ITERS}`,
+      );
+    }
+  }
+
+  get isFirst() {
+    return this.#iteration === 0;
+  }
+
+  shouldContinue() {
+    return this.#iteration < this.count;
+  }
+
+  next() {
+    this.#iteration++;
+    if (this.#iteration > RecursionState.MAX_RECURSIVE_ITERS) {
+      throw new Error(
+        `Recursion iteration ${this.#iteration} exceeded ${RecursionState.MAX_RECURSIVE_ITERS}`,
+      );
+    }
+  }
+
+  get body() {
+    if (this.#recursionBody === undefined) {
+      throw new Error("Accessing undefined RecursionState.#recursionBody");
+    }
+    return this.#recursionBody;
+  }
+
+  set body(value: BodyInput) {
+    this.#recursionBody = value;
+  }
+
+  sameAsLast(body: BodyInput) {
+    return this.#lastBody !== undefined && this.#lastBody === body;
+  }
+
+  remember(body: BodyInput) {
+    this.#lastBody = body;
+  }
+}
+
+function recursionState(task: ExecutableTask) {
+  const raw = task.spawnableCodeFM.pi.flags["recurse"] ??
+    task.spawnableCodeFM.pi.flags["iterate"];
+  if (raw === undefined) return false;
+
+  if (raw === true || raw === "true") return new RecursionState(2);
+
+  const n = typeof raw === "number" ? Math.floor(raw) : Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return false;
+
+  return new RecursionState(
+    Math.min(n, RecursionState.MAX_RECURSIVE_ITERS),
+  );
+}
 
 export function spawnablesConf(
   directives: readonly Directive[],
@@ -165,16 +235,23 @@ export function tasksRunbook<
     ? spawnablesConf(opts.directives)
     : undefined;
 
-  const execute = async (plan: TaskExecutionPlan<T>) =>
-    await executeDAG(plan, async (task, ctx) => {
-      const rendered = await interpolator.renderOne(task, {
-        locals: (_, supplied) => ({
-          ...supplied,
-          TASK: task,
-          resolveRelPath: task.provenance.resolveRelPath,
-        }),
-      });
-      if (!rendered.error) {
+  const execute = async (plan: TaskExecutionPlan<T>) => {
+    return await executeDAG(plan, async (task, ctx) => {
+      const rs = recursionState(task);
+      const iterations = rs ? rs.count : 1;
+
+      for (let i = 0; i < iterations; i++) {
+        const rendered = await interpolator.renderOne(task, {
+          body: (code) => !rs || rs.isFirst ? cis.content.body(code) : rs.body,
+          locals: (_, supplied) => ({
+            ...supplied,
+            TASK: task,
+            resolveRelPath: task.provenance.resolveRelPath,
+          }),
+        });
+
+        if (rendered.error) return fail(ctx, rendered.error);
+
         const spawnable = spawnConf && task.using
           ? using(spawnConf, task.using, undefined, { shell: sh })
           : (task.language.id !== "shell"
@@ -187,7 +264,14 @@ export function tasksRunbook<
             ? await sh.auto(rendered.text, undefined, task)
             : undefined);
 
-        if (execResult) {
+        if (!execResult) {
+          return fail(
+            ctx,
+            "execResult is NULL (don't know how to handle this executable block)",
+          );
+        }
+
+        {
           const er = Array.isArray(execResult) ? execResult : [execResult];
           if (er.length) {
             const aggER = sh.aggregatedRunResults(er);
@@ -200,31 +284,28 @@ export function tasksRunbook<
           }
         }
 
-        if (execResult && task.spawnableArgs.capture) {
-          // before the task runs, "memoize" in interpolator.renderOne stores
-          // the "source" (before execution) and now we need to overwrite that
-          // "memoization" with the actual execution's stdout / result
-          const output = Array.isArray(execResult)
-            ? execResult.map((er) => td.decode(er.stdout)).join("\n")
-            : td.decode(execResult.stdout);
-          if (task.spawnableArgs.capture) {
-            cis.memory.memoize?.(output, {
-              identity: task.taskId(),
-              captureSpecs: task.spawnableArgs.capture,
-            });
-          }
+        const output = Array.isArray(execResult)
+          ? execResult.map((er) => td.decode(er.stdout)).join("\n")
+          : td.decode(execResult.stdout);
+
+        if (task.spawnableArgs.capture) {
+          cis.memory.memoize?.(output, {
+            identity: task.taskId(),
+            captureSpecs: task.spawnableArgs.capture,
+          });
         }
-        if (!execResult) {
-          return fail(
-            ctx,
-            "execResult is NULL (don't know how to handle this executable block)",
-          );
+
+        if (rs) {
+          if (rs.sameAsLast(output)) break;
+          rs.remember(output);
+          rs.body = output;
+          rs.next();
         }
-        return ok(ctx);
-      } else {
-        return fail(ctx, rendered.error);
       }
+
+      return ok(ctx);
     }, { eventBus: opts?.tasksBus });
+  };
 
   return { execute, sh, cis, interpolator };
 }

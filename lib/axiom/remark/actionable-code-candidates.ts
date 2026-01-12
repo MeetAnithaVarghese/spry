@@ -145,6 +145,7 @@ import {
   mergeFlexibleText,
 } from "../../universal/posix-pi.ts";
 import {
+  type CodeFrontmatter,
   codeFrontmatter,
   CodeFrontmatterPresetsFactory,
   presetsFactory,
@@ -237,6 +238,7 @@ export const actionableCodeSchema = z.discriminatedUnion("nature", [
     spawnableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema,
     using: z.string().optional(),
+    spawnableCodeFM: z.custom<CodeFrontmatter>(), // uptyped, parsed but not validated
     spawnableArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
   }).strict(),
   z.object({
@@ -244,6 +246,7 @@ export const actionableCodeSchema = z.discriminatedUnion("nature", [
     materializableIdentity: z.string().min(1), // required, names the task
     language: languageSpecSchema.optional(),
     isBlob: z.boolean().optional(),
+    materializationCodeFM: z.custom<CodeFrontmatter>(), // uptyped, parsed but not validated
     materializationArgs: actionableCodePiFlagsSchema, // typed, parsed, validated
     materializationAttrs: z.custom<Record<string, unknown>>().optional(),
   }).strict(),
@@ -341,6 +344,7 @@ export const actionableCodeCandidates: Plugin<
                 actionable.nature = "EXECUTABLE";
                 actionable.spawnableIdentity = identity;
                 actionable.language = codeFM.langSpec!;
+                actionable.spawnableCodeFM = codeFM;
                 actionable.spawnableArgs = args.data;
                 if (args.data.executable && args.data.executable.texts.length) {
                   actionable.using = args.data.executable.texts[0];
@@ -355,6 +359,7 @@ export const actionableCodeCandidates: Plugin<
                 actionable.materializableIdentity = identity;
                 actionable.language = codeFM.langSpec;
                 actionable.isBlob = code.lang == "utf8";
+                actionable.materializationCodeFM = codeFM;
                 actionable.materializationArgs = args.data;
                 actionable.materializationAttrs = codeFM.attrs;
               }
