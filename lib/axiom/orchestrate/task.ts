@@ -422,6 +422,9 @@ export function exectutionReport<
       const rs = recursionState(task);
       const iterations = rs ? rs.count : 1;
 
+      let finalContent: string | undefined;
+      let finalNature: "execution-result" | "render-result" | undefined;
+
       for (let i = 0; i < iterations; i++) {
         const rendered = await interpolator.renderOne(task, {
           body: (code) => !rs || rs.isFirst ? cis.content.body(code) : rs.body,
@@ -446,50 +449,61 @@ export function exectutionReport<
             ? await sh.auto(rendered.text, undefined, task)
             : undefined);
 
-        if (execResult) {
-          const er = Array.isArray(execResult) ? execResult : [execResult];
-          if (er.length) {
-            const aggER = sh.aggregatedRunResults(er);
-            if (!aggER.success) {
-              const error = new Error(
-                `Shell execution failed (exitCode=${aggER.exitCode})`,
-              );
-              return fail(ctx, error, { disposition: "continue", ...aggER });
-            }
+        if (!execResult) {
+          finalContent =
+            "execResult is NULL (don't know how to handle this executable block)";
+          finalNature = "render-result";
+          break;
+        }
+
+        const er = Array.isArray(execResult) ? execResult : [execResult];
+        if (er.length) {
+          const aggER = sh.aggregatedRunResults(er);
+          if (!aggER.success) {
+            const error = new Error(
+              `Shell execution failed (exitCode=${aggER.exitCode})`,
+            );
+            return fail(ctx, error, { disposition: "continue", ...aggER });
           }
         }
 
-        if (execResult) {
-          const output = Array.isArray(execResult)
-            ? execResult.map((er) => td.decode(er.stdout)).join("\n")
-            : td.decode(execResult.stdout);
+        const output = Array.isArray(execResult)
+          ? execResult.map((r) => td.decode(r.stdout)).join("\n")
+          : td.decode(execResult.stdout);
 
-          if (task.spawnableArgs.capture) {
-            cis.memory.memoize?.(output, {
-              identity: task.taskId(),
-              captureSpecs: task.spawnableArgs.capture,
-            });
-            replaceContents(task, output, "execution-result");
-          } else {
-            replaceContents(task, rendered.text, "render-result");
-          }
+        if (task.spawnableArgs.capture) {
+          cis.memory.memoize?.(output, {
+            identity: task.taskId(),
+            captureSpecs: task.spawnableArgs.capture,
+          });
 
-          if (rs) {
-            if (rs.sameAsLast(output)) break;
-            rs.remember(output);
-            rs.body = output;
-            rs.next();
-          } else {
-            break;
+          // Only treat non-empty output as a "new final" value.
+          // If output is empty, keep previous finalContent (don’t wipe the cell).
+          if (output.length > 0) {
+            finalContent = output;
+            finalNature = "execution-result";
           }
         } else {
-          replaceContents(
-            task,
-            "execResult is NULL (don't know how to handle this executable block)",
-            "render-result",
-          );
-          return ok(ctx);
+          // If not capturing, the rendered text is what we want to store.
+          finalContent = rendered.text;
+          finalNature = "render-result";
         }
+
+        if (rs) {
+          // If the tool outputs nothing, treat it as "no change" and stop.
+          if (output.length === 0) break;
+
+          if (rs.sameAsLast(output)) break;
+          rs.remember(output);
+          rs.body = output;
+          rs.next();
+        } else {
+          break;
+        }
+      }
+
+      if (finalContent !== undefined && finalNature !== undefined) {
+        replaceContents(task, finalContent, finalNature);
       }
 
       return ok(ctx);
