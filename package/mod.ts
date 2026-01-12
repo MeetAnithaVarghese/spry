@@ -4,7 +4,7 @@ export * from "./code.ts";
 export * from "./collectable.ts";
 export * from "./depends.ts";
 export * from "./directive.ts";
-// export * from "./doctor.ts"; // Removed due to external dependency on ../spawn/shell.ts
+export * from "./doctor.ts";
 export * from "./event-bus.ts";
 export * from "./flexible-interpolator.ts";
 export * from "./flexible-pattern.ts";
@@ -33,3 +33,4 @@ export * from "./unsafe-js-expr.ts";
 export * from "./version.ts";
 export * from "./watcher.ts";
 export * from "./zod-aide.ts";
+
