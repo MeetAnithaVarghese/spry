@@ -39,7 +39,6 @@ import {
   errorOnlyTaskEventBus,
   executionPlan,
   executionSubplan,
-  testAnythingProtocolTaskEventBus,
   verboseInfoTaskEventBus,
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
@@ -52,6 +51,7 @@ import {
 } from "../projection/playbook.ts";
 import { CaptureSpec } from "../remark/actionable-code-candidates.ts";
 import * as axiomCLI from "./cli.ts";
+import { testAnythingProtocolTaskEventBus } from "../../tap/task-event-bus.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
