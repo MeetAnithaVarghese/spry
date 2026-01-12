@@ -1,6 +1,6 @@
 {
   "name": "@spry/universal",
-  "version": "0.0.1",
+  "version": "1.0.3",
   "exports": "./mod.ts",
   "imports": {
     "@std/yaml": "jsr:@std/yaml@^1",
