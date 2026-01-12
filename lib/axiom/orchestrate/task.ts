@@ -425,88 +425,124 @@ export function exectutionReport<
       let finalContent: string | undefined;
       let finalNature: "execution-result" | "render-result" | undefined;
 
-      for (let i = 0; i < iterations; i++) {
-        const rendered = await interpolator.renderOne(task, {
-          body: (code) => !rs || rs.isFirst ? cis.content.body(code) : rs.body,
-          locals: (_, supplied) => ({
-            ...supplied,
-            TASK: task,
-            resolveRelPath: task.provenance.resolveRelPath,
-          }),
-        });
-
-        if (rendered.error) return fail(ctx, rendered.error);
-
-        const spawnable = spawnConf && task.using
-          ? using(spawnConf, task.using, undefined, { shell: sh })
-          : (task.language.id !== "shell"
-            ? usingLanguage(task.language, undefined, { shell: sh })
-            : undefined);
-
-        const execResult = spawnable
-          ? await spawnable.spawn({ kind: "text", text: rendered.text })
-          : (task.language.id == "shell"
-            ? await sh.auto(rendered.text, undefined, task)
-            : undefined);
-
-        if (!execResult) {
-          finalContent =
-            "execResult is NULL (don't know how to handle this executable block)";
-          finalNature = "render-result";
-          break;
+      // helper: collect stderr text from exec results (best effort)
+      const stderrText = (execResult: unknown): string => {
+        if (!execResult) return "";
+        const arr = Array.isArray(execResult) ? execResult : [execResult];
+        const parts: string[] = [];
+        for (const r of arr) {
+          // r is whatever your shell/spawn returns; these fields match your usage of stdout
+          const stderr = (r as { stderr?: Uint8Array }).stderr;
+          if (stderr && stderr.length) parts.push(td.decode(stderr));
         }
+        return parts.join("\n");
+      };
 
-        const er = Array.isArray(execResult) ? execResult : [execResult];
-        if (er.length) {
-          const aggER = sh.aggregatedRunResults(er);
-          if (!aggER.success) {
-            const error = new Error(
-              `Shell execution failed (exitCode=${aggER.exitCode})`,
-            );
-            return fail(ctx, error, { disposition: "continue", ...aggER });
-          }
-        }
-
-        const output = Array.isArray(execResult)
-          ? execResult.map((r) => td.decode(r.stdout)).join("\n")
-          : td.decode(execResult.stdout);
-
-        if (task.spawnableArgs.capture) {
-          cis.memory.memoize?.(output, {
-            identity: task.taskId(),
-            captureSpecs: task.spawnableArgs.capture,
+      try {
+        for (let i = 0; i < iterations; i++) {
+          const rendered = await interpolator.renderOne(task, {
+            body: (code) =>
+              !rs || rs.isFirst ? cis.content.body(code) : rs.body,
+            locals: (_, supplied) => ({
+              ...supplied,
+              TASK: task,
+              resolveRelPath: task.provenance.resolveRelPath,
+            }),
           });
 
-          // Only treat non-empty output as a "new final" value.
-          // If output is empty, keep previous finalContent (don’t wipe the cell).
-          if (output.length > 0) {
-            finalContent = output;
-            finalNature = "execution-result";
+          if (rendered.error) {
+            const msg = rendered.error instanceof Error
+              ? (rendered.error.stack ?? rendered.error.message)
+              : String(rendered.error);
+
+            replaceContents(task, msg, "execution-result");
+            return fail(ctx, rendered.error);
           }
-        } else {
-          // If not capturing, the rendered text is what we want to store.
-          finalContent = rendered.text;
-          finalNature = "render-result";
+
+          const spawnable = spawnConf && task.using
+            ? using(spawnConf, task.using, undefined, { shell: sh })
+            : (task.language.id !== "shell"
+              ? usingLanguage(task.language, undefined, { shell: sh })
+              : undefined);
+
+          const execResult = spawnable
+            ? await spawnable.spawn({ kind: "text", text: rendered.text })
+            : (task.language.id == "shell"
+              ? await sh.auto(rendered.text, undefined, task)
+              : undefined);
+
+          if (!execResult) {
+            const msg =
+              "execResult is NULL (don't know how to handle this executable block)";
+            replaceContents(task, msg, "execution-result");
+            return fail(ctx, msg);
+          }
+
+          // check success
+          {
+            const er = Array.isArray(execResult) ? execResult : [execResult];
+            if (er.length) {
+              const aggER = sh.aggregatedRunResults(er);
+              if (!aggER.success) {
+                const errOut = stderrText(execResult).trim();
+                const msg = errOut.length
+                  ? errOut
+                  : `Shell execution failed (exitCode=${aggER.exitCode})`;
+
+                replaceContents(task, msg, "execution-result");
+                const error = new Error(
+                  `Shell execution failed (exitCode=${aggER.exitCode})`,
+                );
+                return fail(ctx, error, { disposition: "continue", ...aggER });
+              }
+            }
+          }
+
+          // success output
+          const output = Array.isArray(execResult)
+            ? execResult.map((r) =>
+              td.decode((r as { stdout: Uint8Array }).stdout)
+            )
+              .join("\n")
+            : td.decode((execResult as { stdout: Uint8Array }).stdout);
+
+          if (task.spawnableArgs.capture) {
+            cis.memory.memoize?.(output, {
+              identity: task.taskId(),
+              captureSpecs: task.spawnableArgs.capture,
+            });
+
+            // do not overwrite the final cell with empty output in recursion
+            if (output.length > 0) {
+              finalContent = output;
+              finalNature = "execution-result";
+            }
+          } else {
+            finalContent = rendered.text;
+            finalNature = "render-result";
+          }
+
+          if (rs) {
+            if (output.length === 0) break;
+            if (rs.sameAsLast(output)) break;
+            rs.remember(output);
+            rs.body = output;
+            rs.next();
+          } else {
+            break;
+          }
         }
 
-        if (rs) {
-          // If the tool outputs nothing, treat it as "no change" and stop.
-          if (output.length === 0) break;
-
-          if (rs.sameAsLast(output)) break;
-          rs.remember(output);
-          rs.body = output;
-          rs.next();
-        } else {
-          break;
+        if (finalContent !== undefined && finalNature !== undefined) {
+          replaceContents(task, finalContent, finalNature);
         }
-      }
 
-      if (finalContent !== undefined && finalNature !== undefined) {
-        replaceContents(task, finalContent, finalNature);
+        return ok(ctx);
+      } catch (e) {
+        const msg = e instanceof Error ? (e.stack ?? e.message) : String(e);
+        replaceContents(task, msg, "execution-result");
+        return fail(ctx, e);
       }
-
-      return ok(ctx);
     }, { eventBus: tasksEventBus.bus });
   };
 
