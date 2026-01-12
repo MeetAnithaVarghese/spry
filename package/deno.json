@@ -1,6 +1,6 @@
 {
   "name": "@spry/universal",
-  "version": "1.0.3",
+  "version": "0.0.4",
   "exports": "./mod.ts",
   "imports": {
     "@std/yaml": "jsr:@std/yaml@^1",
@@ -16,6 +16,11 @@
     "json5": "npm:json5@^2"
   },
   "exclude": [
-    "pkg/"
+    "*_test.ts",
+    "*.fixture",
+    "generate_readme.ts",
+    "schema-info.dml.sqlite.sql",
+    "doctor.ts",
+    "sync-package.ts"
   ]
 }

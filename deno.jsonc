@@ -8,7 +8,8 @@
     "git-hook-pre-commit": "deno fmt --check --ignore=\"support\" --ignore=\"**/web-ui/index.js\" --ignore=\"**/fixture\" && deno lint  --ignore=\"support\" --ignore=\"**/web-ui/index.js\" && deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
     "git-hook-pre-push": "deno test --parallel --allow-all --v8-flags=\"--max-old-space-size=4096\"",
     "ts-check": "deno check --no-lock $(find . -name '*.ts' -not -path \"./support/*\")",
-    "prepare-publish": "git semtag final"
+    "prepare-publish": "git semtag final",
+    "sync-package": "cd package && deno run --allow-read --allow-write sync-package.ts"
   },
   "lint": {
     "rules": {
