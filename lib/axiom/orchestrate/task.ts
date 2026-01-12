@@ -419,14 +419,21 @@ export function exectutionReport<
 
   const execute = async (plan: TaskExecutionPlan<T>) => {
     return await executeDAG<T, Context>(plan, async (task, ctx) => {
-      const rendered = await interpolator.renderOne(task, {
-        locals: (_, supplied) => ({
-          ...supplied,
-          TASK: task,
-          resolveRelPath: task.provenance.resolveRelPath,
-        }),
-      });
-      if (!rendered.error) {
+      const rs = recursionState(task);
+      const iterations = rs ? rs.count : 1;
+
+      for (let i = 0; i < iterations; i++) {
+        const rendered = await interpolator.renderOne(task, {
+          body: (code) => !rs || rs.isFirst ? cis.content.body(code) : rs.body,
+          locals: (_, supplied) => ({
+            ...supplied,
+            TASK: task,
+            resolveRelPath: task.provenance.resolveRelPath,
+          }),
+        });
+
+        if (rendered.error) return fail(ctx, rendered.error);
+
         const spawnable = spawnConf && task.using
           ? using(spawnConf, task.using, undefined, { shell: sh })
           : (task.language.id !== "shell"
@@ -452,35 +459,40 @@ export function exectutionReport<
           }
         }
 
-        if (execResult && task.spawnableArgs.capture) {
-          // before the task runs, "memoize" in interpolator.renderOne stores
-          // the "source" (before execution) and now we need to overwrite that
-          // "memoization" with the actual execution's stdout / result
+        if (execResult) {
           const output = Array.isArray(execResult)
             ? execResult.map((er) => td.decode(er.stdout)).join("\n")
             : td.decode(execResult.stdout);
+
           if (task.spawnableArgs.capture) {
             cis.memory.memoize?.(output, {
               identity: task.taskId(),
               captureSpecs: task.spawnableArgs.capture,
             });
+            replaceContents(task, output, "execution-result");
+          } else {
+            replaceContents(task, rendered.text, "render-result");
           }
-          // mutate the code cell value with the results of the output
-          replaceContents(task, output, "execution-result");
-        } else if (execResult) {
-          // even if the task was not run, mutate the interpolated code cell value
-          replaceContents(task, rendered.text, "render-result");
+
+          if (rs) {
+            if (rs.sameAsLast(output)) break;
+            rs.remember(output);
+            rs.body = output;
+            rs.next();
+          } else {
+            break;
+          }
         } else {
           replaceContents(
             task,
             "execResult is NULL (don't know how to handle this executable block)",
             "render-result",
           );
+          return ok(ctx);
         }
-        return ok(ctx);
-      } else {
-        return fail(ctx, rendered.error);
       }
+
+      return ok(ctx);
     }, { eventBus: tasksEventBus.bus });
   };
 
