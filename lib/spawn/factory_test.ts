@@ -40,8 +40,16 @@ async function binAvailable(argv0: string): Promise<boolean> {
 // Add this helper near binAvailable(...)
 async function hasSurveilr(): Promise<boolean> {
   // these are created in YAML during the tests
-  Deno.remove("/tmp/surveilr-factory-test.sqlite.db").catch();
-  Deno.remove("/tmp/surveilr-factory-test2.sqlite.db").catch();
+  try {
+    await Deno.remove("/tmp/surveilr-factory-test.sqlite.db", {
+      recursive: true,
+    });
+    await Deno.remove("/tmp/surveilr-factory-test2.sqlite.db", {
+      recursive: true,
+    });
+  } catch {
+    // ignore
+  }
   return await binAvailable("surveilr");
 }
 const surveilrAvailable = await hasSurveilr();

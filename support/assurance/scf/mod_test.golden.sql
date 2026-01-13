@@ -569,6 +569,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "injectedDep": [],
     "interpolate": true
   },
+  "materializationCodeFM": "[Circular]",
   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -581,6 +582,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "language": "[Circular]",
     "materializableIdentity": "sql.d/tail/schema-info.dml.sqlite.sql",
     "materializationArgs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -742,6 +744,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -2259,6 +2262,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -3020,6 +3024,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -4372,6 +4377,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -4428,6 +4434,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -5155,6 +5162,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -6131,6 +6139,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6231,6 +6240,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6331,6 +6341,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6431,6 +6442,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6531,6 +6543,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6631,6 +6644,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6731,6 +6745,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6831,6 +6846,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6897,6 +6913,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -6997,6 +7014,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -7098,6 +7116,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -7198,6 +7217,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -7298,6 +7318,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -7911,6 +7932,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "injectedDep": [],
     "interpolate": true
   },
+  "materializationCodeFM": "[Circular]",
   "meta": "sql.d/tail/0000.sql ",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -7923,6 +7945,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "language": "[Circular]",
     "materializableIdentity": "sql.d/tail/0000.sql",
     "materializationArgs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "sql.d/tail/0000.sql ",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -8084,6 +8107,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -9602,6 +9626,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -10363,6 +10388,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -11715,6 +11741,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -11771,6 +11798,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -12498,6 +12526,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -13474,6 +13503,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -13574,6 +13604,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -13674,6 +13705,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -13774,6 +13806,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -13874,6 +13907,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -13974,6 +14008,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14074,6 +14109,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14174,6 +14210,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14240,6 +14277,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14340,6 +14378,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14441,6 +14480,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14541,6 +14581,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14641,6 +14682,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -14762,8 +14804,8 @@ SET page_path = json_extract($resource_json, ''$.route.path'');
   
 
 -- END: PARTIAL global-layout.sql
--- locals: pagination, paginate, SQL, cat, md, raw, type, lang, meta, value, position, data, nature, materializableIdentity, language, isBlob, materializationArgs, materializationAttrs, provenance, origin, cell, path, spc, safeJsonStringify, captured, memoized, partial
--- mdastNode: {"data":{"codeFM":{"attrs":{"route":{"caption":"Home"}},"attrsText":"{ route: { caption: \"Home\" } }","cli":"sql index.sql","cmdLang":"sql","fromPresets":[{"codeFM":{"cli":"code PRESET --interpolate --injectable","cmdLang":"code","pi":{"args":["code","PRESET","--interpolate","--injectable"],"count":4,"flags":{"PRESET":true,"injectable":true,"interpolate":true},"pos":["PRESET","interpolate","injectable"],"posCount":3}},"meta":"sql * --interpolate --injectable"}],"lang":"sql","langSpec":{"comment":{"block":[{"close":"*/","nested":false,"open":"/*"}],"line":["--"]},"extensions":[".sql"],"id":"sql"},"meta":"index.sql { route: { caption: \"Home\" } }","pi":{"args":["sql","index.sql"],"count":2,"flags":{"PRESET":true,"index.sql":true,"injectable":true,"interpolate":true},"pos":["index.sql"],"posCount":1}}},"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"index.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"index.sql { route: { caption: \"Home\" } }","nature":"MATERIALIZABLE","origin":{"data":"[Circular]","isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"index.sql","materializationArgs":"[Circular]","materializationAttrs":"[Circular]","meta":"index.sql { route: { caption: \"Home\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":254,"offset":9815},"start":{"column":1,"line":231,"offset":8881}},"type":"code","value":"-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;"},"position":"[Circular]","provenance":{"file":{"data":{"edges":[{"from":{"contributeFM":{"cli":"include --base ../../../lib/universal","cmdLang":"include","fromPresets":[],"lang":"include","meta":"--base ../../../lib/universal","pi":{"args":["include","--base","../../../lib/universal"],"count":3,"flags":{"base":"../../../lib/universal"},"pos":["base"],"posCount":1}},"contributeQPI":{"bareWords":[],"cmdLang":"include","pi":"[Circular]"},"contributeSF":{"data":{"base":["../../../lib/universal"]},"success":true},"directive":"contribute","identity":"base","includables":[{"data":{"codeFM":{"cli":"sql sql.d/tail/schema-info.dml.sqlite.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"sql.d/tail/schema-info.dml.sqlite.sql ","pi":{"args":["sql","sql.d/tail/schema-info.dml.sqlite.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"sql.d/tail/schema-info.dml.sqlite.sql":true},"pos":["sql.d/tail/schema-info.dml.sqlite.sql"],"posCount":1}}},"include":{"dest":{"kind":"prefix","value":"sql.d/tail"},"destPath":"sql.d/tail/schema-info.dml.sqlite.sql","destPrefix":"sql.d/tail","origin":{"candidate":"*.sql","destToken":"sql.d/tail","ir":{"cli":"sql *.sql sql.d/tail","cmdLang":"sql","pi":{"args":["sql","*.sql","sql.d/tail"],"count":3,"flags":{"*.sql":true,"sql.d/tail":true},"pos":["*.sql","sql.d/tail"],"posCount":2}},"label":"sql","lineNumInRawInstructions":1,"meta":"","parsedArgs":{"data":{"destToken":"sql.d/tail","label":"sql"},"success":true},"ppiq":{"bareWords":["*.sql","sql.d/tail"],"cmdLang":"sql","pi":"[Circular]"},"rawInstructions":"sql *.sql sql.d/tail"},"provenance":{"label":"*.sql","mimeType":"application/sql","path":"ABSOLUTE_PATH/lib/universal/schema-info.dml.sqlite.sql"},"strategy":{"encoding":"utf8-text","target":"local-fs"}},"isActionableCodeCandidate":true,"isBlob":false,"isContentAcquired":true,"lang":"sql","language":"[Circular]","materializableIdentity":"sql.d/tail/schema-info.dml.sqlite.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"meta":"sql.d/tail/schema-info.dml.sqlite.sql ","nature":"MATERIALIZABLE","position":{"end":{"column":1,"line":178},"start":"[Circular]"},"type":"code","value":"-- @spry.nature sql @spry.sqlImpact dml\n\n-- Spry schema information is stored in sqlpage_files as a single-row-per-schema\n-- catalog with path ''spry.d/info-schema.auto.json'' (where ''main'' is schema).\n-- Stores a prettified JSON graph of the entire SQLite schema (tables, columns, \n-- indexes, foreign keys, views, triggers, and derived relations). These views \n-- project that JSON back into relational form for easy querying. Filter by \n-- schema_name in WHERE clauses (e.g., WHERE s.path = ''spry.d/info-schema.auto.json''). \n-- Requires SQLite JSON1.\n\n-- Populate with a comprehensive JSON graph of the current schema\nINSERT OR REPLACE INTO sqlpage_files (path, contents)\nVALUES (\n  ''spry.d/info-schema.auto.json'',\n  json_pretty(\n    json_object(\n      ''schema_name'', ''main'',\n      ''generated_on'', datetime(''now''),\n      ''sqlite_version'', sqlite_version(),\n\n      -- Attached databases\n      ''databases'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''db_name'', name, ''db_file'', file))\n         FROM pragma_database_list),\n\n      -- Available collations\n      ''collations'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''name'', name))\n         FROM pragma_collation_list),\n\n      -- Tables keyed by name, with nested columns, indexes, FKs, triggers\n      ''tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,                 -- ''table''\n                   ''strict'', tl.strict,\n                   ''without_rowid'', 0,              -- not exposed by pragma_table_list; set 0 by default\n                   ''ncol'', tl.ncol,\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name),\n\n                   ''columns'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''cid'', x.cid,\n                               ''name'', x.name,\n                               ''type'', x.type,\n                               ''notnull'', x.\"notnull\",\n                               ''dflt_value'', x.dflt_value,\n                               ''pk'', x.pk,\n                               ''hidden'', x.hidden\n                             )\n                           )\n                      FROM pragma_table_xinfo(tl.name) AS x),\n\n                   ''indexes'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', il.name,\n                               ''origin'', il.origin,          -- ''c'',''u'',''pk''\n                               ''unique'', il.\"unique\",\n                               ''partial'', il.partial,\n                               ''where'',\n                                 (SELECT s.sql FROM sqlite_schema AS s\n                                   WHERE s.type=''index'' AND s.name=il.name),\n                               ''columns'',\n                                 (SELECT json_group_array(\n                                           json_object(\n                                             ''seqno'', ixi.seqno,\n                                             ''cid'', ixi.cid,\n                                             ''name'', ixi.name,\n                                             ''desc'', ixi.\"desc\",\n                                             ''coll'', ixi.coll,\n                                             ''key'', ixi.\"key\"\n                                           )\n                                         )\n                                    FROM pragma_index_xinfo(il.name) AS ixi)\n                             )\n                           )\n                      FROM pragma_index_list(tl.name) AS il),\n\n                   ''foreign_keys'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''id'', fk.id,\n                               ''seq'', fk.seq,\n                               ''from'', fk.\"from\",\n                               ''to'', fk.\"to\",\n                               ''table'', fk.\"table\",\n                               ''on_update'', fk.on_update,\n                               ''on_delete'', fk.on_delete,\n                               ''match'', fk.\"match\"\n                             )\n                           )\n                      FROM pragma_foreign_key_list(tl.name) AS fk),\n\n                   ''triggers'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', t.name,\n                               ''sql'',  t.sql\n                             )\n                           )\n                      FROM sqlite_schema AS t\n                     WHERE t.type=''trigger'' AND t.tbl_name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''table'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Views keyed by name\n      ''views'',\n      (\n        SELECT json_group_object(\n                 v.name,\n                 json_object(\n                   ''type'', ''view'',\n                   ''sql'',  v.sql,\n                   ''dependencies'', json(''[]'') -- placeholder (dependency parsing is non-trivial)\n                 )\n               )\n          FROM sqlite_schema AS v\n         WHERE v.type=''view'' AND v.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Virtual tables keyed by name (basic capture)\n      ''virtual_tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,  -- ''virtual''\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''virtual'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Triggers keyed by name (top-level convenience)\n      ''triggers'',\n      (\n        SELECT json_group_object(\n                 t.name,\n                 json_object(\n                   ''table'', t.tbl_name,\n                   ''sql'',   t.sql\n                 )\n               )\n          FROM sqlite_schema AS t\n         WHERE t.type=''trigger'' AND t.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Relations derived from all foreign keys\n      ''relations'',\n      (\n        SELECT json_group_array(\n                 json_object(\n                   ''name'', printf(''%s_%s_%s_%s'', fk.tbl_name, fk.\"from\", fk.\"table\", fk.\"to\"),\n                   ''from_table'', fk.tbl_name,\n                   ''from_columns'', json_array(fk.\"from\"),\n                   ''to_table'', fk.\"table\",\n                   ''to_columns'', json_array(fk.\"to\"),\n                   ''type'', ''many_to_one'',\n                   ''on_update'', fk.on_update,\n                   ''on_delete'', fk.on_delete,\n                   ''match'', fk.\"match\"\n                 )\n               )\n          FROM (\n                 SELECT\n                   tbl.name AS tbl_name,\n                   fk.\"from\",\n                   fk.\"to\",\n                   fk.\"table\",\n                   fk.on_update,\n                   fk.on_delete,\n                   fk.\"match\"\n                 FROM sqlite_schema AS tbl,\n                      pragma_foreign_key_list(tbl.name) AS fk\n                 WHERE tbl.type=''table'' AND tbl.name NOT LIKE ''sqlite_%''\n               ) AS fk\n      )\n    )\n  )\n);\n\n-- Tables (one row per table)\nDROP VIEW IF EXISTS spry_schema_info_table;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table AS\nSELECT\n  ''main''                                    AS schema_name,\n  t.key                                     AS table_name,\n  json_extract(t.value,''$.type'')            AS type,\n  json_extract(t.value,''$.ncol'')            AS ncol,\n  json_extract(t.value,''$.strict'')          AS strict,\n  json_extract(t.value,''$.without_rowid'')   AS without_rowid,\n  json_extract(t.value,''$.sql'')             AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table columns (one row per column per table)\nDROP VIEW IF EXISTS spry_schema_info_table_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(c.value,''$.cid'')                 AS cid,\n  json_extract(c.value,''$.name'')                AS column_name,\n  json_extract(c.value,''$.type'')                AS column_type,\n  json_extract(c.value,''$.notnull'')             AS not_null,\n  json_extract(c.value,''$.dflt_value'')          AS dflt_value,\n  json_extract(c.value,''$.pk'')                  AS part_of_pk,\n  json_extract(c.value,''$.hidden'')              AS hidden\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t,\n     json_each(t.value, ''$.columns'')           AS c\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Views (one row per view)\nDROP VIEW IF EXISTS spry_schema_info_view;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view AS\nSELECT\n  ''main''                           AS schema_name,\n  v.key                            AS view_name,\n  json_extract(v.value,''$.type'')   AS type,\n  json_extract(v.value,''$.sql'')    AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- View columns (if your schema_graph_json includes a $.views[*].columns array)\nDROP VIEW IF EXISTS spry_schema_info_view_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view_column AS\nSELECT\n  ''main''                          AS schema_name,\n  v.key                           AS view_name,\n  json_extract(vc.value,''$.cid'')  AS cid,\n  json_extract(vc.value,''$.name'') AS column_name,\n  json_extract(vc.value,''$.type'') AS column_type,\n  json_extract(vc.value,''$.notnull'') AS not_null,\n  json_extract(vc.value,''$.dflt_value'') AS dflt_value\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nLEFT JOIN json_each(v.value, ''$.columns'') AS vc ON 1=1\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Indexes (one row per index per table)\nDROP VIEW IF EXISTS spry_schema_info_index;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index AS\nSELECT\n  ''main''                                       AS schema_name,\n  t.key                                        AS table_name,\n  json_extract(i.value,''$.name'')               AS index_name,\n  json_extract(i.value,''$.origin'')             AS origin,      -- ''c'',''u'',''pk''\n  json_extract(i.value,''$.unique'')             AS is_unique,\n  json_extract(i.value,''$.partial'')            AS is_partial,\n  json_extract(i.value,''$.where'')              AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')         AS t,\n     json_each(t.value, ''$.indexes'')           AS i\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Index columns (one row per column per index)\nDROP VIEW IF EXISTS spry_schema_info_index_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(i.value,''$.name'')                AS index_name,\n  json_extract(ic.value,''$.seqno'')              AS seqno,\n  json_extract(ic.value,''$.cid'')                AS cid,\n  json_extract(ic.value,''$.name'')               AS column_name,\n  json_extract(ic.value,''$.desc'')               AS is_desc,\n  json_extract(ic.value,''$.coll'')               AS collation_name,\n  json_extract(ic.value,''$.key'')                AS is_key_column\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')          AS t,\n     json_each(t.value, ''$.indexes'')            AS i,\n     json_each(i.value, ''$.columns'')            AS ic\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Foreign keys (one row per referencing column)\nDROP VIEW IF EXISTS spry_schema_info_foreign_key;\nCREATE VIEW IF NOT EXISTS spry_schema_info_foreign_key AS\nSELECT\n  ''main''                                   AS schema_name,\n  t.key                                    AS table_name,\n  json_extract(fk.value,''$.id'')            AS fk_id,\n  json_extract(fk.value,''$.seq'')           AS seq,\n  json_extract(fk.value,''$.from'')          AS from_column,\n  json_extract(fk.value,''$.to'')            AS to_column,\n  json_extract(fk.value,''$.table'')         AS ref_table,\n  json_extract(fk.value,''$.on_update'')     AS on_update,\n  json_extract(fk.value,''$.on_delete'')     AS on_delete,\n  json_extract(fk.value,''$.match'')         AS match\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')     AS t,\n     json_each(t.value, ''$.foreign_keys'')  AS fk\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table triggers (one row per trigger per table)\nDROP VIEW IF EXISTS spry_schema_info_table_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  t.key                                 AS table_name,\n  json_extract(tr.value,''$.name'')       AS trigger_name,\n  json_extract(tr.value,''$.sql'')        AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')  AS t,\n     json_each(t.value, ''$.triggers'')   AS tr\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Top-level triggers (if captured under $.triggers object)\nDROP VIEW IF EXISTS spry_schema_info_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  trg.key                               AS trigger_name,\n  json_extract(trg.value,''$.table'')     AS table_name,\n  json_extract(trg.value,''$.sql'')       AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.triggers'') AS trg\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Relations derived in schema_graph_json (one row per relation)\nDROP VIEW IF EXISTS spry_schema_info_relation;\nCREATE VIEW IF NOT EXISTS spry_schema_info_relation AS\nSELECT\n  ''main''                                  AS schema_name,\n  json_extract(r.value,''$.name'')          AS relation_name,\n  json_extract(r.value,''$.from_table'')    AS from_table,\n  json_extract(r.value,''$.to_table'')      AS to_table,\n  json_extract(r.value,''$.type'')          AS relation_type,\n  json_extract(r.value,''$.on_update'')     AS on_update,\n  json_extract(r.value,''$.on_delete'')     AS on_delete,\n  json_extract(r.value,''$.match'')         AS match,\n  json_extract(r.value,''$.from_columns'')  AS from_columns_json,\n  json_extract(r.value,''$.to_columns'')    AS to_columns_json\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.relations'') AS r\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n"},{"data":{"codeFM":{"cli":"sql sql.d/tail/0000.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"sql.d/tail/0000.sql ","pi":{"args":["sql","sql.d/tail/0000.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"sql.d/tail/0000.sql":true},"pos":["sql.d/tail/0000.sql"],"posCount":1}}},"include":{"dest":{"kind":"path","value":"sql.d/tail/0000.sql"},"destPath":"sql.d/tail/0000.sql","origin":{"candidate":"schema-info.dml.sqlite.sql","destToken":"sql.d/tail/0000.sql","ir":{"cli":"sql schema-info.dml.sqlite.sql sql.d/tail/0000.sql","cmdLang":"sql","pi":{"args":["sql","schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"count":3,"flags":{"schema-info.dml.sqlite.sql":true,"sql.d/tail/0000.sql":true},"pos":["schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"posCount":2}},"label":"sql","lineNumInRawInstructions":2,"meta":"","parsedArgs":{"data":{"destToken":"sql.d/tail/0000.sql","label":"sql"},"success":true},"ppiq":{"bareWords":["schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"cmdLang":"sql","pi":"[Circular]"},"rawInstructions":"sql schema-info.dml.sqlite.sql sql.d/tail/0000.sql"},"provenance":{"label":"schema-info.dml.sqlite.sql","mimeType":"application/sql","path":"ABSOLUTE_PATH/lib/universal/schema-info.dml.sqlite.sql"},"strategy":{"encoding":"utf8-text","target":"local-fs"}},"isActionableCodeCandidate":true,"isBlob":false,"isContentAcquired":true,"lang":"sql","language":"[Circular]","materializableIdentity":"sql.d/tail/0000.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"meta":"sql.d/tail/0000.sql ","nature":"MATERIALIZABLE","position":{"end":{"column":1,"line":179},"start":"[Circular]"},"type":"code","value":"-- @spry.nature sql @spry.sqlImpact dml\n\n-- Spry schema information is stored in sqlpage_files as a single-row-per-schema\n-- catalog with path ''spry.d/info-schema.auto.json'' (where ''main'' is schema).\n-- Stores a prettified JSON graph of the entire SQLite schema (tables, columns, \n-- indexes, foreign keys, views, triggers, and derived relations). These views \n-- project that JSON back into relational form for easy querying. Filter by \n-- schema_name in WHERE clauses (e.g., WHERE s.path = ''spry.d/info-schema.auto.json''). \n-- Requires SQLite JSON1.\n\n-- Populate with a comprehensive JSON graph of the current schema\nINSERT OR REPLACE INTO sqlpage_files (path, contents)\nVALUES (\n  ''spry.d/info-schema.auto.json'',\n  json_pretty(\n    json_object(\n      ''schema_name'', ''main'',\n      ''generated_on'', datetime(''now''),\n      ''sqlite_version'', sqlite_version(),\n\n      -- Attached databases\n      ''databases'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''db_name'', name, ''db_file'', file))\n         FROM pragma_database_list),\n\n      -- Available collations\n      ''collations'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''name'', name))\n         FROM pragma_collation_list),\n\n      -- Tables keyed by name, with nested columns, indexes, FKs, triggers\n      ''tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,                 -- ''table''\n                   ''strict'', tl.strict,\n                   ''without_rowid'', 0,              -- not exposed by pragma_table_list; set 0 by default\n                   ''ncol'', tl.ncol,\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name),\n\n                   ''columns'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''cid'', x.cid,\n                               ''name'', x.name,\n                               ''type'', x.type,\n                               ''notnull'', x.\"notnull\",\n                               ''dflt_value'', x.dflt_value,\n                               ''pk'', x.pk,\n                               ''hidden'', x.hidden\n                             )\n                           )\n                      FROM pragma_table_xinfo(tl.name) AS x),\n\n                   ''indexes'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', il.name,\n                               ''origin'', il.origin,          -- ''c'',''u'',''pk''\n                               ''unique'', il.\"unique\",\n                               ''partial'', il.partial,\n                               ''where'',\n                                 (SELECT s.sql FROM sqlite_schema AS s\n                                   WHERE s.type=''index'' AND s.name=il.name),\n                               ''columns'',\n                                 (SELECT json_group_array(\n                                           json_object(\n                                             ''seqno'', ixi.seqno,\n                                             ''cid'', ixi.cid,\n                                             ''name'', ixi.name,\n                                             ''desc'', ixi.\"desc\",\n                                             ''coll'', ixi.coll,\n                                             ''key'', ixi.\"key\"\n                                           )\n                                         )\n                                    FROM pragma_index_xinfo(il.name) AS ixi)\n                             )\n                           )\n                      FROM pragma_index_list(tl.name) AS il),\n\n                   ''foreign_keys'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''id'', fk.id,\n                               ''seq'', fk.seq,\n                               ''from'', fk.\"from\",\n                               ''to'', fk.\"to\",\n                               ''table'', fk.\"table\",\n                               ''on_update'', fk.on_update,\n                               ''on_delete'', fk.on_delete,\n                               ''match'', fk.\"match\"\n                             )\n                           )\n                      FROM pragma_foreign_key_list(tl.name) AS fk),\n\n                   ''triggers'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', t.name,\n                               ''sql'',  t.sql\n                             )\n                           )\n                      FROM sqlite_schema AS t\n                     WHERE t.type=''trigger'' AND t.tbl_name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''table'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Views keyed by name\n      ''views'',\n      (\n        SELECT json_group_object(\n                 v.name,\n                 json_object(\n                   ''type'', ''view'',\n                   ''sql'',  v.sql,\n                   ''dependencies'', json(''[]'') -- placeholder (dependency parsing is non-trivial)\n                 )\n               )\n          FROM sqlite_schema AS v\n         WHERE v.type=''view'' AND v.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Virtual tables keyed by name (basic capture)\n      ''virtual_tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,  -- ''virtual''\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''virtual'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Triggers keyed by name (top-level convenience)\n      ''triggers'',\n      (\n        SELECT json_group_object(\n                 t.name,\n                 json_object(\n                   ''table'', t.tbl_name,\n                   ''sql'',   t.sql\n                 )\n               )\n          FROM sqlite_schema AS t\n         WHERE t.type=''trigger'' AND t.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Relations derived from all foreign keys\n      ''relations'',\n      (\n        SELECT json_group_array(\n                 json_object(\n                   ''name'', printf(''%s_%s_%s_%s'', fk.tbl_name, fk.\"from\", fk.\"table\", fk.\"to\"),\n                   ''from_table'', fk.tbl_name,\n                   ''from_columns'', json_array(fk.\"from\"),\n                   ''to_table'', fk.\"table\",\n                   ''to_columns'', json_array(fk.\"to\"),\n                   ''type'', ''many_to_one'',\n                   ''on_update'', fk.on_update,\n                   ''on_delete'', fk.on_delete,\n                   ''match'', fk.\"match\"\n                 )\n               )\n          FROM (\n                 SELECT\n                   tbl.name AS tbl_name,\n                   fk.\"from\",\n                   fk.\"to\",\n                   fk.\"table\",\n                   fk.on_update,\n                   fk.on_delete,\n                   fk.\"match\"\n                 FROM sqlite_schema AS tbl,\n                      pragma_foreign_key_list(tbl.name) AS fk\n                 WHERE tbl.type=''table'' AND tbl.name NOT LIKE ''sqlite_%''\n               ) AS fk\n      )\n    )\n  )\n);\n\n-- Tables (one row per table)\nDROP VIEW IF EXISTS spry_schema_info_table;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table AS\nSELECT\n  ''main''                                    AS schema_name,\n  t.key                                     AS table_name,\n  json_extract(t.value,''$.type'')            AS type,\n  json_extract(t.value,''$.ncol'')            AS ncol,\n  json_extract(t.value,''$.strict'')          AS strict,\n  json_extract(t.value,''$.without_rowid'')   AS without_rowid,\n  json_extract(t.value,''$.sql'')             AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table columns (one row per column per table)\nDROP VIEW IF EXISTS spry_schema_info_table_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(c.value,''$.cid'')                 AS cid,\n  json_extract(c.value,''$.name'')                AS column_name,\n  json_extract(c.value,''$.type'')                AS column_type,\n  json_extract(c.value,''$.notnull'')             AS not_null,\n  json_extract(c.value,''$.dflt_value'')          AS dflt_value,\n  json_extract(c.value,''$.pk'')                  AS part_of_pk,\n  json_extract(c.value,''$.hidden'')              AS hidden\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t,\n     json_each(t.value, ''$.columns'')           AS c\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Views (one row per view)\nDROP VIEW IF EXISTS spry_schema_info_view;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view AS\nSELECT\n  ''main''                           AS schema_name,\n  v.key                            AS view_name,\n  json_extract(v.value,''$.type'')   AS type,\n  json_extract(v.value,''$.sql'')    AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- View columns (if your schema_graph_json includes a $.views[*].columns array)\nDROP VIEW IF EXISTS spry_schema_info_view_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view_column AS\nSELECT\n  ''main''                          AS schema_name,\n  v.key                           AS view_name,\n  json_extract(vc.value,''$.cid'')  AS cid,\n  json_extract(vc.value,''$.name'') AS column_name,\n  json_extract(vc.value,''$.type'') AS column_type,\n  json_extract(vc.value,''$.notnull'') AS not_null,\n  json_extract(vc.value,''$.dflt_value'') AS dflt_value\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nLEFT JOIN json_each(v.value, ''$.columns'') AS vc ON 1=1\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Indexes (one row per index per table)\nDROP VIEW IF EXISTS spry_schema_info_index;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index AS\nSELECT\n  ''main''                                       AS schema_name,\n  t.key                                        AS table_name,\n  json_extract(i.value,''$.name'')               AS index_name,\n  json_extract(i.value,''$.origin'')             AS origin,      -- ''c'',''u'',''pk''\n  json_extract(i.value,''$.unique'')             AS is_unique,\n  json_extract(i.value,''$.partial'')            AS is_partial,\n  json_extract(i.value,''$.where'')              AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')         AS t,\n     json_each(t.value, ''$.indexes'')           AS i\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Index columns (one row per column per index)\nDROP VIEW IF EXISTS spry_schema_info_index_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(i.value,''$.name'')                AS index_name,\n  json_extract(ic.value,''$.seqno'')              AS seqno,\n  json_extract(ic.value,''$.cid'')                AS cid,\n  json_extract(ic.value,''$.name'')               AS column_name,\n  json_extract(ic.value,''$.desc'')               AS is_desc,\n  json_extract(ic.value,''$.coll'')               AS collation_name,\n  json_extract(ic.value,''$.key'')                AS is_key_column\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')          AS t,\n     json_each(t.value, ''$.indexes'')            AS i,\n     json_each(i.value, ''$.columns'')            AS ic\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Foreign keys (one row per referencing column)\nDROP VIEW IF EXISTS spry_schema_info_foreign_key;\nCREATE VIEW IF NOT EXISTS spry_schema_info_foreign_key AS\nSELECT\n  ''main''                                   AS schema_name,\n  t.key                                    AS table_name,\n  json_extract(fk.value,''$.id'')            AS fk_id,\n  json_extract(fk.value,''$.seq'')           AS seq,\n  json_extract(fk.value,''$.from'')          AS from_column,\n  json_extract(fk.value,''$.to'')            AS to_column,\n  json_extract(fk.value,''$.table'')         AS ref_table,\n  json_extract(fk.value,''$.on_update'')     AS on_update,\n  json_extract(fk.value,''$.on_delete'')     AS on_delete,\n  json_extract(fk.value,''$.match'')         AS match\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')     AS t,\n     json_each(t.value, ''$.foreign_keys'')  AS fk\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table triggers (one row per trigger per table)\nDROP VIEW IF EXISTS spry_schema_info_table_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  t.key                                 AS table_name,\n  json_extract(tr.value,''$.name'')       AS trigger_name,\n  json_extract(tr.value,''$.sql'')        AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')  AS t,\n     json_each(t.value, ''$.triggers'')   AS tr\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Top-level triggers (if captured under $.triggers object)\nDROP VIEW IF EXISTS spry_schema_info_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  trg.key                               AS trigger_name,\n  json_extract(trg.value,''$.table'')     AS table_name,\n  json_extract(trg.value,''$.sql'')       AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.triggers'') AS trg\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Relations derived in schema_graph_json (one row per relation)\nDROP VIEW IF EXISTS spry_schema_info_relation;\nCREATE VIEW IF NOT EXISTS spry_schema_info_relation AS\nSELECT\n  ''main''                                  AS schema_name,\n  json_extract(r.value,''$.name'')          AS relation_name,\n  json_extract(r.value,''$.from_table'')    AS from_table,\n  json_extract(r.value,''$.to_table'')      AS to_table,\n  json_extract(r.value,''$.type'')          AS relation_type,\n  json_extract(r.value,''$.on_update'')     AS on_update,\n  json_extract(r.value,''$.on_delete'')     AS on_delete,\n  json_extract(r.value,''$.match'')         AS match,\n  json_extract(r.value,''$.from_columns'')  AS from_columns_json,\n  json_extract(r.value,''$.to_columns'')    AS to_columns_json\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.relations'') AS r\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n"}],"instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"include","meta":"--base ../../../lib/universal","position":{"end":{"column":4,"line":180,"offset":6961},"start":{"column":1,"line":177,"offset":6845}},"type":"code","value":"sql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql"},"rel":"isIncludedNode","to":"[Circular]"},{"from":"[Circular]","rel":"isIncludedNode","to":"[Circular]"}],"frontmatter":{"sqlpage-conf":{"allow_exec":true,"database_url":"sqlite://scf-2025.3.sqlite.db?mode=rwc","port":9227,"web_root":"./dev-src.auto"}},"provenance":{"label":"Spryfile.md","mimeType":"text/markdown","path":"Spryfile.md"}},"history":["Spryfile.md"],"messages":[],"value":"---\nsqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}\n---\n\n# Secure Controls Framework (SCF) SQLPage Application\n\nThis script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n[official SCF GitHub repository](https://github.com/securecontrolsframework/securecontrolsframework)\ninto a structured SQLite database.\n\n- Uses Spry to manage tasks and generate the SQLPage presentation layer.\n- Uses DuckDB with its built-in `excel` and `sqlite` extensions.\n\n## Spry Axiom configuration\n\n`code DEFAULTS` is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like `sql`, `text`, etc. allowing them to\nbe interpolatable (`${...}`) and injectable (using `PARTIAL`s) by default\ninstead of having to pass `--interpolate` and `--injectable` into each code\ncell. 💡 `code DEFAULTS` is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat `sql` code fenced blocks.\n\n```code DEFAULTS\nsql * --interpolate --injectable\n```\n\nThe following example shows how arbitrary files can be \"contributed\" to\n`sqlpage_files`. `--base` should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:\n\n```contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry\n**/* SUNDRY\n```\n\nThe following example shows how template files can be \"contributed\" to\n`sqlpage_files` but only when `--package` is being used. Spry picks them up from\n`../sqlpage/templates/*` and store them in `templates/*` path in `sqlpage_files`\ntable only during `--package` operation:\n\n```contribute sqlpage_files --base sqlpage/templates --mode package\n**/* templates --mime text/plain\n```\n\n💡 You should use the above technique if you ever create custom\n`sqlplage/templates` files that you want included in the database.\n\n## Setup\n\nDownload the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this `README.md` and then run `spry.ts task prepare-db`. We supply\nour own `#!/usr/bin/env -S bash` shebang since we have comments in the shell\nscript.\n\n```bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"\n#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db\n```\n\n## Environment variables and .envrc\n\nThis project reads configuration from environment variables. Two variables you\nwill commonly set in development are:\n\n- `SPRY_DB` — the database connection URL used by SQLPage and Spry. Example\n  value used here: `sqlite://scf-2025.3.sqlite.db?mode=rwc`\n  - Scheme: `sqlite://` followed by a path (relative or absolute) to the SQLite\n    file.\n  - Query `mode=rwc` tells SQLite/DuckDB to open the file for read/write and\n    create it if missing.\n  - If you prefer a path under a `data/` directory, set e.g.\n    `sqlite://./data/scf-2025.3.sqlite.db?mode=rwc`.\n\n- `PORT` — the TCP port the local SQLPage server or other local web component\n  should listen on (example: `9227`).\n\nRecommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named `.envrc`\nin this directory.\n\nPOSIX-style example (bash/zsh):\n\n```envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"\nexport SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227\n```\n\nThen run `direnv allow` in this project directory to load the `.envrc` into your\nshell environment. direnv will evaluate `.envrc` only after you explicitly allow\nit.\n\n## Security and repository hygiene\n\n- Never commit secrets or production credentials into `.envrc`. Treat `.envrc`\n  like a local-only file.\n- Add `.envrc` to your local `.gitignore` if you keep secrets there.\n  Alternatively commit a `.envrc.example` or `.envrc.sample` with safe,\n  non-secret defaults to document expected variables.\n- The SQLite file (e.g. `scf-2025.3.sqlite.db`) is a binary database file — you\n  will usually not check this into version control. Add that filename or the\n  `data/` directory to `.gitignore` as well.\n\nWhy these variables matter here\n\n- The YAML header at the top of this `Spryfile.md` reads\n  `database_url: ${env.SPRY_DB}` and `port: ${env.PORT}` — Spry and the SQLPage\n  tooling will substitute those environment values when building or serving the\n  site.\n- If `SPRY_DB` is not set, the tooling may fail to find the database or fall\n  back to defaults; explicitly setting it ensures predictable, repeatable dev\n  runs.\n\nQuick troubleshooting\n\n- If the server does not start on the expected port, verify `echo $PORT` (or\n  `echo $SPRY_DB`) in your shell to confirm values are loaded.\n- If direnv appears not to load `.envrc`, re-run `direnv allow` and ensure your\n  shell config contains the direnv hook.\n\n## SQLPage Dev / Watch mode\n\nWhile you''re developing, Spry''s `dev-src.auto` generator should be used:\n\n```bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json\n```\n\n```bash clean --descr \"Clean up the project directory''s generated artifacts\"\nrm -rf dev-src.auto\n```\n\nIn development mode, here’s the `--watch` convenience you can use so that\nwhenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,\nwhich is then picked up automatically by the SQLPage server:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage\n```\n\n- `--watch` turns on watching all `--md` files passed in (defaults to\n  `Spryfile.md`)\n- `--with-sqlpage` starts and stops SQLPage after each build\n\nRestarting SQLPage after each re-generation of dev-src.auto is **not**\nnecessary, so you can also use `--watch` without `--with-sqlpage` in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow.\n\nIf you''re running SQLPage in another terminal window, use:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch\n```\n\n## SQLPage single database deployment mode\n\nAfter development is complete, the `dev-src.auto` can be removed and\nsingle-database deployment can be used:\n\n```bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"\nrm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db\n```\n\n## Raw SQL\n\nThis raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed.\n\n```include --base ../../../lib/universal\nsql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql\n```\n\n💡 `schema-info.dml.sqlite.sql` will appear in the output as\n`sql.d/tail/0000.sql` and `sql.d/tail/schema-info.dml.sqlite.sql` (doing it\ntwice just for testing).\n\n## Layout\n\nThis cell instructs Spry to automatically inject the SQL `PARTIAL` into all\nSQLPage content cells. The name `global-layout.sql` is not significant (it''s\nrequired by Spry but only used for reference), but the `--inject **/*` argument\nis how matching occurs. The `--BEGIN` and `--END` comments are not required by\nSpry but make it easier to trace where _partial_ injections are occurring.\n\n⚠️ Content injection content happens _before_ any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell.\n\n```sql PARTIAL global-layout.sql --inject **/*\n-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql\n```\n\nGet the brand assets and store them into the SQLPage content stream. They will\nbe stored as `assets/brand/*` because `--base` is `https://www.surveilr.com/`\nand destination is set to `.`.\n\n```contribute sqlpage_files --base https://www.surveilr.com/\nhttps://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png .\n```\n\n## SCF Home Page\n\nIndex page which automatically generates links to all `/scf` pages.\n\n```sql index.sql { route: { caption: \"Home\" } }\n-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;\n```\n\n## Unpivoted page\n\n```sql scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }\n-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Controls page\n\n```sql scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Count page\n\n```sql scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Domain Count page\n\n```sql scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }\n-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Coverage page\n\n```sql scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }\n-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Rank page\n\n```sql scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }\n-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Jaccard page\n\n```sql scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }\n-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}\n```\n\n```sql scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Controls per regime (totals) details page\n\n```sql scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}\n```\n\n## Threat Catalog Page\n\n```sql scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }\nSELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;\n```\n\n## Controls Library page\n\n```sql scf/controls.sql { route: { caption: \"Controls Library\"} }\n-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}\n```\n\n## Regime details page\n\n```sql scf/details/regime_details.sql { route: { caption: \"Control details\" } }\n SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;\n```\n"},"mdSrcText":"---\nsqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}\n---\n\n# Secure Controls Framework (SCF) SQLPage Application\n\nThis script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n[official SCF GitHub repository](https://github.com/securecontrolsframework/securecontrolsframework)\ninto a structured SQLite database.\n\n- Uses Spry to manage tasks and generate the SQLPage presentation layer.\n- Uses DuckDB with its built-in `excel` and `sqlite` extensions.\n\n## Spry Axiom configuration\n\n`code DEFAULTS` is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like `sql`, `text`, etc. allowing them to\nbe interpolatable (`${...}`) and injectable (using `PARTIAL`s) by default\ninstead of having to pass `--interpolate` and `--injectable` into each code\ncell. 💡 `code DEFAULTS` is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat `sql` code fenced blocks.\n\n```code DEFAULTS\nsql * --interpolate --injectable\n```\n\nThe following example shows how arbitrary files can be \"contributed\" to\n`sqlpage_files`. `--base` should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:\n\n```contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry\n**/* SUNDRY\n```\n\nThe following example shows how template files can be \"contributed\" to\n`sqlpage_files` but only when `--package` is being used. Spry picks them up from\n`../sqlpage/templates/*` and store them in `templates/*` path in `sqlpage_files`\ntable only during `--package` operation:\n\n```contribute sqlpage_files --base sqlpage/templates --mode package\n**/* templates --mime text/plain\n```\n\n💡 You should use the above technique if you ever create custom\n`sqlplage/templates` files that you want included in the database.\n\n## Setup\n\nDownload the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this `README.md` and then run `spry.ts task prepare-db`. We supply\nour own `#!/usr/bin/env -S bash` shebang since we have comments in the shell\nscript.\n\n```bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"\n#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db\n```\n\n## Environment variables and .envrc\n\nThis project reads configuration from environment variables. Two variables you\nwill commonly set in development are:\n\n- `SPRY_DB` — the database connection URL used by SQLPage and Spry. Example\n  value used here: `sqlite://scf-2025.3.sqlite.db?mode=rwc`\n  - Scheme: `sqlite://` followed by a path (relative or absolute) to the SQLite\n    file.\n  - Query `mode=rwc` tells SQLite/DuckDB to open the file for read/write and\n    create it if missing.\n  - If you prefer a path under a `data/` directory, set e.g.\n    `sqlite://./data/scf-2025.3.sqlite.db?mode=rwc`.\n\n- `PORT` — the TCP port the local SQLPage server or other local web component\n  should listen on (example: `9227`).\n\nRecommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named `.envrc`\nin this directory.\n\nPOSIX-style example (bash/zsh):\n\n```envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"\nexport SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227\n```\n\nThen run `direnv allow` in this project directory to load the `.envrc` into your\nshell environment. direnv will evaluate `.envrc` only after you explicitly allow\nit.\n\n## Security and repository hygiene\n\n- Never commit secrets or production credentials into `.envrc`. Treat `.envrc`\n  like a local-only file.\n- Add `.envrc` to your local `.gitignore` if you keep secrets there.\n  Alternatively commit a `.envrc.example` or `.envrc.sample` with safe,\n  non-secret defaults to document expected variables.\n- The SQLite file (e.g. `scf-2025.3.sqlite.db`) is a binary database file — you\n  will usually not check this into version control. Add that filename or the\n  `data/` directory to `.gitignore` as well.\n\nWhy these variables matter here\n\n- The YAML header at the top of this `Spryfile.md` reads\n  `database_url: ${env.SPRY_DB}` and `port: ${env.PORT}` — Spry and the SQLPage\n  tooling will substitute those environment values when building or serving the\n  site.\n- If `SPRY_DB` is not set, the tooling may fail to find the database or fall\n  back to defaults; explicitly setting it ensures predictable, repeatable dev\n  runs.\n\nQuick troubleshooting\n\n- If the server does not start on the expected port, verify `echo $PORT` (or\n  `echo $SPRY_DB`) in your shell to confirm values are loaded.\n- If direnv appears not to load `.envrc`, re-run `direnv allow` and ensure your\n  shell config contains the direnv hook.\n\n## SQLPage Dev / Watch mode\n\nWhile you''re developing, Spry''s `dev-src.auto` generator should be used:\n\n```bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json\n```\n\n```bash clean --descr \"Clean up the project directory''s generated artifacts\"\nrm -rf dev-src.auto\n```\n\nIn development mode, here’s the `--watch` convenience you can use so that\nwhenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,\nwhich is then picked up automatically by the SQLPage server:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage\n```\n\n- `--watch` turns on watching all `--md` files passed in (defaults to\n  `Spryfile.md`)\n- `--with-sqlpage` starts and stops SQLPage after each build\n\nRestarting SQLPage after each re-generation of dev-src.auto is **not**\nnecessary, so you can also use `--watch` without `--with-sqlpage` in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow.\n\nIf you''re running SQLPage in another terminal window, use:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch\n```\n\n## SQLPage single database deployment mode\n\nAfter development is complete, the `dev-src.auto` can be removed and\nsingle-database deployment can be used:\n\n```bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"\nrm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db\n```\n\n## Raw SQL\n\nThis raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed.\n\n```include --base ../../../lib/universal\nsql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql\n```\n\n💡 `schema-info.dml.sqlite.sql` will appear in the output as\n`sql.d/tail/0000.sql` and `sql.d/tail/schema-info.dml.sqlite.sql` (doing it\ntwice just for testing).\n\n## Layout\n\nThis cell instructs Spry to automatically inject the SQL `PARTIAL` into all\nSQLPage content cells. The name `global-layout.sql` is not significant (it''s\nrequired by Spry but only used for reference), but the `--inject **/*` argument\nis how matching occurs. The `--BEGIN` and `--END` comments are not required by\nSpry but make it easier to trace where _partial_ injections are occurring.\n\n⚠️ Content injection content happens _before_ any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell.\n\n```sql PARTIAL global-layout.sql --inject **/*\n-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql\n```\n\nGet the brand assets and store them into the SQLPage content stream. They will\nbe stored as `assets/brand/*` because `--base` is `https://www.surveilr.com/`\nand destination is set to `.`.\n\n```contribute sqlpage_files --base https://www.surveilr.com/\nhttps://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png .\n```\n\n## SCF Home Page\n\nIndex page which automatically generates links to all `/scf` pages.\n\n```sql index.sql { route: { caption: \"Home\" } }\n-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;\n```\n\n## Unpivoted page\n\n```sql scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }\n-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Controls page\n\n```sql scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Count page\n\n```sql scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Domain Count page\n\n```sql scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }\n-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Coverage page\n\n```sql scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }\n-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Rank page\n\n```sql scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }\n-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Jaccard page\n\n```sql scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }\n-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}\n```\n\n```sql scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Controls per regime (totals) details page\n\n```sql scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}\n```\n\n## Threat Catalog Page\n\n```sql scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }\nSELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;\n```\n\n## Controls Library page\n\n```sql scf/controls.sql { route: { caption: \"Controls Library\"} }\n-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}\n```\n\n## Regime details page\n\n```sql scf/details/regime_details.sql { route: { caption: \"Control details\" } }\n SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;\n```\n","mdastRoot":{"children":[{"data":{"parsedFM":{"fm":"[Circular]"}},"position":{"end":{"column":4,"line":7,"offset":120},"start":{"column":1,"line":1,"offset":0}},"type":"yaml","value":"sqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}"},{"children":[{"position":{"end":{"column":54,"line":9,"offset":175},"start":{"column":3,"line":9,"offset":124}},"type":"text","value":"Secure Controls Framework (SCF) SQLPage Application"}],"depth":1,"position":{"end":{"column":54,"line":9,"offset":175},"start":{"column":1,"line":9,"offset":122}},"type":"heading"},{"children":[{"position":{"end":{"column":1,"line":13,"offset":284},"start":{"column":1,"line":11,"offset":177}},"type":"text","value":"This script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n"},{"children":[{"position":{"end":{"column":32,"line":13,"offset":315},"start":{"column":2,"line":13,"offset":285}},"type":"text","value":"official SCF GitHub repository"}],"position":{"end":{"column":101,"line":13,"offset":384},"start":{"column":1,"line":13,"offset":284}},"title":null,"type":"link","url":"https://github.com/securecontrolsframework/securecontrolsframework"},{"position":{"end":{"column":35,"line":14,"offset":419},"start":{"column":101,"line":13,"offset":384}},"type":"text","value":"\ninto a structured SQLite database."}],"position":{"end":{"column":35,"line":14,"offset":419},"start":{"column":1,"line":11,"offset":177}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":3,"line":16,"offset":423}},"type":"text","value":"Uses Spry to manage tasks and generate the SQLPage presentation layer."}],"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":3,"line":16,"offset":423}},"type":"paragraph"}],"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":1,"line":16,"offset":421}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":33,"line":17,"offset":526},"start":{"column":3,"line":17,"offset":496}},"type":"text","value":"Uses DuckDB with its built-in "},{"position":{"end":{"column":40,"line":17,"offset":533},"start":{"column":33,"line":17,"offset":526}},"type":"inlineCode","value":"excel"},{"position":{"end":{"column":45,"line":17,"offset":538},"start":{"column":40,"line":17,"offset":533}},"type":"text","value":" and "},{"position":{"end":{"column":53,"line":17,"offset":546},"start":{"column":45,"line":17,"offset":538}},"type":"inlineCode","value":"sqlite"},{"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":53,"line":17,"offset":546}},"type":"text","value":" extensions."}],"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":3,"line":17,"offset":496}},"type":"paragraph"}],"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":1,"line":17,"offset":494}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":1,"line":16,"offset":421}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":28,"line":19,"offset":587},"start":{"column":4,"line":19,"offset":563}},"type":"text","value":"Spry Axiom configuration"}],"depth":2,"position":{"end":{"column":28,"line":19,"offset":587},"start":{"column":1,"line":19,"offset":560}},"type":"heading"},{"children":[{"position":{"end":{"column":16,"line":21,"offset":604},"start":{"column":1,"line":21,"offset":589}},"type":"inlineCode","value":"code DEFAULTS"},{"position":{"end":{"column":44,"line":22,"offset":709},"start":{"column":16,"line":21,"offset":604}},"type":"text","value":" is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like "},{"position":{"end":{"column":49,"line":22,"offset":714},"start":{"column":44,"line":22,"offset":709}},"type":"inlineCode","value":"sql"},{"position":{"end":{"column":51,"line":22,"offset":716},"start":{"column":49,"line":22,"offset":714}},"type":"text","value":", "},{"position":{"end":{"column":57,"line":22,"offset":722},"start":{"column":51,"line":22,"offset":716}},"type":"inlineCode","value":"text"},{"position":{"end":{"column":20,"line":23,"offset":765},"start":{"column":57,"line":22,"offset":722}},"type":"text","value":", etc. allowing them to\nbe interpolatable ("},{"position":{"end":{"column":28,"line":23,"offset":773},"start":{"column":20,"line":23,"offset":765}},"type":"inlineCode","value":"${...}"},{"position":{"end":{"column":52,"line":23,"offset":797},"start":{"column":28,"line":23,"offset":773}},"type":"text","value":") and injectable (using "},{"position":{"end":{"column":61,"line":23,"offset":806},"start":{"column":52,"line":23,"offset":797}},"type":"inlineCode","value":"PARTIAL"},{"position":{"end":{"column":27,"line":24,"offset":846},"start":{"column":61,"line":23,"offset":806}},"type":"text","value":"s) by default\ninstead of having to pass "},{"position":{"end":{"column":42,"line":24,"offset":861},"start":{"column":27,"line":24,"offset":846}},"type":"inlineCode","value":"--interpolate"},{"position":{"end":{"column":47,"line":24,"offset":866},"start":{"column":42,"line":24,"offset":861}},"type":"text","value":" and "},{"position":{"end":{"column":61,"line":24,"offset":880},"start":{"column":47,"line":24,"offset":866}},"type":"inlineCode","value":"--injectable"},{"position":{"end":{"column":10,"line":25,"offset":905},"start":{"column":61,"line":24,"offset":880}},"type":"text","value":" into each code\ncell. 💡 "},{"position":{"end":{"column":25,"line":25,"offset":920},"start":{"column":10,"line":25,"offset":905}},"type":"inlineCode","value":"code DEFAULTS"},{"position":{"end":{"column":14,"line":26,"offset":987},"start":{"column":25,"line":25,"offset":920}},"type":"text","value":" is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat "},{"position":{"end":{"column":19,"line":26,"offset":992},"start":{"column":14,"line":26,"offset":987}},"type":"inlineCode","value":"sql"},{"position":{"end":{"column":39,"line":26,"offset":1012},"start":{"column":19,"line":26,"offset":992}},"type":"text","value":" code fenced blocks."}],"position":{"end":{"column":39,"line":26,"offset":1012},"start":{"column":1,"line":21,"offset":589}},"type":"paragraph"},{"directive":"DEFAULTS","identity":"0000","instructions":{"cli":"DEFAULTS","cmdLang":"DEFAULTS","pi":{"args":["DEFAULTS"],"count":1,"flags":{},"pos":[],"posCount":0}},"isCodeDirectiveCandidate":true,"lang":"code","meta":"DEFAULTS","position":{"end":{"column":4,"line":30,"offset":1067},"start":{"column":1,"line":28,"offset":1014}},"type":"code","value":"sql * --interpolate --injectable"},{"children":[{"position":{"end":{"column":1,"line":33,"offset":1141},"start":{"column":1,"line":32,"offset":1069}},"type":"text","value":"The following example shows how arbitrary files can be \"contributed\" to\n"},{"position":{"end":{"column":16,"line":33,"offset":1156},"start":{"column":1,"line":33,"offset":1141}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":18,"line":33,"offset":1158},"start":{"column":16,"line":33,"offset":1156}},"type":"text","value":". "},{"position":{"end":{"column":26,"line":33,"offset":1166},"start":{"column":18,"line":33,"offset":1158}},"type":"inlineCode","value":"--base"},{"position":{"end":{"column":65,"line":34,"offset":1283},"start":{"column":26,"line":33,"offset":1166}},"type":"text","value":" should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:"}],"position":{"end":{"column":65,"line":34,"offset":1283},"start":{"column":1,"line":32,"offset":1069}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base ../../../lib/axiom/fixture/sundry","pi":{"args":["contribute","sqlpage_files","--base","../../../lib/axiom/fixture/sundry"],"count":4,"flags":{"base":"../../../lib/axiom/fixture/sundry","sqlpage_files":true},"pos":["sqlpage_files","base"],"posCount":2}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["../../../lib/axiom/fixture/sundry"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base ../../../lib/axiom/fixture/sundry","position":{"end":{"column":4,"line":38,"offset":1369},"start":{"column":1,"line":36,"offset":1285}},"type":"code","value":"**/* SUNDRY"},{"children":[{"position":{"end":{"column":1,"line":41,"offset":1442},"start":{"column":1,"line":40,"offset":1371}},"type":"text","value":"The following example shows how template files can be \"contributed\" to\n"},{"position":{"end":{"column":16,"line":41,"offset":1457},"start":{"column":1,"line":41,"offset":1442}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":31,"line":41,"offset":1472},"start":{"column":16,"line":41,"offset":1457}},"type":"text","value":" but only when "},{"position":{"end":{"column":42,"line":41,"offset":1483},"start":{"column":31,"line":41,"offset":1472}},"type":"inlineCode","value":"--package"},{"position":{"end":{"column":1,"line":42,"offset":1523},"start":{"column":42,"line":41,"offset":1483}},"type":"text","value":" is being used. Spry picks them up from\n"},{"position":{"end":{"column":25,"line":42,"offset":1547},"start":{"column":1,"line":42,"offset":1523}},"type":"inlineCode","value":"../sqlpage/templates/*"},{"position":{"end":{"column":44,"line":42,"offset":1566},"start":{"column":25,"line":42,"offset":1547}},"type":"text","value":" and store them in "},{"position":{"end":{"column":57,"line":42,"offset":1579},"start":{"column":44,"line":42,"offset":1566}},"type":"inlineCode","value":"templates/*"},{"position":{"end":{"column":66,"line":42,"offset":1588},"start":{"column":57,"line":42,"offset":1579}},"type":"text","value":" path in "},{"position":{"end":{"column":81,"line":42,"offset":1603},"start":{"column":66,"line":42,"offset":1588}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":19,"line":43,"offset":1622},"start":{"column":81,"line":42,"offset":1603}},"type":"text","value":"\ntable only during "},{"position":{"end":{"column":30,"line":43,"offset":1633},"start":{"column":19,"line":43,"offset":1622}},"type":"inlineCode","value":"--package"},{"position":{"end":{"column":41,"line":43,"offset":1644},"start":{"column":30,"line":43,"offset":1633}},"type":"text","value":" operation:"}],"position":{"end":{"column":41,"line":43,"offset":1644},"start":{"column":1,"line":40,"offset":1371}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base sqlpage/templates --mode package","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base sqlpage/templates --mode package","pi":{"args":["contribute","sqlpage_files","--base","sqlpage/templates","--mode","package"],"count":6,"flags":{"base":"sqlpage/templates","mode":"package","sqlpage_files":true},"pos":["sqlpage_files","base","mode"],"posCount":3}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["sqlpage/templates"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base sqlpage/templates --mode package","position":{"end":{"column":4,"line":47,"offset":1750},"start":{"column":1,"line":45,"offset":1646}},"type":"code","value":"**/* templates --mime text/plain"},{"children":[{"position":{"end":{"column":1,"line":50,"offset":1816},"start":{"column":1,"line":49,"offset":1752}},"type":"text","value":"💡 You should use the above technique if you ever create custom\n"},{"position":{"end":{"column":21,"line":50,"offset":1836},"start":{"column":1,"line":50,"offset":1816}},"type":"inlineCode","value":"sqlplage/templates"},{"position":{"end":{"column":67,"line":50,"offset":1882},"start":{"column":21,"line":50,"offset":1836}},"type":"text","value":" files that you want included in the database."}],"position":{"end":{"column":67,"line":50,"offset":1882},"start":{"column":1,"line":49,"offset":1752}},"type":"paragraph"},{"children":[{"position":{"end":{"column":9,"line":52,"offset":1892},"start":{"column":4,"line":52,"offset":1887}},"type":"text","value":"Setup"}],"depth":2,"position":{"end":{"column":9,"line":52,"offset":1892},"start":{"column":1,"line":52,"offset":1884}},"type":"heading"},{"children":[{"position":{"end":{"column":19,"line":55,"offset":1992},"start":{"column":1,"line":54,"offset":1894}},"type":"text","value":"Download the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this "},{"position":{"end":{"column":30,"line":55,"offset":2003},"start":{"column":19,"line":55,"offset":1992}},"type":"inlineCode","value":"README.md"},{"position":{"end":{"column":44,"line":55,"offset":2017},"start":{"column":30,"line":55,"offset":2003}},"type":"text","value":" and then run "},{"position":{"end":{"column":69,"line":55,"offset":2042},"start":{"column":44,"line":55,"offset":2017}},"type":"inlineCode","value":"spry.ts task prepare-db"},{"position":{"end":{"column":9,"line":56,"offset":2062},"start":{"column":69,"line":55,"offset":2042}},"type":"text","value":". We supply\nour own "},{"position":{"end":{"column":33,"line":56,"offset":2086},"start":{"column":9,"line":56,"offset":2062}},"type":"inlineCode","value":"#!/usr/bin/env -S bash"},{"position":{"end":{"column":8,"line":57,"offset":2138},"start":{"column":33,"line":56,"offset":2086}},"type":"text","value":" shebang since we have comments in the shell\nscript."}],"position":{"end":{"column":8,"line":57,"offset":2138},"start":{"column":1,"line":54,"offset":1894}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":{"aliases":["bash","sh","zsh"],"comment":{"block":[],"line":["#"]},"extensions":[".sh",".bash",".zsh"],"id":"shell","shebangs":["bash","sh","zsh"]},"meta":"prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","pi":{"args":["bash","prepare-db","--descr","Delete and recreate the SQLite database used by SQLPage"],"count":4,"flags":{"descr":"Delete and recreate the SQLite database used by SQLPage","prepare-db":true},"pos":["prepare-db","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":65,"offset":2549},"start":{"column":1,"line":59,"offset":2140}},"spawnableArgs":{"deps":[],"description":"Delete and recreate the SQLite database used by SQLPage","graphs":[],"injectedDep":[]},"spawnableIdentity":"prepare-db","type":"code","value":"#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"},{"children":[{"position":{"end":{"column":36,"line":67,"offset":2586},"start":{"column":4,"line":67,"offset":2554}},"type":"text","value":"Environment variables and .envrc"}],"depth":2,"position":{"end":{"column":36,"line":67,"offset":2586},"start":{"column":1,"line":67,"offset":2551}},"type":"heading"},{"children":[{"position":{"end":{"column":38,"line":70,"offset":2704},"start":{"column":1,"line":69,"offset":2588}},"type":"text","value":"This project reads configuration from environment variables. Two variables you\nwill commonly set in development are:"}],"position":{"end":{"column":38,"line":70,"offset":2704},"start":{"column":1,"line":69,"offset":2588}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":12,"line":72,"offset":2717},"start":{"column":3,"line":72,"offset":2708}},"type":"inlineCode","value":"SPRY_DB"},{"position":{"end":{"column":20,"line":73,"offset":2801},"start":{"column":12,"line":72,"offset":2717}},"type":"text","value":" — the database connection URL used by SQLPage and Spry. Example\nvalue used here: "},{"position":{"end":{"column":60,"line":73,"offset":2841},"start":{"column":20,"line":73,"offset":2801}},"type":"inlineCode","value":"sqlite://scf-2025.3.sqlite.db?mode=rwc"}],"position":{"end":{"column":60,"line":73,"offset":2841},"start":{"column":3,"line":72,"offset":2708}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":13,"line":74,"offset":2854},"start":{"column":5,"line":74,"offset":2846}},"type":"text","value":"Scheme: "},{"position":{"end":{"column":24,"line":74,"offset":2865},"start":{"column":13,"line":74,"offset":2854}},"type":"inlineCode","value":"sqlite://"},{"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":24,"line":74,"offset":2865}},"type":"text","value":" followed by a path (relative or absolute) to the SQLite\nfile."}],"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":5,"line":74,"offset":2846}},"type":"paragraph"}],"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":3,"line":74,"offset":2844}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":11,"line":76,"offset":2942},"start":{"column":5,"line":76,"offset":2936}},"type":"text","value":"Query "},{"position":{"end":{"column":21,"line":76,"offset":2952},"start":{"column":11,"line":76,"offset":2942}},"type":"inlineCode","value":"mode=rwc"},{"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":21,"line":76,"offset":2952}},"type":"text","value":" tells SQLite/DuckDB to open the file for read/write and\ncreate it if missing."}],"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":5,"line":76,"offset":2936}},"type":"paragraph"}],"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":3,"line":76,"offset":2934}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":34,"line":78,"offset":3068},"start":{"column":5,"line":78,"offset":3039}},"type":"text","value":"If you prefer a path under a "},{"position":{"end":{"column":41,"line":78,"offset":3075},"start":{"column":34,"line":78,"offset":3068}},"type":"inlineCode","value":"data/"},{"position":{"end":{"column":1,"line":79,"offset":3096},"start":{"column":41,"line":78,"offset":3075}},"type":"text","value":" directory, set e.g.\n"},{"position":{"end":{"column":52,"line":79,"offset":3147},"start":{"column":5,"line":79,"offset":3100}},"type":"inlineCode","value":"sqlite://./data/scf-2025.3.sqlite.db?mode=rwc"},{"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":52,"line":79,"offset":3147}},"type":"text","value":"."}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":5,"line":78,"offset":3039}},"type":"paragraph"}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":3,"line":78,"offset":3037}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":3,"line":74,"offset":2844}},"spread":false,"start":null,"type":"list"}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":1,"line":72,"offset":2706}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":9,"line":81,"offset":3158},"start":{"column":3,"line":81,"offset":3152}},"type":"inlineCode","value":"PORT"},{"position":{"end":{"column":30,"line":82,"offset":3257},"start":{"column":9,"line":81,"offset":3158}},"type":"text","value":" — the TCP port the local SQLPage server or other local web component\nshould listen on (example: "},{"position":{"end":{"column":36,"line":82,"offset":3263},"start":{"column":30,"line":82,"offset":3257}},"type":"inlineCode","value":"9227"},{"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":36,"line":82,"offset":3263}},"type":"text","value":")."}],"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":3,"line":81,"offset":3152}},"type":"paragraph"}],"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":1,"line":81,"offset":3150}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":1,"line":72,"offset":2706}},"spread":true,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":72,"line":85,"offset":3412},"start":{"column":1,"line":84,"offset":3267}},"type":"text","value":"Recommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named "},{"position":{"end":{"column":80,"line":85,"offset":3420},"start":{"column":72,"line":85,"offset":3412}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":19,"line":86,"offset":3439},"start":{"column":80,"line":85,"offset":3420}},"type":"text","value":"\nin this directory."}],"position":{"end":{"column":19,"line":86,"offset":3439},"start":{"column":1,"line":84,"offset":3267}},"type":"paragraph"},{"children":[{"position":{"end":{"column":32,"line":88,"offset":3472},"start":{"column":1,"line":88,"offset":3441}},"type":"text","value":"POSIX-style example (bash/zsh):"}],"position":{"end":{"column":32,"line":88,"offset":3472},"start":{"column":1,"line":88,"offset":3441}},"type":"paragraph"},{"data":{"codeFM":{"cli":"envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","cmdLang":"envrc","fromPresets":[],"lang":"envrc","langSpec":{"comment":{"block":[],"line":["#"]},"extensions":[".envrc"],"id":"envrc"},"meta":"prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","pi":{"args":["envrc","prepare-env","-C","./.envrc","-X","--gitignore","--descr","Generate .envrc file and add it to local .gitignore if it''s not already there"],"count":8,"flags":{"C":"./.envrc","X":true,"descr":"Generate .envrc file and add it to local .gitignore if it''s not already there","gitignore":true,"prepare-env":true},"pos":["prepare-env","C","X","gitignore","descr"],"posCount":5}}},"isActionableCodeCandidate":true,"lang":"envrc","language":"[Circular]","meta":"prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":93,"offset":3686},"start":{"column":1,"line":90,"offset":3474}},"spawnableArgs":{"capture":[{"fsPath":"./.envrc","gitignore":true,"nature":"relFsPath"}],"deps":[],"description":"Generate .envrc file and add it to local .gitignore if it''s not already there","executable":{"flagsCount":1,"texts":[]},"graphs":[],"injectedDep":[]},"spawnableIdentity":"prepare-env","type":"code","value":"export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"},{"children":[{"position":{"end":{"column":10,"line":95,"offset":3697},"start":{"column":1,"line":95,"offset":3688}},"type":"text","value":"Then run "},{"position":{"end":{"column":24,"line":95,"offset":3711},"start":{"column":10,"line":95,"offset":3697}},"type":"inlineCode","value":"direnv allow"},{"position":{"end":{"column":63,"line":95,"offset":3750},"start":{"column":24,"line":95,"offset":3711}},"type":"text","value":" in this project directory to load the "},{"position":{"end":{"column":71,"line":95,"offset":3758},"start":{"column":63,"line":95,"offset":3750}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":41,"line":96,"offset":3809},"start":{"column":71,"line":95,"offset":3758}},"type":"text","value":" into your\nshell environment. direnv will evaluate "},{"position":{"end":{"column":49,"line":96,"offset":3817},"start":{"column":41,"line":96,"offset":3809}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":4,"line":97,"offset":3853},"start":{"column":49,"line":96,"offset":3817}},"type":"text","value":" only after you explicitly allow\nit."}],"position":{"end":{"column":4,"line":97,"offset":3853},"start":{"column":1,"line":95,"offset":3688}},"type":"paragraph"},{"children":[{"position":{"end":{"column":35,"line":99,"offset":3889},"start":{"column":4,"line":99,"offset":3858}},"type":"text","value":"Security and repository hygiene"}],"depth":2,"position":{"end":{"column":35,"line":99,"offset":3889},"start":{"column":1,"line":99,"offset":3855}},"type":"heading"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":55,"line":101,"offset":3945},"start":{"column":3,"line":101,"offset":3893}},"type":"text","value":"Never commit secrets or production credentials into "},{"position":{"end":{"column":63,"line":101,"offset":3953},"start":{"column":55,"line":101,"offset":3945}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":71,"line":101,"offset":3961},"start":{"column":63,"line":101,"offset":3953}},"type":"text","value":". Treat "},{"position":{"end":{"column":79,"line":101,"offset":3969},"start":{"column":71,"line":101,"offset":3961}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":79,"line":101,"offset":3969}},"type":"text","value":"\nlike a local-only file."}],"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":3,"line":101,"offset":3893}},"type":"paragraph"}],"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":1,"line":101,"offset":3891}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":7,"line":103,"offset":4002},"start":{"column":3,"line":103,"offset":3998}},"type":"text","value":"Add "},{"position":{"end":{"column":15,"line":103,"offset":4010},"start":{"column":7,"line":103,"offset":4002}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":30,"line":103,"offset":4025},"start":{"column":15,"line":103,"offset":4010}},"type":"text","value":" to your local "},{"position":{"end":{"column":42,"line":103,"offset":4037},"start":{"column":30,"line":103,"offset":4025}},"type":"inlineCode","value":".gitignore"},{"position":{"end":{"column":26,"line":104,"offset":4090},"start":{"column":42,"line":103,"offset":4037}},"type":"text","value":" if you keep secrets there.\nAlternatively commit a "},{"position":{"end":{"column":42,"line":104,"offset":4106},"start":{"column":26,"line":104,"offset":4090}},"type":"inlineCode","value":".envrc.example"},{"position":{"end":{"column":46,"line":104,"offset":4110},"start":{"column":42,"line":104,"offset":4106}},"type":"text","value":" or "},{"position":{"end":{"column":61,"line":104,"offset":4125},"start":{"column":46,"line":104,"offset":4110}},"type":"inlineCode","value":".envrc.sample"},{"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":61,"line":104,"offset":4125}},"type":"text","value":" with safe,\nnon-secret defaults to document expected variables."}],"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":3,"line":103,"offset":3998}},"type":"paragraph"}],"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":1,"line":103,"offset":3996}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":25,"line":106,"offset":4215},"start":{"column":3,"line":106,"offset":4193}},"type":"text","value":"The SQLite file (e.g. "},{"position":{"end":{"column":47,"line":106,"offset":4237},"start":{"column":25,"line":106,"offset":4215}},"type":"inlineCode","value":"scf-2025.3.sqlite.db"},{"position":{"end":{"column":1,"line":108,"offset":4348},"start":{"column":47,"line":106,"offset":4237}},"type":"text","value":") is a binary database file — you\nwill usually not check this into version control. Add that filename or the\n"},{"position":{"end":{"column":10,"line":108,"offset":4357},"start":{"column":3,"line":108,"offset":4350}},"type":"inlineCode","value":"data/"},{"position":{"end":{"column":24,"line":108,"offset":4371},"start":{"column":10,"line":108,"offset":4357}},"type":"text","value":" directory to "},{"position":{"end":{"column":36,"line":108,"offset":4383},"start":{"column":24,"line":108,"offset":4371}},"type":"inlineCode","value":".gitignore"},{"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":36,"line":108,"offset":4383}},"type":"text","value":" as well."}],"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":3,"line":106,"offset":4193}},"type":"paragraph"}],"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":1,"line":106,"offset":4191}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":1,"line":101,"offset":3891}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":32,"line":110,"offset":4425},"start":{"column":1,"line":110,"offset":4394}},"type":"text","value":"Why these variables matter here"}],"position":{"end":{"column":32,"line":110,"offset":4425},"start":{"column":1,"line":110,"offset":4394}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":38,"line":112,"offset":4464},"start":{"column":3,"line":112,"offset":4429}},"type":"text","value":"The YAML header at the top of this "},{"position":{"end":{"column":51,"line":112,"offset":4477},"start":{"column":38,"line":112,"offset":4464}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":1,"line":113,"offset":4484},"start":{"column":51,"line":112,"offset":4477}},"type":"text","value":" reads\n"},{"position":{"end":{"column":33,"line":113,"offset":4516},"start":{"column":3,"line":113,"offset":4486}},"type":"inlineCode","value":"database_url: ${env.SPRY_DB}"},{"position":{"end":{"column":38,"line":113,"offset":4521},"start":{"column":33,"line":113,"offset":4516}},"type":"text","value":" and "},{"position":{"end":{"column":57,"line":113,"offset":4540},"start":{"column":38,"line":113,"offset":4521}},"type":"inlineCode","value":"port: ${env.PORT}"},{"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":57,"line":113,"offset":4540}},"type":"text","value":" — Spry and the SQLPage\ntooling will substitute those environment values when building or serving the\nsite."}],"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":3,"line":112,"offset":4429}},"type":"paragraph"}],"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":1,"line":112,"offset":4427}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":6,"line":116,"offset":4657},"start":{"column":3,"line":116,"offset":4654}},"type":"text","value":"If "},{"position":{"end":{"column":15,"line":116,"offset":4666},"start":{"column":6,"line":116,"offset":4657}},"type":"inlineCode","value":"SPRY_DB"},{"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":15,"line":116,"offset":4666}},"type":"text","value":" is not set, the tooling may fail to find the database or fall\nback to defaults; explicitly setting it ensures predictable, repeatable dev\nruns."}],"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":3,"line":116,"offset":4654}},"type":"paragraph"}],"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":1,"line":116,"offset":4652}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":1,"line":112,"offset":4427}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":22,"line":120,"offset":4837},"start":{"column":1,"line":120,"offset":4816}},"type":"text","value":"Quick troubleshooting"}],"position":{"end":{"column":22,"line":120,"offset":4837},"start":{"column":1,"line":120,"offset":4816}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":61,"line":122,"offset":4899},"start":{"column":3,"line":122,"offset":4841}},"type":"text","value":"If the server does not start on the expected port, verify "},{"position":{"end":{"column":73,"line":122,"offset":4911},"start":{"column":61,"line":122,"offset":4899}},"type":"inlineCode","value":"echo $PORT"},{"position":{"end":{"column":1,"line":123,"offset":4916},"start":{"column":73,"line":122,"offset":4911}},"type":"text","value":" (or\n"},{"position":{"end":{"column":18,"line":123,"offset":4933},"start":{"column":3,"line":123,"offset":4918}},"type":"inlineCode","value":"echo $SPRY_DB"},{"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":18,"line":123,"offset":4933}},"type":"text","value":") in your shell to confirm values are loaded."}],"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":3,"line":122,"offset":4841}},"type":"paragraph"}],"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":1,"line":122,"offset":4839}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":33,"line":124,"offset":5011},"start":{"column":3,"line":124,"offset":4981}},"type":"text","value":"If direnv appears not to load "},{"position":{"end":{"column":41,"line":124,"offset":5019},"start":{"column":33,"line":124,"offset":5011}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":50,"line":124,"offset":5028},"start":{"column":41,"line":124,"offset":5019}},"type":"text","value":", re-run "},{"position":{"end":{"column":64,"line":124,"offset":5042},"start":{"column":50,"line":124,"offset":5028}},"type":"inlineCode","value":"direnv allow"},{"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":64,"line":124,"offset":5042}},"type":"text","value":" and ensure your\nshell config contains the direnv hook."}],"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":3,"line":124,"offset":4981}},"type":"paragraph"}],"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":1,"line":124,"offset":4979}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":1,"line":122,"offset":4839}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":28,"line":127,"offset":5128},"start":{"column":4,"line":127,"offset":5104}},"type":"text","value":"SQLPage Dev / Watch mode"}],"depth":2,"position":{"end":{"column":28,"line":127,"offset":5128},"start":{"column":1,"line":127,"offset":5101}},"type":"heading"},{"children":[{"position":{"end":{"column":33,"line":129,"offset":5162},"start":{"column":1,"line":129,"offset":5130}},"type":"text","value":"While you''re developing, Spry''s "},{"position":{"end":{"column":47,"line":129,"offset":5176},"start":{"column":33,"line":129,"offset":5162}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":73,"line":129,"offset":5202},"start":{"column":47,"line":129,"offset":5176}},"type":"text","value":" generator should be used:"}],"position":{"end":{"column":73,"line":129,"offset":5202},"start":{"column":1,"line":129,"offset":5130}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","pi":{"args":["bash","prepare-sqlpage-dev","--descr","Generate the dev-src.auto directory to work in SQLPage dev mode"],"count":4,"flags":{"descr":"Generate the dev-src.auto directory to work in SQLPage dev mode","prepare-sqlpage-dev":true},"pos":["prepare-sqlpage-dev","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":133,"offset":5388},"start":{"column":1,"line":131,"offset":5204}},"spawnableArgs":{"deps":[],"description":"Generate the dev-src.auto directory to work in SQLPage dev mode","graphs":[],"injectedDep":[]},"spawnableIdentity":"prepare-sqlpage-dev","type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"},{"data":{"codeFM":{"cli":"bash clean --descr \"Clean up the project directory''s generated artifacts\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"clean --descr \"Clean up the project directory''s generated artifacts\"","pi":{"args":["bash","clean","--descr","Clean up the project directory''s generated artifacts"],"count":4,"flags":{"clean":true,"descr":"Clean up the project directory''s generated artifacts"},"pos":["clean","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"clean --descr \"Clean up the project directory''s generated artifacts\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":137,"offset":5490},"start":{"column":1,"line":135,"offset":5390}},"spawnableArgs":{"deps":[],"description":"Clean up the project directory''s generated artifacts","graphs":[],"injectedDep":[]},"spawnableIdentity":"clean","type":"code","value":"rm -rf dev-src.auto"},{"children":[{"position":{"end":{"column":33,"line":139,"offset":5524},"start":{"column":1,"line":139,"offset":5492}},"type":"text","value":"In development mode, here’s the "},{"position":{"end":{"column":42,"line":139,"offset":5533},"start":{"column":33,"line":139,"offset":5524}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":21,"line":140,"offset":5586},"start":{"column":42,"line":139,"offset":5533}},"type":"text","value":" convenience you can use so that\nwhenever you update "},{"position":{"end":{"column":34,"line":140,"offset":5599},"start":{"column":21,"line":140,"offset":5586}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":63,"line":140,"offset":5628},"start":{"column":34,"line":140,"offset":5599}},"type":"text","value":", it regenerates the SQLPage "},{"position":{"end":{"column":77,"line":140,"offset":5642},"start":{"column":63,"line":140,"offset":5628}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":61,"line":141,"offset":5704},"start":{"column":77,"line":140,"offset":5642}},"type":"text","value":",\nwhich is then picked up automatically by the SQLPage server:"}],"position":{"end":{"column":61,"line":141,"offset":5704},"start":{"column":1,"line":139,"offset":5492}},"type":"paragraph"},{"lang":"bash","meta":null,"position":{"end":{"column":4,"line":145,"offset":5819},"start":{"column":1,"line":143,"offset":5706}},"type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":12,"line":147,"offset":5832},"start":{"column":3,"line":147,"offset":5823}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":35,"line":147,"offset":5855},"start":{"column":12,"line":147,"offset":5832}},"type":"text","value":" turns on watching all "},{"position":{"end":{"column":41,"line":147,"offset":5861},"start":{"column":35,"line":147,"offset":5855}},"type":"inlineCode","value":"--md"},{"position":{"end":{"column":1,"line":148,"offset":5891},"start":{"column":41,"line":147,"offset":5861}},"type":"text","value":" files passed in (defaults to\n"},{"position":{"end":{"column":16,"line":148,"offset":5906},"start":{"column":3,"line":148,"offset":5893}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":16,"line":148,"offset":5906}},"type":"text","value":")"}],"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":3,"line":147,"offset":5823}},"type":"paragraph"}],"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":1,"line":147,"offset":5821}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":19,"line":149,"offset":5926},"start":{"column":3,"line":149,"offset":5910}},"type":"inlineCode","value":"--with-sqlpage"},{"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":19,"line":149,"offset":5926}},"type":"text","value":" starts and stops SQLPage after each build"}],"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":3,"line":149,"offset":5910}},"type":"paragraph"}],"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":1,"line":149,"offset":5908}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":1,"line":147,"offset":5821}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":64,"line":151,"offset":6033},"start":{"column":1,"line":151,"offset":5970}},"type":"text","value":"Restarting SQLPage after each re-generation of dev-src.auto is "},{"children":[{"position":{"end":{"column":69,"line":151,"offset":6038},"start":{"column":66,"line":151,"offset":6035}},"type":"text","value":"not"}],"position":{"end":{"column":71,"line":151,"offset":6040},"start":{"column":64,"line":151,"offset":6033}},"type":"strong"},{"position":{"end":{"column":32,"line":152,"offset":6072},"start":{"column":71,"line":151,"offset":6040}},"type":"text","value":"\nnecessary, so you can also use "},{"position":{"end":{"column":41,"line":152,"offset":6081},"start":{"column":32,"line":152,"offset":6072}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":50,"line":152,"offset":6090},"start":{"column":41,"line":152,"offset":6081}},"type":"text","value":" without "},{"position":{"end":{"column":66,"line":152,"offset":6106},"start":{"column":50,"line":152,"offset":6090}},"type":"inlineCode","value":"--with-sqlpage"},{"position":{"end":{"column":8,"line":154,"offset":6198},"start":{"column":66,"line":152,"offset":6106}},"type":"text","value":" in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow."}],"position":{"end":{"column":8,"line":154,"offset":6198},"start":{"column":1,"line":151,"offset":5970}},"type":"paragraph"},{"children":[{"position":{"end":{"column":59,"line":156,"offset":6258},"start":{"column":1,"line":156,"offset":6200}},"type":"text","value":"If you''re running SQLPage in another terminal window, use:"}],"position":{"end":{"column":59,"line":156,"offset":6258},"start":{"column":1,"line":156,"offset":6200}},"type":"paragraph"},{"lang":"bash","meta":null,"position":{"end":{"column":4,"line":160,"offset":6358},"start":{"column":1,"line":158,"offset":6260}},"type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch"},{"children":[{"position":{"end":{"column":43,"line":162,"offset":6402},"start":{"column":4,"line":162,"offset":6363}},"type":"text","value":"SQLPage single database deployment mode"}],"depth":2,"position":{"end":{"column":43,"line":162,"offset":6402},"start":{"column":1,"line":162,"offset":6360}},"type":"heading"},{"children":[{"position":{"end":{"column":36,"line":164,"offset":6439},"start":{"column":1,"line":164,"offset":6404}},"type":"text","value":"After development is complete, the "},{"position":{"end":{"column":50,"line":164,"offset":6453},"start":{"column":36,"line":164,"offset":6439}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":40,"line":165,"offset":6512},"start":{"column":50,"line":164,"offset":6453}},"type":"text","value":" can be removed and\nsingle-database deployment can be used:"}],"position":{"end":{"column":40,"line":165,"offset":6512},"start":{"column":1,"line":164,"offset":6404}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","pi":{"args":["bash","deploy","-C","--descr","Generate sqlpage_files table upsert SQL and push them to SQLite"],"count":5,"flags":{"C":true,"deploy":true,"descr":"Generate sqlpage_files table upsert SQL and push them to SQLite"},"pos":["deploy","C","descr"],"posCount":3}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":170,"offset":6715},"start":{"column":1,"line":167,"offset":6514}},"spawnableArgs":{"capture":[{"nature":"memory"}],"deps":[],"description":"Generate sqlpage_files table upsert SQL and push them to SQLite","graphs":[],"injectedDep":[]},"spawnableIdentity":"deploy","type":"code","value":"rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"},{"children":[{"position":{"end":{"column":11,"line":172,"offset":6727},"start":{"column":4,"line":172,"offset":6720}},"type":"text","value":"Raw SQL"}],"depth":2,"position":{"end":{"column":11,"line":172,"offset":6727},"start":{"column":1,"line":172,"offset":6717}},"type":"heading"},{"children":[{"position":{"end":{"column":37,"line":175,"offset":6843},"start":{"column":1,"line":174,"offset":6729}},"type":"text","value":"This raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed."}],"position":{"end":{"column":37,"line":175,"offset":6843},"start":{"column":1,"line":174,"offset":6729}},"type":"paragraph"},"[Circular]","[Circular]","[Circular]",{"children":[{"position":{"end":{"column":4,"line":182,"offset":6966},"start":{"column":1,"line":182,"offset":6963}},"type":"text","value":"💡 "},{"position":{"end":{"column":32,"line":182,"offset":6994},"start":{"column":4,"line":182,"offset":6966}},"type":"inlineCode","value":"schema-info.dml.sqlite.sql"},{"position":{"end":{"column":1,"line":183,"offset":7024},"start":{"column":32,"line":182,"offset":6994}},"type":"text","value":" will appear in the output as\n"},{"position":{"end":{"column":22,"line":183,"offset":7045},"start":{"column":1,"line":183,"offset":7024}},"type":"inlineCode","value":"sql.d/tail/0000.sql"},{"position":{"end":{"column":27,"line":183,"offset":7050},"start":{"column":22,"line":183,"offset":7045}},"type":"text","value":" and "},{"position":{"end":{"column":66,"line":183,"offset":7089},"start":{"column":27,"line":183,"offset":7050}},"type":"inlineCode","value":"sql.d/tail/schema-info.dml.sqlite.sql"},{"position":{"end":{"column":25,"line":184,"offset":7124},"start":{"column":66,"line":183,"offset":7089}},"type":"text","value":" (doing it\ntwice just for testing)."}],"position":{"end":{"column":25,"line":184,"offset":7124},"start":{"column":1,"line":182,"offset":6963}},"type":"paragraph"},{"children":[{"position":{"end":{"column":10,"line":186,"offset":7135},"start":{"column":4,"line":186,"offset":7129}},"type":"text","value":"Layout"}],"depth":2,"position":{"end":{"column":10,"line":186,"offset":7135},"start":{"column":1,"line":186,"offset":7126}},"type":"heading"},{"children":[{"position":{"end":{"column":58,"line":188,"offset":7194},"start":{"column":1,"line":188,"offset":7137}},"type":"text","value":"This cell instructs Spry to automatically inject the SQL "},{"position":{"end":{"column":67,"line":188,"offset":7203},"start":{"column":58,"line":188,"offset":7194}},"type":"inlineCode","value":"PARTIAL"},{"position":{"end":{"column":33,"line":189,"offset":7245},"start":{"column":67,"line":188,"offset":7203}},"type":"text","value":" into all\nSQLPage content cells. The name "},{"position":{"end":{"column":52,"line":189,"offset":7264},"start":{"column":33,"line":189,"offset":7245}},"type":"inlineCode","value":"global-layout.sql"},{"position":{"end":{"column":56,"line":190,"offset":7345},"start":{"column":52,"line":189,"offset":7264}},"type":"text","value":" is not significant (it''s\nrequired by Spry but only used for reference), but the "},{"position":{"end":{"column":71,"line":190,"offset":7360},"start":{"column":56,"line":190,"offset":7345}},"type":"inlineCode","value":"--inject **/*"},{"position":{"end":{"column":29,"line":191,"offset":7398},"start":{"column":71,"line":190,"offset":7360}},"type":"text","value":" argument\nis how matching occurs. The "},{"position":{"end":{"column":38,"line":191,"offset":7407},"start":{"column":29,"line":191,"offset":7398}},"type":"inlineCode","value":"--BEGIN"},{"position":{"end":{"column":43,"line":191,"offset":7412},"start":{"column":38,"line":191,"offset":7407}},"type":"text","value":" and "},{"position":{"end":{"column":50,"line":191,"offset":7419},"start":{"column":43,"line":191,"offset":7412}},"type":"inlineCode","value":"--END"},{"position":{"end":{"column":40,"line":192,"offset":7488},"start":{"column":50,"line":191,"offset":7419}},"type":"text","value":" comments are not required by\nSpry but make it easier to trace where "},{"children":[{"position":{"end":{"column":48,"line":192,"offset":7496},"start":{"column":41,"line":192,"offset":7489}},"type":"text","value":"partial"}],"position":{"end":{"column":49,"line":192,"offset":7497},"start":{"column":40,"line":192,"offset":7488}},"type":"emphasis"},{"position":{"end":{"column":75,"line":192,"offset":7523},"start":{"column":49,"line":192,"offset":7497}},"type":"text","value":" injections are occurring."}],"position":{"end":{"column":75,"line":192,"offset":7523},"start":{"column":1,"line":188,"offset":7137}},"type":"paragraph"},{"children":[{"position":{"end":{"column":38,"line":194,"offset":7562},"start":{"column":1,"line":194,"offset":7525}},"type":"text","value":"⚠️ Content injection content happens "},{"children":[{"position":{"end":{"column":45,"line":194,"offset":7569},"start":{"column":39,"line":194,"offset":7563}},"type":"text","value":"before"}],"position":{"end":{"column":46,"line":194,"offset":7570},"start":{"column":38,"line":194,"offset":7562}},"type":"emphasis"},{"position":{"end":{"column":77,"line":195,"offset":7678},"start":{"column":46,"line":194,"offset":7570}},"type":"text","value":" any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell."}],"position":{"end":{"column":77,"line":195,"offset":7678},"start":{"column":1,"line":194,"offset":7525}},"type":"paragraph"},{"directive":"PARTIAL","identity":"global-layout.sql","instructions":{"cli":"PARTIAL global-layout.sql --inject **/*","cmdLang":"PARTIAL","pi":{"args":["PARTIAL","global-layout.sql","--inject","**/*"],"count":4,"flags":{"global-layout.sql":true,"inject":"**/*"},"pos":["global-layout.sql","inject"],"posCount":2}},"isCodeDirectiveCandidate":true,"lang":"sql","langSpec":"[Circular]","meta":"PARTIAL global-layout.sql --inject **/*","position":{"end":{"column":4,"line":216,"offset":8411},"start":{"column":1,"line":197,"offset":7680}},"type":"code","value":"-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql"},{"children":[{"position":{"end":{"column":14,"line":219,"offset":8505},"start":{"column":1,"line":218,"offset":8413}},"type":"text","value":"Get the brand assets and store them into the SQLPage content stream. They will\nbe stored as "},{"position":{"end":{"column":30,"line":219,"offset":8521},"start":{"column":14,"line":219,"offset":8505}},"type":"inlineCode","value":"assets/brand/*"},{"position":{"end":{"column":39,"line":219,"offset":8530},"start":{"column":30,"line":219,"offset":8521}},"type":"text","value":" because "},{"position":{"end":{"column":47,"line":219,"offset":8538},"start":{"column":39,"line":219,"offset":8530}},"type":"inlineCode","value":"--base"},{"position":{"end":{"column":51,"line":219,"offset":8542},"start":{"column":47,"line":219,"offset":8538}},"type":"text","value":" is "},{"position":{"end":{"column":78,"line":219,"offset":8569},"start":{"column":51,"line":219,"offset":8542}},"type":"inlineCode","value":"https://www.surveilr.com/"},{"position":{"end":{"column":27,"line":220,"offset":8596},"start":{"column":78,"line":219,"offset":8569}},"type":"text","value":"\nand destination is set to "},{"position":{"end":{"column":30,"line":220,"offset":8599},"start":{"column":27,"line":220,"offset":8596}},"type":"inlineCode","value":"."},{"position":{"end":{"column":31,"line":220,"offset":8600},"start":{"column":30,"line":220,"offset":8599}},"type":"text","value":"."}],"position":{"end":{"column":31,"line":220,"offset":8600},"start":{"column":1,"line":218,"offset":8413}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base https://www.surveilr.com/","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base https://www.surveilr.com/","pi":{"args":["contribute","sqlpage_files","--base","https://www.surveilr.com/"],"count":4,"flags":{"base":"https://www.surveilr.com/","sqlpage_files":true},"pos":["sqlpage_files","base"],"posCount":2}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["https://www.surveilr.com/"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base https://www.surveilr.com/","position":{"end":{"column":4,"line":225,"offset":8792},"start":{"column":1,"line":222,"offset":8602}},"type":"code","value":"https://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png ."},{"children":[{"position":{"end":{"column":17,"line":227,"offset":8810},"start":{"column":4,"line":227,"offset":8797}},"type":"text","value":"SCF Home Page"}],"depth":2,"position":{"end":{"column":17,"line":227,"offset":8810},"start":{"column":1,"line":227,"offset":8794}},"type":"heading"},{"children":[{"position":{"end":{"column":55,"line":229,"offset":8866},"start":{"column":1,"line":229,"offset":8812}},"type":"text","value":"Index page which automatically generates links to all "},{"position":{"end":{"column":61,"line":229,"offset":8872},"start":{"column":55,"line":229,"offset":8866}},"type":"inlineCode","value":"/scf"},{"position":{"end":{"column":68,"line":229,"offset":8879},"start":{"column":61,"line":229,"offset":8872}},"type":"text","value":" pages."}],"position":{"end":{"column":68,"line":229,"offset":8879},"start":{"column":1,"line":229,"offset":8812}},"type":"paragraph"},"[Circular]",{"children":[{"position":{"end":{"column":18,"line":256,"offset":9834},"start":{"column":4,"line":256,"offset":9820}},"type":"text","value":"Unpivoted page"}],"depth":2,"position":{"end":{"column":18,"line":256,"offset":9834},"start":{"column":1,"line":256,"offset":9817}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Regime mappings"}},"attrsText":"{ route: { caption: \"Regime mappings\" } }","cli":"sql scf/regime_control_unpivoted.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }","pi":{"args":["sql","scf/regime_control_unpivoted.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_control_unpivoted.sql":true},"pos":["scf/regime_control_unpivoted.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_control_unpivoted.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":282,"offset":10842},"start":{"column":1,"line":258,"offset":9836}},"type":"code","value":"-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":24,"line":284,"offset":10867},"start":{"column":4,"line":284,"offset":10847}},"type":"text","value":"Regime Controls page"}],"depth":2,"position":{"end":{"column":24,"line":284,"offset":10867},"start":{"column":1,"line":284,"offset":10844}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Clean list of regime mappings"}},"attrsText":"{ route: { caption: \"Clean list of regime mappings\"} }","cli":"sql scf/regime_control.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }","pi":{"args":["sql","scf/regime_control.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_control.sql":true},"pos":["scf/regime_control.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_control.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":307,"offset":11722},"start":{"column":1,"line":286,"offset":10869}},"type":"code","value":"-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":21,"line":309,"offset":11744},"start":{"column":4,"line":309,"offset":11727}},"type":"text","value":"Regime Count page"}],"depth":2,"position":{"end":{"column":21,"line":309,"offset":11744},"start":{"column":1,"line":309,"offset":11724}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls per regime (totals)"}},"attrsText":"{ route: { caption: \"Controls per regime (totals)\"} }","cli":"sql scf/regime_count.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }","pi":{"args":["sql","scf/regime_count.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_count.sql":true},"pos":["scf/regime_count.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_count.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":330,"offset":12423},"start":{"column":1,"line":311,"offset":11746}},"type":"code","value":"-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":21,"line":332,"offset":12445},"start":{"column":4,"line":332,"offset":12428}},"type":"text","value":"Domain Count page"}],"depth":2,"position":{"end":{"column":21,"line":332,"offset":12445},"start":{"column":1,"line":332,"offset":12425}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Domain x Regime counts"}},"attrsText":"{ route: { caption: \"Domain x Regime counts\"} }","cli":"sql scf/regime_domain_count.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }","pi":{"args":["sql","scf/regime_domain_count.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_count.sql":true},"pos":["scf/regime_domain_count.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_count.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":352,"offset":13027},"start":{"column":1,"line":334,"offset":12447}},"type":"code","value":"-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":17,"line":354,"offset":13045},"start":{"column":4,"line":354,"offset":13032}},"type":"text","value":"Coverage page"}],"depth":2,"position":{"end":{"column":17,"line":354,"offset":13045},"start":{"column":1,"line":354,"offset":13029}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Domain coverage % by regime"}},"attrsText":"{ route: { caption: \"Domain coverage % by regime\"} }","cli":"sql scf/regime_domain_coverage.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }","pi":{"args":["sql","scf/regime_domain_coverage.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_coverage.sql":true},"pos":["scf/regime_domain_coverage.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_coverage.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":378,"offset":13878},"start":{"column":1,"line":356,"offset":13047}},"type":"code","value":"-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":20,"line":380,"offset":13899},"start":{"column":4,"line":380,"offset":13883}},"type":"text","value":"Regime Rank page"}],"depth":2,"position":{"end":{"column":20,"line":380,"offset":13899},"start":{"column":1,"line":380,"offset":13880}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Top regimes within each domain"}},"attrsText":"{ route: { caption: \"Top regimes within each domain\"} }","cli":"sql scf/regime_domain_rank.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }","pi":{"args":["sql","scf/regime_domain_rank.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_rank.sql":true},"pos":["scf/regime_domain_rank.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_rank.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":403,"offset":14668},"start":{"column":1,"line":382,"offset":13901}},"type":"code","value":"-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":16,"line":405,"offset":14685},"start":{"column":4,"line":405,"offset":14673}},"type":"text","value":"Jaccard page"}],"depth":2,"position":{"end":{"column":16,"line":405,"offset":14685},"start":{"column":1,"line":405,"offset":14670}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Regime overlap (Jaccard)"}},"attrsText":"{ route: { caption: \"Regime overlap (Jaccard)\"} }","cli":"sql scf/regime_overlap_jaccard.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }","pi":{"args":["sql","scf/regime_overlap_jaccard.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_overlap_jaccard.sql":true},"pos":["scf/regime_overlap_jaccard.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_overlap_jaccard.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":431,"offset":15595},"start":{"column":1,"line":407,"offset":14687}},"type":"code","value":"-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Long form of SCF x Regime mappings details"}},"attrsText":"{ route: { caption: \"Long form of SCF x Regime mappings details\" } }","cli":"sql scf/details/regime_control_unpivoted_details.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }","pi":{"args":["sql","scf/details/regime_control_unpivoted_details.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime_control_unpivoted_details.sql":true},"pos":["scf/details/regime_control_unpivoted_details.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime_control_unpivoted_details.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":458,"offset":16564},"start":{"column":1,"line":433,"offset":15597}},"type":"code","value":"SELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":45,"line":460,"offset":16610},"start":{"column":4,"line":460,"offset":16569}},"type":"text","value":"Controls per regime (totals) details page"}],"depth":2,"position":{"end":{"column":45,"line":460,"offset":16610},"start":{"column":1,"line":460,"offset":16566}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls per regime (totals) details"}},"attrsText":"{ route: { caption: \"Controls per regime (totals) details\" } }","cli":"sql scf/details/regime.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }","pi":{"args":["sql","scf/details/regime.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime.sql":true},"pos":["scf/details/regime.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":483,"offset":17327},"start":{"column":1,"line":462,"offset":16612}},"type":"code","value":"SELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}"},{"children":[{"position":{"end":{"column":23,"line":485,"offset":17351},"start":{"column":4,"line":485,"offset":17332}},"type":"text","value":"Threat Catalog Page"}],"depth":2,"position":{"end":{"column":23,"line":485,"offset":17351},"start":{"column":1,"line":485,"offset":17329}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Threat Catalog","description":"Threat Catalog"}},"attrsText":"{ route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","cli":"sql scf/threat_catalog.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","pi":{"args":["sql","scf/threat_catalog.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/threat_catalog.sql":true},"pos":["scf/threat_catalog.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/threat_catalog.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":500,"offset":17746},"start":{"column":1,"line":487,"offset":17353}},"type":"code","value":"SELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;"},{"children":[{"position":{"end":{"column":25,"line":502,"offset":17772},"start":{"column":4,"line":502,"offset":17751}},"type":"text","value":"Controls Library page"}],"depth":2,"position":{"end":{"column":25,"line":502,"offset":17772},"start":{"column":1,"line":502,"offset":17748}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls Library"}},"attrsText":"{ route: { caption: \"Controls Library\"} }","cli":"sql scf/controls.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/controls.sql { route: { caption: \"Controls Library\"} }","pi":{"args":["sql","scf/controls.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/controls.sql":true},"pos":["scf/controls.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/controls.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/controls.sql { route: { caption: \"Controls Library\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":524,"offset":18504},"start":{"column":1,"line":504,"offset":17774}},"type":"code","value":"-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}"},{"children":[{"position":{"end":{"column":23,"line":526,"offset":18528},"start":{"column":4,"line":526,"offset":18509}},"type":"text","value":"Regime details page"}],"depth":2,"position":{"end":{"column":23,"line":526,"offset":18528},"start":{"column":1,"line":526,"offset":18506}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Control details"}},"attrsText":"{ route: { caption: \"Control details\" } }","cli":"sql scf/details/regime_details.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime_details.sql { route: { caption: \"Control details\" } }","pi":{"args":["sql","scf/details/regime_details.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime_details.sql":true},"pos":["scf/details/regime_details.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime_details.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","meta":"scf/details/regime_details.sql { route: { caption: \"Control details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":548,"offset":19085},"start":{"column":1,"line":528,"offset":18530}},"type":"code","value":" SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;"}],"data":{"documentFrontmatter":{"node":"[Circular]","parsed":"[Circular]"}},"position":{"end":{"column":1,"line":549,"offset":19086},"start":{"column":1,"line":1,"offset":0}},"type":"root"},"nodeSrcText":{},"relativeTo":{},"resource":{"file":"[Circular]","provenance":"[Circular]","strategy":{"encoding":"utf8-text","target":"local-fs"}}},"type":"code","value":"-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;"}
+-- locals: pagination, paginate, SQL, cat, md, raw, type, lang, meta, value, position, data, nature, materializableIdentity, language, isBlob, materializationCodeFM, materializationArgs, materializationAttrs, provenance, origin, cell, path, spc, safeJsonStringify, captured, memoized, partial
+-- mdastNode: {"data":{"codeFM":{"attrs":{"route":{"caption":"Home"}},"attrsText":"{ route: { caption: \"Home\" } }","cli":"sql index.sql","cmdLang":"sql","fromPresets":[{"codeFM":{"cli":"code PRESET --interpolate --injectable","cmdLang":"code","pi":{"args":["code","PRESET","--interpolate","--injectable"],"count":4,"flags":{"PRESET":true,"injectable":true,"interpolate":true},"pos":["PRESET","interpolate","injectable"],"posCount":3}},"meta":"sql * --interpolate --injectable"}],"lang":"sql","langSpec":{"comment":{"block":[{"close":"*/","nested":false,"open":"/*"}],"line":["--"]},"extensions":[".sql"],"id":"sql"},"meta":"index.sql { route: { caption: \"Home\" } }","pi":{"args":["sql","index.sql"],"count":2,"flags":{"PRESET":true,"index.sql":true,"injectable":true,"interpolate":true},"pos":["index.sql"],"posCount":1}}},"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"index.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"index.sql { route: { caption: \"Home\" } }","nature":"MATERIALIZABLE","origin":{"data":"[Circular]","isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"index.sql","materializationArgs":"[Circular]","materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"index.sql { route: { caption: \"Home\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":254,"offset":9815},"start":{"column":1,"line":231,"offset":8881}},"type":"code","value":"-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;"},"position":"[Circular]","provenance":{"file":{"data":{"edges":[{"from":{"contributeFM":{"cli":"include --base ../../../lib/universal","cmdLang":"include","fromPresets":[],"lang":"include","meta":"--base ../../../lib/universal","pi":{"args":["include","--base","../../../lib/universal"],"count":3,"flags":{"base":"../../../lib/universal"},"pos":["base"],"posCount":1}},"contributeQPI":{"bareWords":[],"cmdLang":"include","pi":"[Circular]"},"contributeSF":{"data":{"base":["../../../lib/universal"]},"success":true},"directive":"contribute","identity":"base","includables":[{"data":{"codeFM":{"cli":"sql sql.d/tail/schema-info.dml.sqlite.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"sql.d/tail/schema-info.dml.sqlite.sql ","pi":{"args":["sql","sql.d/tail/schema-info.dml.sqlite.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"sql.d/tail/schema-info.dml.sqlite.sql":true},"pos":["sql.d/tail/schema-info.dml.sqlite.sql"],"posCount":1}}},"include":{"dest":{"kind":"prefix","value":"sql.d/tail"},"destPath":"sql.d/tail/schema-info.dml.sqlite.sql","destPrefix":"sql.d/tail","origin":{"candidate":"*.sql","destToken":"sql.d/tail","ir":{"cli":"sql *.sql sql.d/tail","cmdLang":"sql","pi":{"args":["sql","*.sql","sql.d/tail"],"count":3,"flags":{"*.sql":true,"sql.d/tail":true},"pos":["*.sql","sql.d/tail"],"posCount":2}},"label":"sql","lineNumInRawInstructions":1,"meta":"","parsedArgs":{"data":{"destToken":"sql.d/tail","label":"sql"},"success":true},"ppiq":{"bareWords":["*.sql","sql.d/tail"],"cmdLang":"sql","pi":"[Circular]"},"rawInstructions":"sql *.sql sql.d/tail"},"provenance":{"label":"*.sql","mimeType":"application/sql","path":"ABSOLUTE_PATH/lib/universal/schema-info.dml.sqlite.sql"},"strategy":{"encoding":"utf8-text","target":"local-fs"}},"isActionableCodeCandidate":true,"isBlob":false,"isContentAcquired":true,"lang":"sql","language":"[Circular]","materializableIdentity":"sql.d/tail/schema-info.dml.sqlite.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationCodeFM":"[Circular]","meta":"sql.d/tail/schema-info.dml.sqlite.sql ","nature":"MATERIALIZABLE","position":{"end":{"column":1,"line":178},"start":"[Circular]"},"type":"code","value":"-- @spry.nature sql @spry.sqlImpact dml\n\n-- Spry schema information is stored in sqlpage_files as a single-row-per-schema\n-- catalog with path ''spry.d/info-schema.auto.json'' (where ''main'' is schema).\n-- Stores a prettified JSON graph of the entire SQLite schema (tables, columns, \n-- indexes, foreign keys, views, triggers, and derived relations). These views \n-- project that JSON back into relational form for easy querying. Filter by \n-- schema_name in WHERE clauses (e.g., WHERE s.path = ''spry.d/info-schema.auto.json''). \n-- Requires SQLite JSON1.\n\n-- Populate with a comprehensive JSON graph of the current schema\nINSERT OR REPLACE INTO sqlpage_files (path, contents)\nVALUES (\n  ''spry.d/info-schema.auto.json'',\n  json_pretty(\n    json_object(\n      ''schema_name'', ''main'',\n      ''generated_on'', datetime(''now''),\n      ''sqlite_version'', sqlite_version(),\n\n      -- Attached databases\n      ''databases'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''db_name'', name, ''db_file'', file))\n         FROM pragma_database_list),\n\n      -- Available collations\n      ''collations'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''name'', name))\n         FROM pragma_collation_list),\n\n      -- Tables keyed by name, with nested columns, indexes, FKs, triggers\n      ''tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,                 -- ''table''\n                   ''strict'', tl.strict,\n                   ''without_rowid'', 0,              -- not exposed by pragma_table_list; set 0 by default\n                   ''ncol'', tl.ncol,\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name),\n\n                   ''columns'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''cid'', x.cid,\n                               ''name'', x.name,\n                               ''type'', x.type,\n                               ''notnull'', x.\"notnull\",\n                               ''dflt_value'', x.dflt_value,\n                               ''pk'', x.pk,\n                               ''hidden'', x.hidden\n                             )\n                           )\n                      FROM pragma_table_xinfo(tl.name) AS x),\n\n                   ''indexes'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', il.name,\n                               ''origin'', il.origin,          -- ''c'',''u'',''pk''\n                               ''unique'', il.\"unique\",\n                               ''partial'', il.partial,\n                               ''where'',\n                                 (SELECT s.sql FROM sqlite_schema AS s\n                                   WHERE s.type=''index'' AND s.name=il.name),\n                               ''columns'',\n                                 (SELECT json_group_array(\n                                           json_object(\n                                             ''seqno'', ixi.seqno,\n                                             ''cid'', ixi.cid,\n                                             ''name'', ixi.name,\n                                             ''desc'', ixi.\"desc\",\n                                             ''coll'', ixi.coll,\n                                             ''key'', ixi.\"key\"\n                                           )\n                                         )\n                                    FROM pragma_index_xinfo(il.name) AS ixi)\n                             )\n                           )\n                      FROM pragma_index_list(tl.name) AS il),\n\n                   ''foreign_keys'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''id'', fk.id,\n                               ''seq'', fk.seq,\n                               ''from'', fk.\"from\",\n                               ''to'', fk.\"to\",\n                               ''table'', fk.\"table\",\n                               ''on_update'', fk.on_update,\n                               ''on_delete'', fk.on_delete,\n                               ''match'', fk.\"match\"\n                             )\n                           )\n                      FROM pragma_foreign_key_list(tl.name) AS fk),\n\n                   ''triggers'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', t.name,\n                               ''sql'',  t.sql\n                             )\n                           )\n                      FROM sqlite_schema AS t\n                     WHERE t.type=''trigger'' AND t.tbl_name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''table'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Views keyed by name\n      ''views'',\n      (\n        SELECT json_group_object(\n                 v.name,\n                 json_object(\n                   ''type'', ''view'',\n                   ''sql'',  v.sql,\n                   ''dependencies'', json(''[]'') -- placeholder (dependency parsing is non-trivial)\n                 )\n               )\n          FROM sqlite_schema AS v\n         WHERE v.type=''view'' AND v.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Virtual tables keyed by name (basic capture)\n      ''virtual_tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,  -- ''virtual''\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''virtual'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Triggers keyed by name (top-level convenience)\n      ''triggers'',\n      (\n        SELECT json_group_object(\n                 t.name,\n                 json_object(\n                   ''table'', t.tbl_name,\n                   ''sql'',   t.sql\n                 )\n               )\n          FROM sqlite_schema AS t\n         WHERE t.type=''trigger'' AND t.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Relations derived from all foreign keys\n      ''relations'',\n      (\n        SELECT json_group_array(\n                 json_object(\n                   ''name'', printf(''%s_%s_%s_%s'', fk.tbl_name, fk.\"from\", fk.\"table\", fk.\"to\"),\n                   ''from_table'', fk.tbl_name,\n                   ''from_columns'', json_array(fk.\"from\"),\n                   ''to_table'', fk.\"table\",\n                   ''to_columns'', json_array(fk.\"to\"),\n                   ''type'', ''many_to_one'',\n                   ''on_update'', fk.on_update,\n                   ''on_delete'', fk.on_delete,\n                   ''match'', fk.\"match\"\n                 )\n               )\n          FROM (\n                 SELECT\n                   tbl.name AS tbl_name,\n                   fk.\"from\",\n                   fk.\"to\",\n                   fk.\"table\",\n                   fk.on_update,\n                   fk.on_delete,\n                   fk.\"match\"\n                 FROM sqlite_schema AS tbl,\n                      pragma_foreign_key_list(tbl.name) AS fk\n                 WHERE tbl.type=''table'' AND tbl.name NOT LIKE ''sqlite_%''\n               ) AS fk\n      )\n    )\n  )\n);\n\n-- Tables (one row per table)\nDROP VIEW IF EXISTS spry_schema_info_table;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table AS\nSELECT\n  ''main''                                    AS schema_name,\n  t.key                                     AS table_name,\n  json_extract(t.value,''$.type'')            AS type,\n  json_extract(t.value,''$.ncol'')            AS ncol,\n  json_extract(t.value,''$.strict'')          AS strict,\n  json_extract(t.value,''$.without_rowid'')   AS without_rowid,\n  json_extract(t.value,''$.sql'')             AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table columns (one row per column per table)\nDROP VIEW IF EXISTS spry_schema_info_table_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(c.value,''$.cid'')                 AS cid,\n  json_extract(c.value,''$.name'')                AS column_name,\n  json_extract(c.value,''$.type'')                AS column_type,\n  json_extract(c.value,''$.notnull'')             AS not_null,\n  json_extract(c.value,''$.dflt_value'')          AS dflt_value,\n  json_extract(c.value,''$.pk'')                  AS part_of_pk,\n  json_extract(c.value,''$.hidden'')              AS hidden\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t,\n     json_each(t.value, ''$.columns'')           AS c\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Views (one row per view)\nDROP VIEW IF EXISTS spry_schema_info_view;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view AS\nSELECT\n  ''main''                           AS schema_name,\n  v.key                            AS view_name,\n  json_extract(v.value,''$.type'')   AS type,\n  json_extract(v.value,''$.sql'')    AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- View columns (if your schema_graph_json includes a $.views[*].columns array)\nDROP VIEW IF EXISTS spry_schema_info_view_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view_column AS\nSELECT\n  ''main''                          AS schema_name,\n  v.key                           AS view_name,\n  json_extract(vc.value,''$.cid'')  AS cid,\n  json_extract(vc.value,''$.name'') AS column_name,\n  json_extract(vc.value,''$.type'') AS column_type,\n  json_extract(vc.value,''$.notnull'') AS not_null,\n  json_extract(vc.value,''$.dflt_value'') AS dflt_value\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nLEFT JOIN json_each(v.value, ''$.columns'') AS vc ON 1=1\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Indexes (one row per index per table)\nDROP VIEW IF EXISTS spry_schema_info_index;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index AS\nSELECT\n  ''main''                                       AS schema_name,\n  t.key                                        AS table_name,\n  json_extract(i.value,''$.name'')               AS index_name,\n  json_extract(i.value,''$.origin'')             AS origin,      -- ''c'',''u'',''pk''\n  json_extract(i.value,''$.unique'')             AS is_unique,\n  json_extract(i.value,''$.partial'')            AS is_partial,\n  json_extract(i.value,''$.where'')              AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')         AS t,\n     json_each(t.value, ''$.indexes'')           AS i\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Index columns (one row per column per index)\nDROP VIEW IF EXISTS spry_schema_info_index_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(i.value,''$.name'')                AS index_name,\n  json_extract(ic.value,''$.seqno'')              AS seqno,\n  json_extract(ic.value,''$.cid'')                AS cid,\n  json_extract(ic.value,''$.name'')               AS column_name,\n  json_extract(ic.value,''$.desc'')               AS is_desc,\n  json_extract(ic.value,''$.coll'')               AS collation_name,\n  json_extract(ic.value,''$.key'')                AS is_key_column\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')          AS t,\n     json_each(t.value, ''$.indexes'')            AS i,\n     json_each(i.value, ''$.columns'')            AS ic\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Foreign keys (one row per referencing column)\nDROP VIEW IF EXISTS spry_schema_info_foreign_key;\nCREATE VIEW IF NOT EXISTS spry_schema_info_foreign_key AS\nSELECT\n  ''main''                                   AS schema_name,\n  t.key                                    AS table_name,\n  json_extract(fk.value,''$.id'')            AS fk_id,\n  json_extract(fk.value,''$.seq'')           AS seq,\n  json_extract(fk.value,''$.from'')          AS from_column,\n  json_extract(fk.value,''$.to'')            AS to_column,\n  json_extract(fk.value,''$.table'')         AS ref_table,\n  json_extract(fk.value,''$.on_update'')     AS on_update,\n  json_extract(fk.value,''$.on_delete'')     AS on_delete,\n  json_extract(fk.value,''$.match'')         AS match\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')     AS t,\n     json_each(t.value, ''$.foreign_keys'')  AS fk\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table triggers (one row per trigger per table)\nDROP VIEW IF EXISTS spry_schema_info_table_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  t.key                                 AS table_name,\n  json_extract(tr.value,''$.name'')       AS trigger_name,\n  json_extract(tr.value,''$.sql'')        AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')  AS t,\n     json_each(t.value, ''$.triggers'')   AS tr\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Top-level triggers (if captured under $.triggers object)\nDROP VIEW IF EXISTS spry_schema_info_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  trg.key                               AS trigger_name,\n  json_extract(trg.value,''$.table'')     AS table_name,\n  json_extract(trg.value,''$.sql'')       AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.triggers'') AS trg\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Relations derived in schema_graph_json (one row per relation)\nDROP VIEW IF EXISTS spry_schema_info_relation;\nCREATE VIEW IF NOT EXISTS spry_schema_info_relation AS\nSELECT\n  ''main''                                  AS schema_name,\n  json_extract(r.value,''$.name'')          AS relation_name,\n  json_extract(r.value,''$.from_table'')    AS from_table,\n  json_extract(r.value,''$.to_table'')      AS to_table,\n  json_extract(r.value,''$.type'')          AS relation_type,\n  json_extract(r.value,''$.on_update'')     AS on_update,\n  json_extract(r.value,''$.on_delete'')     AS on_delete,\n  json_extract(r.value,''$.match'')         AS match,\n  json_extract(r.value,''$.from_columns'')  AS from_columns_json,\n  json_extract(r.value,''$.to_columns'')    AS to_columns_json\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.relations'') AS r\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n"},{"data":{"codeFM":{"cli":"sql sql.d/tail/0000.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"sql.d/tail/0000.sql ","pi":{"args":["sql","sql.d/tail/0000.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"sql.d/tail/0000.sql":true},"pos":["sql.d/tail/0000.sql"],"posCount":1}}},"include":{"dest":{"kind":"path","value":"sql.d/tail/0000.sql"},"destPath":"sql.d/tail/0000.sql","origin":{"candidate":"schema-info.dml.sqlite.sql","destToken":"sql.d/tail/0000.sql","ir":{"cli":"sql schema-info.dml.sqlite.sql sql.d/tail/0000.sql","cmdLang":"sql","pi":{"args":["sql","schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"count":3,"flags":{"schema-info.dml.sqlite.sql":true,"sql.d/tail/0000.sql":true},"pos":["schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"posCount":2}},"label":"sql","lineNumInRawInstructions":2,"meta":"","parsedArgs":{"data":{"destToken":"sql.d/tail/0000.sql","label":"sql"},"success":true},"ppiq":{"bareWords":["schema-info.dml.sqlite.sql","sql.d/tail/0000.sql"],"cmdLang":"sql","pi":"[Circular]"},"rawInstructions":"sql schema-info.dml.sqlite.sql sql.d/tail/0000.sql"},"provenance":{"label":"schema-info.dml.sqlite.sql","mimeType":"application/sql","path":"ABSOLUTE_PATH/lib/universal/schema-info.dml.sqlite.sql"},"strategy":{"encoding":"utf8-text","target":"local-fs"}},"isActionableCodeCandidate":true,"isBlob":false,"isContentAcquired":true,"lang":"sql","language":"[Circular]","materializableIdentity":"sql.d/tail/0000.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationCodeFM":"[Circular]","meta":"sql.d/tail/0000.sql ","nature":"MATERIALIZABLE","position":{"end":{"column":1,"line":179},"start":"[Circular]"},"type":"code","value":"-- @spry.nature sql @spry.sqlImpact dml\n\n-- Spry schema information is stored in sqlpage_files as a single-row-per-schema\n-- catalog with path ''spry.d/info-schema.auto.json'' (where ''main'' is schema).\n-- Stores a prettified JSON graph of the entire SQLite schema (tables, columns, \n-- indexes, foreign keys, views, triggers, and derived relations). These views \n-- project that JSON back into relational form for easy querying. Filter by \n-- schema_name in WHERE clauses (e.g., WHERE s.path = ''spry.d/info-schema.auto.json''). \n-- Requires SQLite JSON1.\n\n-- Populate with a comprehensive JSON graph of the current schema\nINSERT OR REPLACE INTO sqlpage_files (path, contents)\nVALUES (\n  ''spry.d/info-schema.auto.json'',\n  json_pretty(\n    json_object(\n      ''schema_name'', ''main'',\n      ''generated_on'', datetime(''now''),\n      ''sqlite_version'', sqlite_version(),\n\n      -- Attached databases\n      ''databases'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''db_name'', name, ''db_file'', file))\n         FROM pragma_database_list),\n\n      -- Available collations\n      ''collations'',\n      (SELECT json_group_array(json_object(''seq'', seq, ''name'', name))\n         FROM pragma_collation_list),\n\n      -- Tables keyed by name, with nested columns, indexes, FKs, triggers\n      ''tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,                 -- ''table''\n                   ''strict'', tl.strict,\n                   ''without_rowid'', 0,              -- not exposed by pragma_table_list; set 0 by default\n                   ''ncol'', tl.ncol,\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name),\n\n                   ''columns'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''cid'', x.cid,\n                               ''name'', x.name,\n                               ''type'', x.type,\n                               ''notnull'', x.\"notnull\",\n                               ''dflt_value'', x.dflt_value,\n                               ''pk'', x.pk,\n                               ''hidden'', x.hidden\n                             )\n                           )\n                      FROM pragma_table_xinfo(tl.name) AS x),\n\n                   ''indexes'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', il.name,\n                               ''origin'', il.origin,          -- ''c'',''u'',''pk''\n                               ''unique'', il.\"unique\",\n                               ''partial'', il.partial,\n                               ''where'',\n                                 (SELECT s.sql FROM sqlite_schema AS s\n                                   WHERE s.type=''index'' AND s.name=il.name),\n                               ''columns'',\n                                 (SELECT json_group_array(\n                                           json_object(\n                                             ''seqno'', ixi.seqno,\n                                             ''cid'', ixi.cid,\n                                             ''name'', ixi.name,\n                                             ''desc'', ixi.\"desc\",\n                                             ''coll'', ixi.coll,\n                                             ''key'', ixi.\"key\"\n                                           )\n                                         )\n                                    FROM pragma_index_xinfo(il.name) AS ixi)\n                             )\n                           )\n                      FROM pragma_index_list(tl.name) AS il),\n\n                   ''foreign_keys'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''id'', fk.id,\n                               ''seq'', fk.seq,\n                               ''from'', fk.\"from\",\n                               ''to'', fk.\"to\",\n                               ''table'', fk.\"table\",\n                               ''on_update'', fk.on_update,\n                               ''on_delete'', fk.on_delete,\n                               ''match'', fk.\"match\"\n                             )\n                           )\n                      FROM pragma_foreign_key_list(tl.name) AS fk),\n\n                   ''triggers'',\n                   (SELECT json_group_array(\n                             json_object(\n                               ''name'', t.name,\n                               ''sql'',  t.sql\n                             )\n                           )\n                      FROM sqlite_schema AS t\n                     WHERE t.type=''trigger'' AND t.tbl_name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''table'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Views keyed by name\n      ''views'',\n      (\n        SELECT json_group_object(\n                 v.name,\n                 json_object(\n                   ''type'', ''view'',\n                   ''sql'',  v.sql,\n                   ''dependencies'', json(''[]'') -- placeholder (dependency parsing is non-trivial)\n                 )\n               )\n          FROM sqlite_schema AS v\n         WHERE v.type=''view'' AND v.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Virtual tables keyed by name (basic capture)\n      ''virtual_tables'',\n      (\n        SELECT json_group_object(\n                 tl.name,\n                 json_object(\n                   ''type'', tl.type,  -- ''virtual''\n                   ''sql'', (SELECT s.sql FROM sqlite_schema AS s WHERE s.type=''table'' AND s.name=tl.name)\n                 )\n               )\n          FROM pragma_table_list AS tl\n         WHERE tl.type=''virtual'' AND tl.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Triggers keyed by name (top-level convenience)\n      ''triggers'',\n      (\n        SELECT json_group_object(\n                 t.name,\n                 json_object(\n                   ''table'', t.tbl_name,\n                   ''sql'',   t.sql\n                 )\n               )\n          FROM sqlite_schema AS t\n         WHERE t.type=''trigger'' AND t.name NOT LIKE ''sqlite_%''\n      ),\n\n      -- Relations derived from all foreign keys\n      ''relations'',\n      (\n        SELECT json_group_array(\n                 json_object(\n                   ''name'', printf(''%s_%s_%s_%s'', fk.tbl_name, fk.\"from\", fk.\"table\", fk.\"to\"),\n                   ''from_table'', fk.tbl_name,\n                   ''from_columns'', json_array(fk.\"from\"),\n                   ''to_table'', fk.\"table\",\n                   ''to_columns'', json_array(fk.\"to\"),\n                   ''type'', ''many_to_one'',\n                   ''on_update'', fk.on_update,\n                   ''on_delete'', fk.on_delete,\n                   ''match'', fk.\"match\"\n                 )\n               )\n          FROM (\n                 SELECT\n                   tbl.name AS tbl_name,\n                   fk.\"from\",\n                   fk.\"to\",\n                   fk.\"table\",\n                   fk.on_update,\n                   fk.on_delete,\n                   fk.\"match\"\n                 FROM sqlite_schema AS tbl,\n                      pragma_foreign_key_list(tbl.name) AS fk\n                 WHERE tbl.type=''table'' AND tbl.name NOT LIKE ''sqlite_%''\n               ) AS fk\n      )\n    )\n  )\n);\n\n-- Tables (one row per table)\nDROP VIEW IF EXISTS spry_schema_info_table;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table AS\nSELECT\n  ''main''                                    AS schema_name,\n  t.key                                     AS table_name,\n  json_extract(t.value,''$.type'')            AS type,\n  json_extract(t.value,''$.ncol'')            AS ncol,\n  json_extract(t.value,''$.strict'')          AS strict,\n  json_extract(t.value,''$.without_rowid'')   AS without_rowid,\n  json_extract(t.value,''$.sql'')             AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table columns (one row per column per table)\nDROP VIEW IF EXISTS spry_schema_info_table_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(c.value,''$.cid'')                 AS cid,\n  json_extract(c.value,''$.name'')                AS column_name,\n  json_extract(c.value,''$.type'')                AS column_type,\n  json_extract(c.value,''$.notnull'')             AS not_null,\n  json_extract(c.value,''$.dflt_value'')          AS dflt_value,\n  json_extract(c.value,''$.pk'')                  AS part_of_pk,\n  json_extract(c.value,''$.hidden'')              AS hidden\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'') AS t,\n     json_each(t.value, ''$.columns'')           AS c\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Views (one row per view)\nDROP VIEW IF EXISTS spry_schema_info_view;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view AS\nSELECT\n  ''main''                           AS schema_name,\n  v.key                            AS view_name,\n  json_extract(v.value,''$.type'')   AS type,\n  json_extract(v.value,''$.sql'')    AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- View columns (if your schema_graph_json includes a $.views[*].columns array)\nDROP VIEW IF EXISTS spry_schema_info_view_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_view_column AS\nSELECT\n  ''main''                          AS schema_name,\n  v.key                           AS view_name,\n  json_extract(vc.value,''$.cid'')  AS cid,\n  json_extract(vc.value,''$.name'') AS column_name,\n  json_extract(vc.value,''$.type'') AS column_type,\n  json_extract(vc.value,''$.notnull'') AS not_null,\n  json_extract(vc.value,''$.dflt_value'') AS dflt_value\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.views'') AS v\nLEFT JOIN json_each(v.value, ''$.columns'') AS vc ON 1=1\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Indexes (one row per index per table)\nDROP VIEW IF EXISTS spry_schema_info_index;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index AS\nSELECT\n  ''main''                                       AS schema_name,\n  t.key                                        AS table_name,\n  json_extract(i.value,''$.name'')               AS index_name,\n  json_extract(i.value,''$.origin'')             AS origin,      -- ''c'',''u'',''pk''\n  json_extract(i.value,''$.unique'')             AS is_unique,\n  json_extract(i.value,''$.partial'')            AS is_partial,\n  json_extract(i.value,''$.where'')              AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')         AS t,\n     json_each(t.value, ''$.indexes'')           AS i\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Index columns (one row per column per index)\nDROP VIEW IF EXISTS spry_schema_info_index_column;\nCREATE VIEW IF NOT EXISTS spry_schema_info_index_column AS\nSELECT\n  ''main''                                        AS schema_name,\n  t.key                                         AS table_name,\n  json_extract(i.value,''$.name'')                AS index_name,\n  json_extract(ic.value,''$.seqno'')              AS seqno,\n  json_extract(ic.value,''$.cid'')                AS cid,\n  json_extract(ic.value,''$.name'')               AS column_name,\n  json_extract(ic.value,''$.desc'')               AS is_desc,\n  json_extract(ic.value,''$.coll'')               AS collation_name,\n  json_extract(ic.value,''$.key'')                AS is_key_column\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')          AS t,\n     json_each(t.value, ''$.indexes'')            AS i,\n     json_each(i.value, ''$.columns'')            AS ic\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Foreign keys (one row per referencing column)\nDROP VIEW IF EXISTS spry_schema_info_foreign_key;\nCREATE VIEW IF NOT EXISTS spry_schema_info_foreign_key AS\nSELECT\n  ''main''                                   AS schema_name,\n  t.key                                    AS table_name,\n  json_extract(fk.value,''$.id'')            AS fk_id,\n  json_extract(fk.value,''$.seq'')           AS seq,\n  json_extract(fk.value,''$.from'')          AS from_column,\n  json_extract(fk.value,''$.to'')            AS to_column,\n  json_extract(fk.value,''$.table'')         AS ref_table,\n  json_extract(fk.value,''$.on_update'')     AS on_update,\n  json_extract(fk.value,''$.on_delete'')     AS on_delete,\n  json_extract(fk.value,''$.match'')         AS match\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')     AS t,\n     json_each(t.value, ''$.foreign_keys'')  AS fk\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Table triggers (one row per trigger per table)\nDROP VIEW IF EXISTS spry_schema_info_table_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_table_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  t.key                                 AS table_name,\n  json_extract(tr.value,''$.name'')       AS trigger_name,\n  json_extract(tr.value,''$.sql'')        AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.tables'')  AS t,\n     json_each(t.value, ''$.triggers'')   AS tr\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Top-level triggers (if captured under $.triggers object)\nDROP VIEW IF EXISTS spry_schema_info_trigger;\nCREATE VIEW IF NOT EXISTS spry_schema_info_trigger AS\nSELECT\n  ''main''                                AS schema_name,\n  trg.key                               AS trigger_name,\n  json_extract(trg.value,''$.table'')     AS table_name,\n  json_extract(trg.value,''$.sql'')       AS definition_sql\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.triggers'') AS trg\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n\n-- Relations derived in schema_graph_json (one row per relation)\nDROP VIEW IF EXISTS spry_schema_info_relation;\nCREATE VIEW IF NOT EXISTS spry_schema_info_relation AS\nSELECT\n  ''main''                                  AS schema_name,\n  json_extract(r.value,''$.name'')          AS relation_name,\n  json_extract(r.value,''$.from_table'')    AS from_table,\n  json_extract(r.value,''$.to_table'')      AS to_table,\n  json_extract(r.value,''$.type'')          AS relation_type,\n  json_extract(r.value,''$.on_update'')     AS on_update,\n  json_extract(r.value,''$.on_delete'')     AS on_delete,\n  json_extract(r.value,''$.match'')         AS match,\n  json_extract(r.value,''$.from_columns'')  AS from_columns_json,\n  json_extract(r.value,''$.to_columns'')    AS to_columns_json\nFROM sqlpage_files AS s,\n     json_each(s.contents, ''$.relations'') AS r\nWHERE s.path = ''spry.d/info-schema.auto.json'';\n"}],"instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"include","meta":"--base ../../../lib/universal","position":{"end":{"column":4,"line":180,"offset":6961},"start":{"column":1,"line":177,"offset":6845}},"type":"code","value":"sql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql"},"rel":"isIncludedNode","to":"[Circular]"},{"from":"[Circular]","rel":"isIncludedNode","to":"[Circular]"}],"frontmatter":{"sqlpage-conf":{"allow_exec":true,"database_url":"sqlite://scf-2025.3.sqlite.db?mode=rwc","port":9227,"web_root":"./dev-src.auto"}},"provenance":{"label":"Spryfile.md","mimeType":"text/markdown","path":"Spryfile.md"}},"history":["Spryfile.md"],"messages":[],"value":"---\nsqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}\n---\n\n# Secure Controls Framework (SCF) SQLPage Application\n\nThis script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n[official SCF GitHub repository](https://github.com/securecontrolsframework/securecontrolsframework)\ninto a structured SQLite database.\n\n- Uses Spry to manage tasks and generate the SQLPage presentation layer.\n- Uses DuckDB with its built-in `excel` and `sqlite` extensions.\n\n## Spry Axiom configuration\n\n`code DEFAULTS` is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like `sql`, `text`, etc. allowing them to\nbe interpolatable (`${...}`) and injectable (using `PARTIAL`s) by default\ninstead of having to pass `--interpolate` and `--injectable` into each code\ncell. 💡 `code DEFAULTS` is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat `sql` code fenced blocks.\n\n```code DEFAULTS\nsql * --interpolate --injectable\n```\n\nThe following example shows how arbitrary files can be \"contributed\" to\n`sqlpage_files`. `--base` should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:\n\n```contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry\n**/* SUNDRY\n```\n\nThe following example shows how template files can be \"contributed\" to\n`sqlpage_files` but only when `--package` is being used. Spry picks them up from\n`../sqlpage/templates/*` and store them in `templates/*` path in `sqlpage_files`\ntable only during `--package` operation:\n\n```contribute sqlpage_files --base sqlpage/templates --mode package\n**/* templates --mime text/plain\n```\n\n💡 You should use the above technique if you ever create custom\n`sqlplage/templates` files that you want included in the database.\n\n## Setup\n\nDownload the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this `README.md` and then run `spry.ts task prepare-db`. We supply\nour own `#!/usr/bin/env -S bash` shebang since we have comments in the shell\nscript.\n\n```bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"\n#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db\n```\n\n## Environment variables and .envrc\n\nThis project reads configuration from environment variables. Two variables you\nwill commonly set in development are:\n\n- `SPRY_DB` — the database connection URL used by SQLPage and Spry. Example\n  value used here: `sqlite://scf-2025.3.sqlite.db?mode=rwc`\n  - Scheme: `sqlite://` followed by a path (relative or absolute) to the SQLite\n    file.\n  - Query `mode=rwc` tells SQLite/DuckDB to open the file for read/write and\n    create it if missing.\n  - If you prefer a path under a `data/` directory, set e.g.\n    `sqlite://./data/scf-2025.3.sqlite.db?mode=rwc`.\n\n- `PORT` — the TCP port the local SQLPage server or other local web component\n  should listen on (example: `9227`).\n\nRecommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named `.envrc`\nin this directory.\n\nPOSIX-style example (bash/zsh):\n\n```envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"\nexport SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227\n```\n\nThen run `direnv allow` in this project directory to load the `.envrc` into your\nshell environment. direnv will evaluate `.envrc` only after you explicitly allow\nit.\n\n## Security and repository hygiene\n\n- Never commit secrets or production credentials into `.envrc`. Treat `.envrc`\n  like a local-only file.\n- Add `.envrc` to your local `.gitignore` if you keep secrets there.\n  Alternatively commit a `.envrc.example` or `.envrc.sample` with safe,\n  non-secret defaults to document expected variables.\n- The SQLite file (e.g. `scf-2025.3.sqlite.db`) is a binary database file — you\n  will usually not check this into version control. Add that filename or the\n  `data/` directory to `.gitignore` as well.\n\nWhy these variables matter here\n\n- The YAML header at the top of this `Spryfile.md` reads\n  `database_url: ${env.SPRY_DB}` and `port: ${env.PORT}` — Spry and the SQLPage\n  tooling will substitute those environment values when building or serving the\n  site.\n- If `SPRY_DB` is not set, the tooling may fail to find the database or fall\n  back to defaults; explicitly setting it ensures predictable, repeatable dev\n  runs.\n\nQuick troubleshooting\n\n- If the server does not start on the expected port, verify `echo $PORT` (or\n  `echo $SPRY_DB`) in your shell to confirm values are loaded.\n- If direnv appears not to load `.envrc`, re-run `direnv allow` and ensure your\n  shell config contains the direnv hook.\n\n## SQLPage Dev / Watch mode\n\nWhile you''re developing, Spry''s `dev-src.auto` generator should be used:\n\n```bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json\n```\n\n```bash clean --descr \"Clean up the project directory''s generated artifacts\"\nrm -rf dev-src.auto\n```\n\nIn development mode, here’s the `--watch` convenience you can use so that\nwhenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,\nwhich is then picked up automatically by the SQLPage server:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage\n```\n\n- `--watch` turns on watching all `--md` files passed in (defaults to\n  `Spryfile.md`)\n- `--with-sqlpage` starts and stops SQLPage after each build\n\nRestarting SQLPage after each re-generation of dev-src.auto is **not**\nnecessary, so you can also use `--watch` without `--with-sqlpage` in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow.\n\nIf you''re running SQLPage in another terminal window, use:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch\n```\n\n## SQLPage single database deployment mode\n\nAfter development is complete, the `dev-src.auto` can be removed and\nsingle-database deployment can be used:\n\n```bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"\nrm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db\n```\n\n## Raw SQL\n\nThis raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed.\n\n```include --base ../../../lib/universal\nsql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql\n```\n\n💡 `schema-info.dml.sqlite.sql` will appear in the output as\n`sql.d/tail/0000.sql` and `sql.d/tail/schema-info.dml.sqlite.sql` (doing it\ntwice just for testing).\n\n## Layout\n\nThis cell instructs Spry to automatically inject the SQL `PARTIAL` into all\nSQLPage content cells. The name `global-layout.sql` is not significant (it''s\nrequired by Spry but only used for reference), but the `--inject **/*` argument\nis how matching occurs. The `--BEGIN` and `--END` comments are not required by\nSpry but make it easier to trace where _partial_ injections are occurring.\n\n⚠️ Content injection content happens _before_ any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell.\n\n```sql PARTIAL global-layout.sql --inject **/*\n-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql\n```\n\nGet the brand assets and store them into the SQLPage content stream. They will\nbe stored as `assets/brand/*` because `--base` is `https://www.surveilr.com/`\nand destination is set to `.`.\n\n```contribute sqlpage_files --base https://www.surveilr.com/\nhttps://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png .\n```\n\n## SCF Home Page\n\nIndex page which automatically generates links to all `/scf` pages.\n\n```sql index.sql { route: { caption: \"Home\" } }\n-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;\n```\n\n## Unpivoted page\n\n```sql scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }\n-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Controls page\n\n```sql scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Count page\n\n```sql scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Domain Count page\n\n```sql scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }\n-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Coverage page\n\n```sql scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }\n-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Rank page\n\n```sql scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }\n-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Jaccard page\n\n```sql scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }\n-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}\n```\n\n```sql scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Controls per regime (totals) details page\n\n```sql scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}\n```\n\n## Threat Catalog Page\n\n```sql scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }\nSELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;\n```\n\n## Controls Library page\n\n```sql scf/controls.sql { route: { caption: \"Controls Library\"} }\n-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}\n```\n\n## Regime details page\n\n```sql scf/details/regime_details.sql { route: { caption: \"Control details\" } }\n SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;\n```\n"},"mdSrcText":"---\nsqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}\n---\n\n# Secure Controls Framework (SCF) SQLPage Application\n\nThis script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n[official SCF GitHub repository](https://github.com/securecontrolsframework/securecontrolsframework)\ninto a structured SQLite database.\n\n- Uses Spry to manage tasks and generate the SQLPage presentation layer.\n- Uses DuckDB with its built-in `excel` and `sqlite` extensions.\n\n## Spry Axiom configuration\n\n`code DEFAULTS` is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like `sql`, `text`, etc. allowing them to\nbe interpolatable (`${...}`) and injectable (using `PARTIAL`s) by default\ninstead of having to pass `--interpolate` and `--injectable` into each code\ncell. 💡 `code DEFAULTS` is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat `sql` code fenced blocks.\n\n```code DEFAULTS\nsql * --interpolate --injectable\n```\n\nThe following example shows how arbitrary files can be \"contributed\" to\n`sqlpage_files`. `--base` should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:\n\n```contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry\n**/* SUNDRY\n```\n\nThe following example shows how template files can be \"contributed\" to\n`sqlpage_files` but only when `--package` is being used. Spry picks them up from\n`../sqlpage/templates/*` and store them in `templates/*` path in `sqlpage_files`\ntable only during `--package` operation:\n\n```contribute sqlpage_files --base sqlpage/templates --mode package\n**/* templates --mime text/plain\n```\n\n💡 You should use the above technique if you ever create custom\n`sqlplage/templates` files that you want included in the database.\n\n## Setup\n\nDownload the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this `README.md` and then run `spry.ts task prepare-db`. We supply\nour own `#!/usr/bin/env -S bash` shebang since we have comments in the shell\nscript.\n\n```bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"\n#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db\n```\n\n## Environment variables and .envrc\n\nThis project reads configuration from environment variables. Two variables you\nwill commonly set in development are:\n\n- `SPRY_DB` — the database connection URL used by SQLPage and Spry. Example\n  value used here: `sqlite://scf-2025.3.sqlite.db?mode=rwc`\n  - Scheme: `sqlite://` followed by a path (relative or absolute) to the SQLite\n    file.\n  - Query `mode=rwc` tells SQLite/DuckDB to open the file for read/write and\n    create it if missing.\n  - If you prefer a path under a `data/` directory, set e.g.\n    `sqlite://./data/scf-2025.3.sqlite.db?mode=rwc`.\n\n- `PORT` — the TCP port the local SQLPage server or other local web component\n  should listen on (example: `9227`).\n\nRecommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named `.envrc`\nin this directory.\n\nPOSIX-style example (bash/zsh):\n\n```envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"\nexport SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227\n```\n\nThen run `direnv allow` in this project directory to load the `.envrc` into your\nshell environment. direnv will evaluate `.envrc` only after you explicitly allow\nit.\n\n## Security and repository hygiene\n\n- Never commit secrets or production credentials into `.envrc`. Treat `.envrc`\n  like a local-only file.\n- Add `.envrc` to your local `.gitignore` if you keep secrets there.\n  Alternatively commit a `.envrc.example` or `.envrc.sample` with safe,\n  non-secret defaults to document expected variables.\n- The SQLite file (e.g. `scf-2025.3.sqlite.db`) is a binary database file — you\n  will usually not check this into version control. Add that filename or the\n  `data/` directory to `.gitignore` as well.\n\nWhy these variables matter here\n\n- The YAML header at the top of this `Spryfile.md` reads\n  `database_url: ${env.SPRY_DB}` and `port: ${env.PORT}` — Spry and the SQLPage\n  tooling will substitute those environment values when building or serving the\n  site.\n- If `SPRY_DB` is not set, the tooling may fail to find the database or fall\n  back to defaults; explicitly setting it ensures predictable, repeatable dev\n  runs.\n\nQuick troubleshooting\n\n- If the server does not start on the expected port, verify `echo $PORT` (or\n  `echo $SPRY_DB`) in your shell to confirm values are loaded.\n- If direnv appears not to load `.envrc`, re-run `direnv allow` and ensure your\n  shell config contains the direnv hook.\n\n## SQLPage Dev / Watch mode\n\nWhile you''re developing, Spry''s `dev-src.auto` generator should be used:\n\n```bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json\n```\n\n```bash clean --descr \"Clean up the project directory''s generated artifacts\"\nrm -rf dev-src.auto\n```\n\nIn development mode, here’s the `--watch` convenience you can use so that\nwhenever you update `Spryfile.md`, it regenerates the SQLPage `dev-src.auto`,\nwhich is then picked up automatically by the SQLPage server:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage\n```\n\n- `--watch` turns on watching all `--md` files passed in (defaults to\n  `Spryfile.md`)\n- `--with-sqlpage` starts and stops SQLPage after each build\n\nRestarting SQLPage after each re-generation of dev-src.auto is **not**\nnecessary, so you can also use `--watch` without `--with-sqlpage` in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow.\n\nIf you''re running SQLPage in another terminal window, use:\n\n```bash\n./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch\n```\n\n## SQLPage single database deployment mode\n\nAfter development is complete, the `dev-src.auto` can be removed and\nsingle-database deployment can be used:\n\n```bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"\nrm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db\n```\n\n## Raw SQL\n\nThis raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed.\n\n```include --base ../../../lib/universal\nsql *.sql sql.d/tail\nsql schema-info.dml.sqlite.sql sql.d/tail/0000.sql\n```\n\n💡 `schema-info.dml.sqlite.sql` will appear in the output as\n`sql.d/tail/0000.sql` and `sql.d/tail/schema-info.dml.sqlite.sql` (doing it\ntwice just for testing).\n\n## Layout\n\nThis cell instructs Spry to automatically inject the SQL `PARTIAL` into all\nSQLPage content cells. The name `global-layout.sql` is not significant (it''s\nrequired by Spry but only used for reference), but the `--inject **/*` argument\nis how matching occurs. The `--BEGIN` and `--END` comments are not required by\nSpry but make it easier to trace where _partial_ injections are occurring.\n\n⚠️ Content injection content happens _before_ any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell.\n\n```sql PARTIAL global-layout.sql --inject **/*\n-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql\n```\n\nGet the brand assets and store them into the SQLPage content stream. They will\nbe stored as `assets/brand/*` because `--base` is `https://www.surveilr.com/`\nand destination is set to `.`.\n\n```contribute sqlpage_files --base https://www.surveilr.com/\nhttps://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png .\n```\n\n## SCF Home Page\n\nIndex page which automatically generates links to all `/scf` pages.\n\n```sql index.sql { route: { caption: \"Home\" } }\n-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;\n```\n\n## Unpivoted page\n\n```sql scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }\n-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Controls page\n\n```sql scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Count page\n\n```sql scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }\n-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Domain Count page\n\n```sql scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }\n-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Coverage page\n\n```sql scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }\n-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Regime Rank page\n\n```sql scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }\n-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Jaccard page\n\n```sql scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }\n-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}\n```\n\n```sql scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}\n```\n\n## Controls per regime (totals) details page\n\n```sql scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }\nSELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}\n```\n\n## Threat Catalog Page\n\n```sql scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }\nSELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;\n```\n\n## Controls Library page\n\n```sql scf/controls.sql { route: { caption: \"Controls Library\"} }\n-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}\n```\n\n## Regime details page\n\n```sql scf/details/regime_details.sql { route: { caption: \"Control details\" } }\n SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;\n```\n","mdastRoot":{"children":[{"data":{"parsedFM":{"fm":"[Circular]"}},"position":{"end":{"column":4,"line":7,"offset":120},"start":{"column":1,"line":1,"offset":0}},"type":"yaml","value":"sqlpage-conf:\n  database_url: ${env.SPRY_DB}\n  web_root: \"./dev-src.auto\"\n  allow_exec: true\n  port: ${env.PORT}"},{"children":[{"position":{"end":{"column":54,"line":9,"offset":175},"start":{"column":3,"line":9,"offset":124}},"type":"text","value":"Secure Controls Framework (SCF) SQLPage Application"}],"depth":1,"position":{"end":{"column":54,"line":9,"offset":175},"start":{"column":1,"line":9,"offset":122}},"type":"heading"},{"children":[{"position":{"end":{"column":1,"line":13,"offset":284},"start":{"column":1,"line":11,"offset":177}},"type":"text","value":"This script automates the conversion of the latest Secure Controls Framework\n(SCF) Excel workbook from the\n"},{"children":[{"position":{"end":{"column":32,"line":13,"offset":315},"start":{"column":2,"line":13,"offset":285}},"type":"text","value":"official SCF GitHub repository"}],"position":{"end":{"column":101,"line":13,"offset":384},"start":{"column":1,"line":13,"offset":284}},"title":null,"type":"link","url":"https://github.com/securecontrolsframework/securecontrolsframework"},{"position":{"end":{"column":35,"line":14,"offset":419},"start":{"column":101,"line":13,"offset":384}},"type":"text","value":"\ninto a structured SQLite database."}],"position":{"end":{"column":35,"line":14,"offset":419},"start":{"column":1,"line":11,"offset":177}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":3,"line":16,"offset":423}},"type":"text","value":"Uses Spry to manage tasks and generate the SQLPage presentation layer."}],"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":3,"line":16,"offset":423}},"type":"paragraph"}],"position":{"end":{"column":73,"line":16,"offset":493},"start":{"column":1,"line":16,"offset":421}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":33,"line":17,"offset":526},"start":{"column":3,"line":17,"offset":496}},"type":"text","value":"Uses DuckDB with its built-in "},{"position":{"end":{"column":40,"line":17,"offset":533},"start":{"column":33,"line":17,"offset":526}},"type":"inlineCode","value":"excel"},{"position":{"end":{"column":45,"line":17,"offset":538},"start":{"column":40,"line":17,"offset":533}},"type":"text","value":" and "},{"position":{"end":{"column":53,"line":17,"offset":546},"start":{"column":45,"line":17,"offset":538}},"type":"inlineCode","value":"sqlite"},{"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":53,"line":17,"offset":546}},"type":"text","value":" extensions."}],"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":3,"line":17,"offset":496}},"type":"paragraph"}],"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":1,"line":17,"offset":494}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":65,"line":17,"offset":558},"start":{"column":1,"line":16,"offset":421}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":28,"line":19,"offset":587},"start":{"column":4,"line":19,"offset":563}},"type":"text","value":"Spry Axiom configuration"}],"depth":2,"position":{"end":{"column":28,"line":19,"offset":587},"start":{"column":1,"line":19,"offset":560}},"type":"heading"},{"children":[{"position":{"end":{"column":16,"line":21,"offset":604},"start":{"column":1,"line":21,"offset":589}},"type":"inlineCode","value":"code DEFAULTS"},{"position":{"end":{"column":44,"line":22,"offset":709},"start":{"column":16,"line":21,"offset":604}},"type":"text","value":" is a special directive use by Spry''s Axiom library to supply\ndefault flags to specific code blocks like "},{"position":{"end":{"column":49,"line":22,"offset":714},"start":{"column":44,"line":22,"offset":709}},"type":"inlineCode","value":"sql"},{"position":{"end":{"column":51,"line":22,"offset":716},"start":{"column":49,"line":22,"offset":714}},"type":"text","value":", "},{"position":{"end":{"column":57,"line":22,"offset":722},"start":{"column":51,"line":22,"offset":716}},"type":"inlineCode","value":"text"},{"position":{"end":{"column":20,"line":23,"offset":765},"start":{"column":57,"line":22,"offset":722}},"type":"text","value":", etc. allowing them to\nbe interpolatable ("},{"position":{"end":{"column":28,"line":23,"offset":773},"start":{"column":20,"line":23,"offset":765}},"type":"inlineCode","value":"${...}"},{"position":{"end":{"column":52,"line":23,"offset":797},"start":{"column":28,"line":23,"offset":773}},"type":"text","value":") and injectable (using "},{"position":{"end":{"column":61,"line":23,"offset":806},"start":{"column":52,"line":23,"offset":797}},"type":"inlineCode","value":"PARTIAL"},{"position":{"end":{"column":27,"line":24,"offset":846},"start":{"column":61,"line":23,"offset":806}},"type":"text","value":"s) by default\ninstead of having to pass "},{"position":{"end":{"column":42,"line":24,"offset":861},"start":{"column":27,"line":24,"offset":846}},"type":"inlineCode","value":"--interpolate"},{"position":{"end":{"column":47,"line":24,"offset":866},"start":{"column":42,"line":24,"offset":861}},"type":"text","value":" and "},{"position":{"end":{"column":61,"line":24,"offset":880},"start":{"column":47,"line":24,"offset":866}},"type":"inlineCode","value":"--injectable"},{"position":{"end":{"column":10,"line":25,"offset":905},"start":{"column":61,"line":24,"offset":880}},"type":"text","value":" into each code\ncell. 💡 "},{"position":{"end":{"column":25,"line":25,"offset":920},"start":{"column":10,"line":25,"offset":905}},"type":"inlineCode","value":"code DEFAULTS"},{"position":{"end":{"column":14,"line":26,"offset":987},"start":{"column":25,"line":25,"offset":920}},"type":"text","value":" is necessary in Spry SQLPage playbooks to tell Axiom\nhow to treat "},{"position":{"end":{"column":19,"line":26,"offset":992},"start":{"column":14,"line":26,"offset":987}},"type":"inlineCode","value":"sql"},{"position":{"end":{"column":39,"line":26,"offset":1012},"start":{"column":19,"line":26,"offset":992}},"type":"text","value":" code fenced blocks."}],"position":{"end":{"column":39,"line":26,"offset":1012},"start":{"column":1,"line":21,"offset":589}},"type":"paragraph"},{"directive":"DEFAULTS","identity":"0000","instructions":{"cli":"DEFAULTS","cmdLang":"DEFAULTS","pi":{"args":["DEFAULTS"],"count":1,"flags":{},"pos":[],"posCount":0}},"isCodeDirectiveCandidate":true,"lang":"code","meta":"DEFAULTS","position":{"end":{"column":4,"line":30,"offset":1067},"start":{"column":1,"line":28,"offset":1014}},"type":"code","value":"sql * --interpolate --injectable"},{"children":[{"position":{"end":{"column":1,"line":33,"offset":1141},"start":{"column":1,"line":32,"offset":1069}},"type":"text","value":"The following example shows how arbitrary files can be \"contributed\" to\n"},{"position":{"end":{"column":16,"line":33,"offset":1156},"start":{"column":1,"line":33,"offset":1141}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":18,"line":33,"offset":1158},"start":{"column":16,"line":33,"offset":1156}},"type":"text","value":". "},{"position":{"end":{"column":26,"line":33,"offset":1166},"start":{"column":18,"line":33,"offset":1158}},"type":"inlineCode","value":"--base"},{"position":{"end":{"column":65,"line":34,"offset":1283},"start":{"column":26,"line":33,"offset":1166}},"type":"text","value":" should be relative to the current working directory\n(CWD). 💡 It''s included just as an examplar and is not required:"}],"position":{"end":{"column":65,"line":34,"offset":1283},"start":{"column":1,"line":32,"offset":1069}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base ../../../lib/axiom/fixture/sundry","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base ../../../lib/axiom/fixture/sundry","pi":{"args":["contribute","sqlpage_files","--base","../../../lib/axiom/fixture/sundry"],"count":4,"flags":{"base":"../../../lib/axiom/fixture/sundry","sqlpage_files":true},"pos":["sqlpage_files","base"],"posCount":2}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["../../../lib/axiom/fixture/sundry"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base ../../../lib/axiom/fixture/sundry","position":{"end":{"column":4,"line":38,"offset":1369},"start":{"column":1,"line":36,"offset":1285}},"type":"code","value":"**/* SUNDRY"},{"children":[{"position":{"end":{"column":1,"line":41,"offset":1442},"start":{"column":1,"line":40,"offset":1371}},"type":"text","value":"The following example shows how template files can be \"contributed\" to\n"},{"position":{"end":{"column":16,"line":41,"offset":1457},"start":{"column":1,"line":41,"offset":1442}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":31,"line":41,"offset":1472},"start":{"column":16,"line":41,"offset":1457}},"type":"text","value":" but only when "},{"position":{"end":{"column":42,"line":41,"offset":1483},"start":{"column":31,"line":41,"offset":1472}},"type":"inlineCode","value":"--package"},{"position":{"end":{"column":1,"line":42,"offset":1523},"start":{"column":42,"line":41,"offset":1483}},"type":"text","value":" is being used. Spry picks them up from\n"},{"position":{"end":{"column":25,"line":42,"offset":1547},"start":{"column":1,"line":42,"offset":1523}},"type":"inlineCode","value":"../sqlpage/templates/*"},{"position":{"end":{"column":44,"line":42,"offset":1566},"start":{"column":25,"line":42,"offset":1547}},"type":"text","value":" and store them in "},{"position":{"end":{"column":57,"line":42,"offset":1579},"start":{"column":44,"line":42,"offset":1566}},"type":"inlineCode","value":"templates/*"},{"position":{"end":{"column":66,"line":42,"offset":1588},"start":{"column":57,"line":42,"offset":1579}},"type":"text","value":" path in "},{"position":{"end":{"column":81,"line":42,"offset":1603},"start":{"column":66,"line":42,"offset":1588}},"type":"inlineCode","value":"sqlpage_files"},{"position":{"end":{"column":19,"line":43,"offset":1622},"start":{"column":81,"line":42,"offset":1603}},"type":"text","value":"\ntable only during "},{"position":{"end":{"column":30,"line":43,"offset":1633},"start":{"column":19,"line":43,"offset":1622}},"type":"inlineCode","value":"--package"},{"position":{"end":{"column":41,"line":43,"offset":1644},"start":{"column":30,"line":43,"offset":1633}},"type":"text","value":" operation:"}],"position":{"end":{"column":41,"line":43,"offset":1644},"start":{"column":1,"line":40,"offset":1371}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base sqlpage/templates --mode package","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base sqlpage/templates --mode package","pi":{"args":["contribute","sqlpage_files","--base","sqlpage/templates","--mode","package"],"count":6,"flags":{"base":"sqlpage/templates","mode":"package","sqlpage_files":true},"pos":["sqlpage_files","base","mode"],"posCount":3}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["sqlpage/templates"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base sqlpage/templates --mode package","position":{"end":{"column":4,"line":47,"offset":1750},"start":{"column":1,"line":45,"offset":1646}},"type":"code","value":"**/* templates --mime text/plain"},{"children":[{"position":{"end":{"column":1,"line":50,"offset":1816},"start":{"column":1,"line":49,"offset":1752}},"type":"text","value":"💡 You should use the above technique if you ever create custom\n"},{"position":{"end":{"column":21,"line":50,"offset":1836},"start":{"column":1,"line":50,"offset":1816}},"type":"inlineCode","value":"sqlplage/templates"},{"position":{"end":{"column":67,"line":50,"offset":1882},"start":{"column":21,"line":50,"offset":1836}},"type":"text","value":" files that you want included in the database."}],"position":{"end":{"column":67,"line":50,"offset":1882},"start":{"column":1,"line":49,"offset":1752}},"type":"paragraph"},{"children":[{"position":{"end":{"column":9,"line":52,"offset":1892},"start":{"column":4,"line":52,"offset":1887}},"type":"text","value":"Setup"}],"depth":2,"position":{"end":{"column":9,"line":52,"offset":1892},"start":{"column":1,"line":52,"offset":1884}},"type":"heading"},{"children":[{"position":{"end":{"column":19,"line":55,"offset":1992},"start":{"column":1,"line":54,"offset":1894}},"type":"text","value":"Download the SCF Excel workbook from the GitHub repo and place it into the same\ndirectory as this "},{"position":{"end":{"column":30,"line":55,"offset":2003},"start":{"column":19,"line":55,"offset":1992}},"type":"inlineCode","value":"README.md"},{"position":{"end":{"column":44,"line":55,"offset":2017},"start":{"column":30,"line":55,"offset":2003}},"type":"text","value":" and then run "},{"position":{"end":{"column":69,"line":55,"offset":2042},"start":{"column":44,"line":55,"offset":2017}},"type":"inlineCode","value":"spry.ts task prepare-db"},{"position":{"end":{"column":9,"line":56,"offset":2062},"start":{"column":69,"line":55,"offset":2042}},"type":"text","value":". We supply\nour own "},{"position":{"end":{"column":33,"line":56,"offset":2086},"start":{"column":9,"line":56,"offset":2062}},"type":"inlineCode","value":"#!/usr/bin/env -S bash"},{"position":{"end":{"column":8,"line":57,"offset":2138},"start":{"column":33,"line":56,"offset":2086}},"type":"text","value":" shebang since we have comments in the shell\nscript."}],"position":{"end":{"column":8,"line":57,"offset":2138},"start":{"column":1,"line":54,"offset":1894}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":{"aliases":["bash","sh","zsh"],"comment":{"block":[],"line":["#"]},"extensions":[".sh",".bash",".zsh"],"id":"shell","shebangs":["bash","sh","zsh"]},"meta":"prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","pi":{"args":["bash","prepare-db","--descr","Delete and recreate the SQLite database used by SQLPage"],"count":4,"flags":{"descr":"Delete and recreate the SQLite database used by SQLPage","prepare-db":true},"pos":["prepare-db","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"prepare-db --descr \"Delete and recreate the SQLite database used by SQLPage\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":65,"offset":2549},"start":{"column":1,"line":59,"offset":2140}},"spawnableArgs":{"deps":[],"description":"Delete and recreate the SQLite database used by SQLPage","graphs":[],"injectedDep":[]},"spawnableCodeFM":"[Circular]","spawnableIdentity":"prepare-db","type":"code","value":"#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"},{"children":[{"position":{"end":{"column":36,"line":67,"offset":2586},"start":{"column":4,"line":67,"offset":2554}},"type":"text","value":"Environment variables and .envrc"}],"depth":2,"position":{"end":{"column":36,"line":67,"offset":2586},"start":{"column":1,"line":67,"offset":2551}},"type":"heading"},{"children":[{"position":{"end":{"column":38,"line":70,"offset":2704},"start":{"column":1,"line":69,"offset":2588}},"type":"text","value":"This project reads configuration from environment variables. Two variables you\nwill commonly set in development are:"}],"position":{"end":{"column":38,"line":70,"offset":2704},"start":{"column":1,"line":69,"offset":2588}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":12,"line":72,"offset":2717},"start":{"column":3,"line":72,"offset":2708}},"type":"inlineCode","value":"SPRY_DB"},{"position":{"end":{"column":20,"line":73,"offset":2801},"start":{"column":12,"line":72,"offset":2717}},"type":"text","value":" — the database connection URL used by SQLPage and Spry. Example\nvalue used here: "},{"position":{"end":{"column":60,"line":73,"offset":2841},"start":{"column":20,"line":73,"offset":2801}},"type":"inlineCode","value":"sqlite://scf-2025.3.sqlite.db?mode=rwc"}],"position":{"end":{"column":60,"line":73,"offset":2841},"start":{"column":3,"line":72,"offset":2708}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":13,"line":74,"offset":2854},"start":{"column":5,"line":74,"offset":2846}},"type":"text","value":"Scheme: "},{"position":{"end":{"column":24,"line":74,"offset":2865},"start":{"column":13,"line":74,"offset":2854}},"type":"inlineCode","value":"sqlite://"},{"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":24,"line":74,"offset":2865}},"type":"text","value":" followed by a path (relative or absolute) to the SQLite\nfile."}],"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":5,"line":74,"offset":2846}},"type":"paragraph"}],"position":{"end":{"column":10,"line":75,"offset":2931},"start":{"column":3,"line":74,"offset":2844}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":11,"line":76,"offset":2942},"start":{"column":5,"line":76,"offset":2936}},"type":"text","value":"Query "},{"position":{"end":{"column":21,"line":76,"offset":2952},"start":{"column":11,"line":76,"offset":2942}},"type":"inlineCode","value":"mode=rwc"},{"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":21,"line":76,"offset":2952}},"type":"text","value":" tells SQLite/DuckDB to open the file for read/write and\ncreate it if missing."}],"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":5,"line":76,"offset":2936}},"type":"paragraph"}],"position":{"end":{"column":26,"line":77,"offset":3034},"start":{"column":3,"line":76,"offset":2934}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":34,"line":78,"offset":3068},"start":{"column":5,"line":78,"offset":3039}},"type":"text","value":"If you prefer a path under a "},{"position":{"end":{"column":41,"line":78,"offset":3075},"start":{"column":34,"line":78,"offset":3068}},"type":"inlineCode","value":"data/"},{"position":{"end":{"column":1,"line":79,"offset":3096},"start":{"column":41,"line":78,"offset":3075}},"type":"text","value":" directory, set e.g.\n"},{"position":{"end":{"column":52,"line":79,"offset":3147},"start":{"column":5,"line":79,"offset":3100}},"type":"inlineCode","value":"sqlite://./data/scf-2025.3.sqlite.db?mode=rwc"},{"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":52,"line":79,"offset":3147}},"type":"text","value":"."}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":5,"line":78,"offset":3039}},"type":"paragraph"}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":3,"line":78,"offset":3037}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":3,"line":74,"offset":2844}},"spread":false,"start":null,"type":"list"}],"position":{"end":{"column":53,"line":79,"offset":3148},"start":{"column":1,"line":72,"offset":2706}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":9,"line":81,"offset":3158},"start":{"column":3,"line":81,"offset":3152}},"type":"inlineCode","value":"PORT"},{"position":{"end":{"column":30,"line":82,"offset":3257},"start":{"column":9,"line":81,"offset":3158}},"type":"text","value":" — the TCP port the local SQLPage server or other local web component\nshould listen on (example: "},{"position":{"end":{"column":36,"line":82,"offset":3263},"start":{"column":30,"line":82,"offset":3257}},"type":"inlineCode","value":"9227"},{"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":36,"line":82,"offset":3263}},"type":"text","value":")."}],"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":3,"line":81,"offset":3152}},"type":"paragraph"}],"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":1,"line":81,"offset":3150}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":38,"line":82,"offset":3265},"start":{"column":1,"line":72,"offset":2706}},"spread":true,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":72,"line":85,"offset":3412},"start":{"column":1,"line":84,"offset":3267}},"type":"text","value":"Recommended practice is to keep these values in a local, directory-scoped\nenvironment file. If you use direnv (recommended), create a file named "},{"position":{"end":{"column":80,"line":85,"offset":3420},"start":{"column":72,"line":85,"offset":3412}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":19,"line":86,"offset":3439},"start":{"column":80,"line":85,"offset":3420}},"type":"text","value":"\nin this directory."}],"position":{"end":{"column":19,"line":86,"offset":3439},"start":{"column":1,"line":84,"offset":3267}},"type":"paragraph"},{"children":[{"position":{"end":{"column":32,"line":88,"offset":3472},"start":{"column":1,"line":88,"offset":3441}},"type":"text","value":"POSIX-style example (bash/zsh):"}],"position":{"end":{"column":32,"line":88,"offset":3472},"start":{"column":1,"line":88,"offset":3441}},"type":"paragraph"},{"data":{"codeFM":{"cli":"envrc prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","cmdLang":"envrc","fromPresets":[],"lang":"envrc","langSpec":{"comment":{"block":[],"line":["#"]},"extensions":[".envrc"],"id":"envrc"},"meta":"prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","pi":{"args":["envrc","prepare-env","-C","./.envrc","-X","--gitignore","--descr","Generate .envrc file and add it to local .gitignore if it''s not already there"],"count":8,"flags":{"C":"./.envrc","X":true,"descr":"Generate .envrc file and add it to local .gitignore if it''s not already there","gitignore":true,"prepare-env":true},"pos":["prepare-env","C","X","gitignore","descr"],"posCount":5}}},"isActionableCodeCandidate":true,"lang":"envrc","language":"[Circular]","meta":"prepare-env -C ./.envrc -X --gitignore --descr \"Generate .envrc file and add it to local .gitignore if it''s not already there\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":93,"offset":3686},"start":{"column":1,"line":90,"offset":3474}},"spawnableArgs":{"capture":[{"fsPath":"./.envrc","gitignore":true,"nature":"relFsPath"}],"deps":[],"description":"Generate .envrc file and add it to local .gitignore if it''s not already there","executable":{"flagsCount":1,"texts":[]},"graphs":[],"injectedDep":[]},"spawnableCodeFM":"[Circular]","spawnableIdentity":"prepare-env","type":"code","value":"export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"},{"children":[{"position":{"end":{"column":10,"line":95,"offset":3697},"start":{"column":1,"line":95,"offset":3688}},"type":"text","value":"Then run "},{"position":{"end":{"column":24,"line":95,"offset":3711},"start":{"column":10,"line":95,"offset":3697}},"type":"inlineCode","value":"direnv allow"},{"position":{"end":{"column":63,"line":95,"offset":3750},"start":{"column":24,"line":95,"offset":3711}},"type":"text","value":" in this project directory to load the "},{"position":{"end":{"column":71,"line":95,"offset":3758},"start":{"column":63,"line":95,"offset":3750}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":41,"line":96,"offset":3809},"start":{"column":71,"line":95,"offset":3758}},"type":"text","value":" into your\nshell environment. direnv will evaluate "},{"position":{"end":{"column":49,"line":96,"offset":3817},"start":{"column":41,"line":96,"offset":3809}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":4,"line":97,"offset":3853},"start":{"column":49,"line":96,"offset":3817}},"type":"text","value":" only after you explicitly allow\nit."}],"position":{"end":{"column":4,"line":97,"offset":3853},"start":{"column":1,"line":95,"offset":3688}},"type":"paragraph"},{"children":[{"position":{"end":{"column":35,"line":99,"offset":3889},"start":{"column":4,"line":99,"offset":3858}},"type":"text","value":"Security and repository hygiene"}],"depth":2,"position":{"end":{"column":35,"line":99,"offset":3889},"start":{"column":1,"line":99,"offset":3855}},"type":"heading"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":55,"line":101,"offset":3945},"start":{"column":3,"line":101,"offset":3893}},"type":"text","value":"Never commit secrets or production credentials into "},{"position":{"end":{"column":63,"line":101,"offset":3953},"start":{"column":55,"line":101,"offset":3945}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":71,"line":101,"offset":3961},"start":{"column":63,"line":101,"offset":3953}},"type":"text","value":". Treat "},{"position":{"end":{"column":79,"line":101,"offset":3969},"start":{"column":71,"line":101,"offset":3961}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":79,"line":101,"offset":3969}},"type":"text","value":"\nlike a local-only file."}],"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":3,"line":101,"offset":3893}},"type":"paragraph"}],"position":{"end":{"column":26,"line":102,"offset":3995},"start":{"column":1,"line":101,"offset":3891}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":7,"line":103,"offset":4002},"start":{"column":3,"line":103,"offset":3998}},"type":"text","value":"Add "},{"position":{"end":{"column":15,"line":103,"offset":4010},"start":{"column":7,"line":103,"offset":4002}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":30,"line":103,"offset":4025},"start":{"column":15,"line":103,"offset":4010}},"type":"text","value":" to your local "},{"position":{"end":{"column":42,"line":103,"offset":4037},"start":{"column":30,"line":103,"offset":4025}},"type":"inlineCode","value":".gitignore"},{"position":{"end":{"column":26,"line":104,"offset":4090},"start":{"column":42,"line":103,"offset":4037}},"type":"text","value":" if you keep secrets there.\nAlternatively commit a "},{"position":{"end":{"column":42,"line":104,"offset":4106},"start":{"column":26,"line":104,"offset":4090}},"type":"inlineCode","value":".envrc.example"},{"position":{"end":{"column":46,"line":104,"offset":4110},"start":{"column":42,"line":104,"offset":4106}},"type":"text","value":" or "},{"position":{"end":{"column":61,"line":104,"offset":4125},"start":{"column":46,"line":104,"offset":4110}},"type":"inlineCode","value":".envrc.sample"},{"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":61,"line":104,"offset":4125}},"type":"text","value":" with safe,\nnon-secret defaults to document expected variables."}],"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":3,"line":103,"offset":3998}},"type":"paragraph"}],"position":{"end":{"column":54,"line":105,"offset":4190},"start":{"column":1,"line":103,"offset":3996}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":25,"line":106,"offset":4215},"start":{"column":3,"line":106,"offset":4193}},"type":"text","value":"The SQLite file (e.g. "},{"position":{"end":{"column":47,"line":106,"offset":4237},"start":{"column":25,"line":106,"offset":4215}},"type":"inlineCode","value":"scf-2025.3.sqlite.db"},{"position":{"end":{"column":1,"line":108,"offset":4348},"start":{"column":47,"line":106,"offset":4237}},"type":"text","value":") is a binary database file — you\nwill usually not check this into version control. Add that filename or the\n"},{"position":{"end":{"column":10,"line":108,"offset":4357},"start":{"column":3,"line":108,"offset":4350}},"type":"inlineCode","value":"data/"},{"position":{"end":{"column":24,"line":108,"offset":4371},"start":{"column":10,"line":108,"offset":4357}},"type":"text","value":" directory to "},{"position":{"end":{"column":36,"line":108,"offset":4383},"start":{"column":24,"line":108,"offset":4371}},"type":"inlineCode","value":".gitignore"},{"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":36,"line":108,"offset":4383}},"type":"text","value":" as well."}],"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":3,"line":106,"offset":4193}},"type":"paragraph"}],"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":1,"line":106,"offset":4191}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":45,"line":108,"offset":4392},"start":{"column":1,"line":101,"offset":3891}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":32,"line":110,"offset":4425},"start":{"column":1,"line":110,"offset":4394}},"type":"text","value":"Why these variables matter here"}],"position":{"end":{"column":32,"line":110,"offset":4425},"start":{"column":1,"line":110,"offset":4394}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":38,"line":112,"offset":4464},"start":{"column":3,"line":112,"offset":4429}},"type":"text","value":"The YAML header at the top of this "},{"position":{"end":{"column":51,"line":112,"offset":4477},"start":{"column":38,"line":112,"offset":4464}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":1,"line":113,"offset":4484},"start":{"column":51,"line":112,"offset":4477}},"type":"text","value":" reads\n"},{"position":{"end":{"column":33,"line":113,"offset":4516},"start":{"column":3,"line":113,"offset":4486}},"type":"inlineCode","value":"database_url: ${env.SPRY_DB}"},{"position":{"end":{"column":38,"line":113,"offset":4521},"start":{"column":33,"line":113,"offset":4516}},"type":"text","value":" and "},{"position":{"end":{"column":57,"line":113,"offset":4540},"start":{"column":38,"line":113,"offset":4521}},"type":"inlineCode","value":"port: ${env.PORT}"},{"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":57,"line":113,"offset":4540}},"type":"text","value":" — Spry and the SQLPage\ntooling will substitute those environment values when building or serving the\nsite."}],"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":3,"line":112,"offset":4429}},"type":"paragraph"}],"position":{"end":{"column":8,"line":115,"offset":4651},"start":{"column":1,"line":112,"offset":4427}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":6,"line":116,"offset":4657},"start":{"column":3,"line":116,"offset":4654}},"type":"text","value":"If "},{"position":{"end":{"column":15,"line":116,"offset":4666},"start":{"column":6,"line":116,"offset":4657}},"type":"inlineCode","value":"SPRY_DB"},{"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":15,"line":116,"offset":4666}},"type":"text","value":" is not set, the tooling may fail to find the database or fall\nback to defaults; explicitly setting it ensures predictable, repeatable dev\nruns."}],"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":3,"line":116,"offset":4654}},"type":"paragraph"}],"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":1,"line":116,"offset":4652}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":8,"line":118,"offset":4814},"start":{"column":1,"line":112,"offset":4427}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":22,"line":120,"offset":4837},"start":{"column":1,"line":120,"offset":4816}},"type":"text","value":"Quick troubleshooting"}],"position":{"end":{"column":22,"line":120,"offset":4837},"start":{"column":1,"line":120,"offset":4816}},"type":"paragraph"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":61,"line":122,"offset":4899},"start":{"column":3,"line":122,"offset":4841}},"type":"text","value":"If the server does not start on the expected port, verify "},{"position":{"end":{"column":73,"line":122,"offset":4911},"start":{"column":61,"line":122,"offset":4899}},"type":"inlineCode","value":"echo $PORT"},{"position":{"end":{"column":1,"line":123,"offset":4916},"start":{"column":73,"line":122,"offset":4911}},"type":"text","value":" (or\n"},{"position":{"end":{"column":18,"line":123,"offset":4933},"start":{"column":3,"line":123,"offset":4918}},"type":"inlineCode","value":"echo $SPRY_DB"},{"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":18,"line":123,"offset":4933}},"type":"text","value":") in your shell to confirm values are loaded."}],"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":3,"line":122,"offset":4841}},"type":"paragraph"}],"position":{"end":{"column":63,"line":123,"offset":4978},"start":{"column":1,"line":122,"offset":4839}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":33,"line":124,"offset":5011},"start":{"column":3,"line":124,"offset":4981}},"type":"text","value":"If direnv appears not to load "},{"position":{"end":{"column":41,"line":124,"offset":5019},"start":{"column":33,"line":124,"offset":5011}},"type":"inlineCode","value":".envrc"},{"position":{"end":{"column":50,"line":124,"offset":5028},"start":{"column":41,"line":124,"offset":5019}},"type":"text","value":", re-run "},{"position":{"end":{"column":64,"line":124,"offset":5042},"start":{"column":50,"line":124,"offset":5028}},"type":"inlineCode","value":"direnv allow"},{"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":64,"line":124,"offset":5042}},"type":"text","value":" and ensure your\nshell config contains the direnv hook."}],"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":3,"line":124,"offset":4981}},"type":"paragraph"}],"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":1,"line":124,"offset":4979}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":41,"line":125,"offset":5099},"start":{"column":1,"line":122,"offset":4839}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":28,"line":127,"offset":5128},"start":{"column":4,"line":127,"offset":5104}},"type":"text","value":"SQLPage Dev / Watch mode"}],"depth":2,"position":{"end":{"column":28,"line":127,"offset":5128},"start":{"column":1,"line":127,"offset":5101}},"type":"heading"},{"children":[{"position":{"end":{"column":33,"line":129,"offset":5162},"start":{"column":1,"line":129,"offset":5130}},"type":"text","value":"While you''re developing, Spry''s "},{"position":{"end":{"column":47,"line":129,"offset":5176},"start":{"column":33,"line":129,"offset":5162}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":73,"line":129,"offset":5202},"start":{"column":47,"line":129,"offset":5176}},"type":"text","value":" generator should be used:"}],"position":{"end":{"column":73,"line":129,"offset":5202},"start":{"column":1,"line":129,"offset":5130}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","pi":{"args":["bash","prepare-sqlpage-dev","--descr","Generate the dev-src.auto directory to work in SQLPage dev mode"],"count":4,"flags":{"descr":"Generate the dev-src.auto directory to work in SQLPage dev mode","prepare-sqlpage-dev":true},"pos":["prepare-sqlpage-dev","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"prepare-sqlpage-dev --descr \"Generate the dev-src.auto directory to work in SQLPage dev mode\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":133,"offset":5388},"start":{"column":1,"line":131,"offset":5204}},"spawnableArgs":{"deps":[],"description":"Generate the dev-src.auto directory to work in SQLPage dev mode","graphs":[],"injectedDep":[]},"spawnableCodeFM":"[Circular]","spawnableIdentity":"prepare-sqlpage-dev","type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"},{"data":{"codeFM":{"cli":"bash clean --descr \"Clean up the project directory''s generated artifacts\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"clean --descr \"Clean up the project directory''s generated artifacts\"","pi":{"args":["bash","clean","--descr","Clean up the project directory''s generated artifacts"],"count":4,"flags":{"clean":true,"descr":"Clean up the project directory''s generated artifacts"},"pos":["clean","descr"],"posCount":2}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"clean --descr \"Clean up the project directory''s generated artifacts\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":137,"offset":5490},"start":{"column":1,"line":135,"offset":5390}},"spawnableArgs":{"deps":[],"description":"Clean up the project directory''s generated artifacts","graphs":[],"injectedDep":[]},"spawnableCodeFM":"[Circular]","spawnableIdentity":"clean","type":"code","value":"rm -rf dev-src.auto"},{"children":[{"position":{"end":{"column":33,"line":139,"offset":5524},"start":{"column":1,"line":139,"offset":5492}},"type":"text","value":"In development mode, here’s the "},{"position":{"end":{"column":42,"line":139,"offset":5533},"start":{"column":33,"line":139,"offset":5524}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":21,"line":140,"offset":5586},"start":{"column":42,"line":139,"offset":5533}},"type":"text","value":" convenience you can use so that\nwhenever you update "},{"position":{"end":{"column":34,"line":140,"offset":5599},"start":{"column":21,"line":140,"offset":5586}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":63,"line":140,"offset":5628},"start":{"column":34,"line":140,"offset":5599}},"type":"text","value":", it regenerates the SQLPage "},{"position":{"end":{"column":77,"line":140,"offset":5642},"start":{"column":63,"line":140,"offset":5628}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":61,"line":141,"offset":5704},"start":{"column":77,"line":140,"offset":5642}},"type":"text","value":",\nwhich is then picked up automatically by the SQLPage server:"}],"position":{"end":{"column":61,"line":141,"offset":5704},"start":{"column":1,"line":139,"offset":5492}},"type":"paragraph"},{"lang":"bash","meta":null,"position":{"end":{"column":4,"line":145,"offset":5819},"start":{"column":1,"line":143,"offset":5706}},"type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch --with-sqlpage"},{"children":[{"checked":null,"children":[{"children":[{"position":{"end":{"column":12,"line":147,"offset":5832},"start":{"column":3,"line":147,"offset":5823}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":35,"line":147,"offset":5855},"start":{"column":12,"line":147,"offset":5832}},"type":"text","value":" turns on watching all "},{"position":{"end":{"column":41,"line":147,"offset":5861},"start":{"column":35,"line":147,"offset":5855}},"type":"inlineCode","value":"--md"},{"position":{"end":{"column":1,"line":148,"offset":5891},"start":{"column":41,"line":147,"offset":5861}},"type":"text","value":" files passed in (defaults to\n"},{"position":{"end":{"column":16,"line":148,"offset":5906},"start":{"column":3,"line":148,"offset":5893}},"type":"inlineCode","value":"Spryfile.md"},{"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":16,"line":148,"offset":5906}},"type":"text","value":")"}],"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":3,"line":147,"offset":5823}},"type":"paragraph"}],"position":{"end":{"column":17,"line":148,"offset":5907},"start":{"column":1,"line":147,"offset":5821}},"spread":false,"type":"listItem"},{"checked":null,"children":[{"children":[{"position":{"end":{"column":19,"line":149,"offset":5926},"start":{"column":3,"line":149,"offset":5910}},"type":"inlineCode","value":"--with-sqlpage"},{"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":19,"line":149,"offset":5926}},"type":"text","value":" starts and stops SQLPage after each build"}],"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":3,"line":149,"offset":5910}},"type":"paragraph"}],"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":1,"line":149,"offset":5908}},"spread":false,"type":"listItem"}],"ordered":false,"position":{"end":{"column":61,"line":149,"offset":5968},"start":{"column":1,"line":147,"offset":5821}},"spread":false,"start":null,"type":"list"},{"children":[{"position":{"end":{"column":64,"line":151,"offset":6033},"start":{"column":1,"line":151,"offset":5970}},"type":"text","value":"Restarting SQLPage after each re-generation of dev-src.auto is "},{"children":[{"position":{"end":{"column":69,"line":151,"offset":6038},"start":{"column":66,"line":151,"offset":6035}},"type":"text","value":"not"}],"position":{"end":{"column":71,"line":151,"offset":6040},"start":{"column":64,"line":151,"offset":6033}},"type":"strong"},{"position":{"end":{"column":32,"line":152,"offset":6072},"start":{"column":71,"line":151,"offset":6040}},"type":"text","value":"\nnecessary, so you can also use "},{"position":{"end":{"column":41,"line":152,"offset":6081},"start":{"column":32,"line":152,"offset":6072}},"type":"inlineCode","value":"--watch"},{"position":{"end":{"column":50,"line":152,"offset":6090},"start":{"column":41,"line":152,"offset":6081}},"type":"text","value":" without "},{"position":{"end":{"column":66,"line":152,"offset":6106},"start":{"column":50,"line":152,"offset":6090}},"type":"inlineCode","value":"--with-sqlpage"},{"position":{"end":{"column":8,"line":154,"offset":6198},"start":{"column":66,"line":152,"offset":6106}},"type":"text","value":" in one\nterminal window while keeping the SQLPage server running in another terminal\nwindow."}],"position":{"end":{"column":8,"line":154,"offset":6198},"start":{"column":1,"line":151,"offset":5970}},"type":"paragraph"},{"children":[{"position":{"end":{"column":59,"line":156,"offset":6258},"start":{"column":1,"line":156,"offset":6200}},"type":"text","value":"If you''re running SQLPage in another terminal window, use:"}],"position":{"end":{"column":59,"line":156,"offset":6258},"start":{"column":1,"line":156,"offset":6200}},"type":"paragraph"},{"lang":"bash","meta":null,"position":{"end":{"column":4,"line":160,"offset":6358},"start":{"column":1,"line":158,"offset":6260}},"type":"code","value":"./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json --watch"},{"children":[{"position":{"end":{"column":43,"line":162,"offset":6402},"start":{"column":4,"line":162,"offset":6363}},"type":"text","value":"SQLPage single database deployment mode"}],"depth":2,"position":{"end":{"column":43,"line":162,"offset":6402},"start":{"column":1,"line":162,"offset":6360}},"type":"heading"},{"children":[{"position":{"end":{"column":36,"line":164,"offset":6439},"start":{"column":1,"line":164,"offset":6404}},"type":"text","value":"After development is complete, the "},{"position":{"end":{"column":50,"line":164,"offset":6453},"start":{"column":36,"line":164,"offset":6439}},"type":"inlineCode","value":"dev-src.auto"},{"position":{"end":{"column":40,"line":165,"offset":6512},"start":{"column":50,"line":164,"offset":6453}},"type":"text","value":" can be removed and\nsingle-database deployment can be used:"}],"position":{"end":{"column":40,"line":165,"offset":6512},"start":{"column":1,"line":164,"offset":6404}},"type":"paragraph"},{"data":{"codeFM":{"cli":"bash deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","cmdLang":"bash","fromPresets":[],"lang":"bash","langSpec":"[Circular]","meta":"deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","pi":{"args":["bash","deploy","-C","--descr","Generate sqlpage_files table upsert SQL and push them to SQLite"],"count":5,"flags":{"C":true,"deploy":true,"descr":"Generate sqlpage_files table upsert SQL and push them to SQLite"},"pos":["deploy","C","descr"],"posCount":3}}},"isActionableCodeCandidate":true,"lang":"bash","language":"[Circular]","meta":"deploy -C --descr \"Generate sqlpage_files table upsert SQL and push them to SQLite\"","nature":"EXECUTABLE","position":{"end":{"column":4,"line":170,"offset":6715},"start":{"column":1,"line":167,"offset":6514}},"spawnableArgs":{"capture":[{"nature":"memory"}],"deps":[],"description":"Generate sqlpage_files table upsert SQL and push them to SQLite","graphs":[],"injectedDep":[]},"spawnableCodeFM":"[Circular]","spawnableIdentity":"deploy","type":"code","value":"rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"},{"children":[{"position":{"end":{"column":11,"line":172,"offset":6727},"start":{"column":4,"line":172,"offset":6720}},"type":"text","value":"Raw SQL"}],"depth":2,"position":{"end":{"column":11,"line":172,"offset":6727},"start":{"column":1,"line":172,"offset":6717}},"type":"heading"},{"children":[{"position":{"end":{"column":37,"line":175,"offset":6843},"start":{"column":1,"line":174,"offset":6729}},"type":"text","value":"This raw SQL will be placed into HEAD/TAIL. As an example, copy the same file\ntwice to show how it can be renamed."}],"position":{"end":{"column":37,"line":175,"offset":6843},"start":{"column":1,"line":174,"offset":6729}},"type":"paragraph"},"[Circular]","[Circular]","[Circular]",{"children":[{"position":{"end":{"column":4,"line":182,"offset":6966},"start":{"column":1,"line":182,"offset":6963}},"type":"text","value":"💡 "},{"position":{"end":{"column":32,"line":182,"offset":6994},"start":{"column":4,"line":182,"offset":6966}},"type":"inlineCode","value":"schema-info.dml.sqlite.sql"},{"position":{"end":{"column":1,"line":183,"offset":7024},"start":{"column":32,"line":182,"offset":6994}},"type":"text","value":" will appear in the output as\n"},{"position":{"end":{"column":22,"line":183,"offset":7045},"start":{"column":1,"line":183,"offset":7024}},"type":"inlineCode","value":"sql.d/tail/0000.sql"},{"position":{"end":{"column":27,"line":183,"offset":7050},"start":{"column":22,"line":183,"offset":7045}},"type":"text","value":" and "},{"position":{"end":{"column":66,"line":183,"offset":7089},"start":{"column":27,"line":183,"offset":7050}},"type":"inlineCode","value":"sql.d/tail/schema-info.dml.sqlite.sql"},{"position":{"end":{"column":25,"line":184,"offset":7124},"start":{"column":66,"line":183,"offset":7089}},"type":"text","value":" (doing it\ntwice just for testing)."}],"position":{"end":{"column":25,"line":184,"offset":7124},"start":{"column":1,"line":182,"offset":6963}},"type":"paragraph"},{"children":[{"position":{"end":{"column":10,"line":186,"offset":7135},"start":{"column":4,"line":186,"offset":7129}},"type":"text","value":"Layout"}],"depth":2,"position":{"end":{"column":10,"line":186,"offset":7135},"start":{"column":1,"line":186,"offset":7126}},"type":"heading"},{"children":[{"position":{"end":{"column":58,"line":188,"offset":7194},"start":{"column":1,"line":188,"offset":7137}},"type":"text","value":"This cell instructs Spry to automatically inject the SQL "},{"position":{"end":{"column":67,"line":188,"offset":7203},"start":{"column":58,"line":188,"offset":7194}},"type":"inlineCode","value":"PARTIAL"},{"position":{"end":{"column":33,"line":189,"offset":7245},"start":{"column":67,"line":188,"offset":7203}},"type":"text","value":" into all\nSQLPage content cells. The name "},{"position":{"end":{"column":52,"line":189,"offset":7264},"start":{"column":33,"line":189,"offset":7245}},"type":"inlineCode","value":"global-layout.sql"},{"position":{"end":{"column":56,"line":190,"offset":7345},"start":{"column":52,"line":189,"offset":7264}},"type":"text","value":" is not significant (it''s\nrequired by Spry but only used for reference), but the "},{"position":{"end":{"column":71,"line":190,"offset":7360},"start":{"column":56,"line":190,"offset":7345}},"type":"inlineCode","value":"--inject **/*"},{"position":{"end":{"column":29,"line":191,"offset":7398},"start":{"column":71,"line":190,"offset":7360}},"type":"text","value":" argument\nis how matching occurs. The "},{"position":{"end":{"column":38,"line":191,"offset":7407},"start":{"column":29,"line":191,"offset":7398}},"type":"inlineCode","value":"--BEGIN"},{"position":{"end":{"column":43,"line":191,"offset":7412},"start":{"column":38,"line":191,"offset":7407}},"type":"text","value":" and "},{"position":{"end":{"column":50,"line":191,"offset":7419},"start":{"column":43,"line":191,"offset":7412}},"type":"inlineCode","value":"--END"},{"position":{"end":{"column":40,"line":192,"offset":7488},"start":{"column":50,"line":191,"offset":7419}},"type":"text","value":" comments are not required by\nSpry but make it easier to trace where "},{"children":[{"position":{"end":{"column":48,"line":192,"offset":7496},"start":{"column":41,"line":192,"offset":7489}},"type":"text","value":"partial"}],"position":{"end":{"column":49,"line":192,"offset":7497},"start":{"column":40,"line":192,"offset":7488}},"type":"emphasis"},{"position":{"end":{"column":75,"line":192,"offset":7523},"start":{"column":49,"line":192,"offset":7497}},"type":"text","value":" injections are occurring."}],"position":{"end":{"column":75,"line":192,"offset":7523},"start":{"column":1,"line":188,"offset":7137}},"type":"paragraph"},{"children":[{"position":{"end":{"column":38,"line":194,"offset":7562},"start":{"column":1,"line":194,"offset":7525}},"type":"text","value":"⚠️ Content injection content happens "},{"children":[{"position":{"end":{"column":45,"line":194,"offset":7569},"start":{"column":39,"line":194,"offset":7563}},"type":"text","value":"before"}],"position":{"end":{"column":46,"line":194,"offset":7570},"start":{"column":38,"line":194,"offset":7562}},"type":"emphasis"},{"position":{"end":{"column":77,"line":195,"offset":7678},"start":{"column":46,"line":194,"offset":7570}},"type":"text","value":" any other interpolation so the\nfinal interpolation for injected content will occur in the destination cell."}],"position":{"end":{"column":77,"line":195,"offset":7678},"start":{"column":1,"line":194,"offset":7525}},"type":"paragraph"},{"directive":"PARTIAL","identity":"global-layout.sql","instructions":{"cli":"PARTIAL global-layout.sql --inject **/*","cmdLang":"PARTIAL","pi":{"args":["PARTIAL","global-layout.sql","--inject","**/*"],"count":4,"flags":{"global-layout.sql":true,"inject":"**/*"},"pos":["global-layout.sql","inject"],"posCount":2}},"isCodeDirectiveCandidate":true,"lang":"sql","langSpec":"[Circular]","meta":"PARTIAL global-layout.sql --inject **/*","position":{"end":{"column":4,"line":216,"offset":8411},"start":{"column":1,"line":197,"offset":7680}},"type":"code","value":"-- BEGIN: PARTIAL global-layout.sql\nSELECT ''shell'' AS component,\n       ''Secure Controls Framework (SCF) Explorer'' AS title,\n       NULL AS icon,\n       ''/assets/brand/content-assembler.ico'' AS favicon,\n       ''/assets/brand/compliance-explorer.png'' AS image,\n       ''fluid'' AS layout,\n       true AS fixed_top_menu,\n       ''index.sql'' AS link,\n       ''{\"link\":\"/index.sql\",\"title\":\"Home\"}'' AS menu_item;\n\nSET resource_json = sqlpage.read_file_as_text(''spry.d/auto/resource/${path}.auto.json'');\nSET page_title  = json_extract($resource_json, ''$.route.caption'');\nSET page_path = json_extract($resource_json, ''$.route.path'');\n\n${ctx.breadcrumbs()}\n\n-- END: PARTIAL global-layout.sql"},{"children":[{"position":{"end":{"column":14,"line":219,"offset":8505},"start":{"column":1,"line":218,"offset":8413}},"type":"text","value":"Get the brand assets and store them into the SQLPage content stream. They will\nbe stored as "},{"position":{"end":{"column":30,"line":219,"offset":8521},"start":{"column":14,"line":219,"offset":8505}},"type":"inlineCode","value":"assets/brand/*"},{"position":{"end":{"column":39,"line":219,"offset":8530},"start":{"column":30,"line":219,"offset":8521}},"type":"text","value":" because "},{"position":{"end":{"column":47,"line":219,"offset":8538},"start":{"column":39,"line":219,"offset":8530}},"type":"inlineCode","value":"--base"},{"position":{"end":{"column":51,"line":219,"offset":8542},"start":{"column":47,"line":219,"offset":8538}},"type":"text","value":" is "},{"position":{"end":{"column":78,"line":219,"offset":8569},"start":{"column":51,"line":219,"offset":8542}},"type":"inlineCode","value":"https://www.surveilr.com/"},{"position":{"end":{"column":27,"line":220,"offset":8596},"start":{"column":78,"line":219,"offset":8569}},"type":"text","value":"\nand destination is set to "},{"position":{"end":{"column":30,"line":220,"offset":8599},"start":{"column":27,"line":220,"offset":8596}},"type":"inlineCode","value":"."},{"position":{"end":{"column":31,"line":220,"offset":8600},"start":{"column":30,"line":220,"offset":8599}},"type":"text","value":"."}],"position":{"end":{"column":31,"line":220,"offset":8600},"start":{"column":1,"line":218,"offset":8413}},"type":"paragraph"},{"contributeFM":{"cli":"contribute sqlpage_files --base https://www.surveilr.com/","cmdLang":"contribute","fromPresets":[],"lang":"contribute","meta":"sqlpage_files --base https://www.surveilr.com/","pi":{"args":["contribute","sqlpage_files","--base","https://www.surveilr.com/"],"count":4,"flags":{"base":"https://www.surveilr.com/","sqlpage_files":true},"pos":["sqlpage_files","base"],"posCount":2}},"contributeQPI":{"bareWords":["sqlpage_files"],"cmdLang":"contribute","pi":"[Circular]"},"contributeSF":{"data":{"base":["https://www.surveilr.com/"]},"success":true},"directive":"contribute","identity":"sqlpage_files","instructions":"[Circular]","isCodeDirectiveCandidate":true,"lang":"contribute","meta":"sqlpage_files --base https://www.surveilr.com/","position":{"end":{"column":4,"line":225,"offset":8792},"start":{"column":1,"line":222,"offset":8602}},"type":"code","value":"https://www.surveilr.com/assets/brand/content-assembler.ico .\nhttps://www.surveilr.com/assets/brand/compliance-explorer.png ."},{"children":[{"position":{"end":{"column":17,"line":227,"offset":8810},"start":{"column":4,"line":227,"offset":8797}},"type":"text","value":"SCF Home Page"}],"depth":2,"position":{"end":{"column":17,"line":227,"offset":8810},"start":{"column":1,"line":227,"offset":8794}},"type":"heading"},{"children":[{"position":{"end":{"column":55,"line":229,"offset":8866},"start":{"column":1,"line":229,"offset":8812}},"type":"text","value":"Index page which automatically generates links to all "},{"position":{"end":{"column":61,"line":229,"offset":8872},"start":{"column":55,"line":229,"offset":8866}},"type":"inlineCode","value":"/scf"},{"position":{"end":{"column":68,"line":229,"offset":8879},"start":{"column":61,"line":229,"offset":8872}},"type":"text","value":" pages."}],"position":{"end":{"column":68,"line":229,"offset":8879},"start":{"column":1,"line":229,"offset":8812}},"type":"paragraph"},"[Circular]",{"children":[{"position":{"end":{"column":18,"line":256,"offset":9834},"start":{"column":4,"line":256,"offset":9820}},"type":"text","value":"Unpivoted page"}],"depth":2,"position":{"end":{"column":18,"line":256,"offset":9834},"start":{"column":1,"line":256,"offset":9817}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Regime mappings"}},"attrsText":"{ route: { caption: \"Regime mappings\" } }","cli":"sql scf/regime_control_unpivoted.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }","pi":{"args":["sql","scf/regime_control_unpivoted.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_control_unpivoted.sql":true},"pos":["scf/regime_control_unpivoted.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_control_unpivoted.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":282,"offset":10842},"start":{"column":1,"line":258,"offset":9836}},"type":"code","value":"-- @route.description \"One row per (SCF control, regime column) with the raw cell value and regime column ordinal. Use this as the base long-form dataset.\"\n\nSELECT ''text'' AS component, $page_title AS title;\n\n${paginate(\"scf_regime_control_unpivoted\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''SCF #'' as  markdown,\n       ''Regime'' as  markdown,\n       TRUE     AS search;  \nSELECT\n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":24,"line":284,"offset":10867},"start":{"column":4,"line":284,"offset":10847}},"type":"text","value":"Regime Controls page"}],"depth":2,"position":{"end":{"column":24,"line":284,"offset":10867},"start":{"column":1,"line":284,"offset":10844}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Clean list of regime mappings"}},"attrsText":"{ route: { caption: \"Clean list of regime mappings\"} }","cli":"sql scf/regime_control.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }","pi":{"args":["sql","scf/regime_control.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_control.sql":true},"pos":["scf/regime_control.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_control.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":307,"offset":11722},"start":{"column":1,"line":286,"offset":10869}},"type":"code","value":"-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_control\")}\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search,\n       ''SCF #'' as  markdown,\n       ''Regime'' AS markdown;              -- interpret the \"Regime\" column as Markdown\nSELECT  \n  ${md.link(\"scf_no\", [`''details/regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":21,"line":309,"offset":11744},"start":{"column":4,"line":309,"offset":11727}},"type":"text","value":"Regime Count page"}],"depth":2,"position":{"end":{"column":21,"line":309,"offset":11744},"start":{"column":1,"line":309,"offset":11724}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls per regime (totals)"}},"attrsText":"{ route: { caption: \"Controls per regime (totals)\"} }","cli":"sql scf/regime_count.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }","pi":{"args":["sql","scf/regime_count.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_count.sql":true},"pos":["scf/regime_count.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_count.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":330,"offset":12423},"start":{"column":1,"line":311,"offset":11746}},"type":"code","value":"-- @route.description \"Filtered projection of the unpivoted data. One row per (SCF control, regime) keeping key control fields and the regime''s raw marker.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n  control_count AS \"Controls\"\nFROM \"scf_regime_count\"\nORDER BY control_count DESC, regime\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":21,"line":332,"offset":12445},"start":{"column":4,"line":332,"offset":12428}},"type":"text","value":"Domain Count page"}],"depth":2,"position":{"end":{"column":21,"line":332,"offset":12445},"start":{"column":1,"line":332,"offset":12425}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Domain x Regime counts"}},"attrsText":"{ route: { caption: \"Domain x Regime counts\"} }","cli":"sql scf/regime_domain_count.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }","pi":{"args":["sql","scf/regime_domain_count.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_count.sql":true},"pos":["scf/regime_domain_count.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_count.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":352,"offset":13027},"start":{"column":1,"line":334,"offset":12447}},"type":"code","value":"-- @route.description \"Counts of controls grouped by SCF domain and regime. Useful for heatmaps showing domain coverage by regime.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_domain_count\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       TRUE     AS search;              \nSELECT\n  domain AS \"Domain\",\n  control_count AS \"Controls\"\nFROM \"scf_regime_domain_count\"\nORDER BY control_count DESC, domain\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":17,"line":354,"offset":13045},"start":{"column":4,"line":354,"offset":13032}},"type":"text","value":"Coverage page"}],"depth":2,"position":{"end":{"column":17,"line":354,"offset":13045},"start":{"column":1,"line":354,"offset":13029}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Domain coverage % by regime"}},"attrsText":"{ route: { caption: \"Domain coverage % by regime\"} }","cli":"sql scf/regime_domain_coverage.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }","pi":{"args":["sql","scf/regime_domain_coverage.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_coverage.sql":true},"pos":["scf/regime_domain_coverage.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_coverage.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":378,"offset":13878},"start":{"column":1,"line":356,"offset":13047}},"type":"code","value":"-- @route.description \"For each SCF domain and regime, shows mapped control count, total controls in the domain, and the percent coverage.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n ${paginate(\"scf_regime_domain_coverage\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\", \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  mapped_controls AS \"Mapped Controls\",\n  domain_total_controls AS \"Total Controls\",\n  coverage_pct AS \"Coverage %\"\nFROM \"scf_regime_domain_coverage\"\nORDER BY scf_domain, coverage_pct DESC, regime_label\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":20,"line":380,"offset":13899},"start":{"column":4,"line":380,"offset":13883}},"type":"text","value":"Regime Rank page"}],"depth":2,"position":{"end":{"column":20,"line":380,"offset":13899},"start":{"column":1,"line":380,"offset":13880}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Top regimes within each domain"}},"attrsText":"{ route: { caption: \"Top regimes within each domain\"} }","cli":"sql scf/regime_domain_rank.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }","pi":{"args":["sql","scf/regime_domain_rank.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_domain_rank.sql":true},"pos":["scf/regime_domain_rank.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_domain_rank.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":403,"offset":14668},"start":{"column":1,"line":382,"offset":13901}},"type":"code","value":"-- @route.description \"Ranks regimes inside each SCF domain by count of mapped controls (ties broken by regime name).\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n \n ${paginate(\"scf_regime_domain_rank\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  scf_domain AS \"Domain\",   \n  ${md.link(\"regime_label\", [`''details/regime.sql?regime=''`, \"regime_label\"])} as Regime,\n  control_count AS \"Controls\",\n  regime_rank_in_domain AS \"Rank in Domain\"\nFROM \"scf_regime_domain_rank\"\nORDER BY scf_domain, regime_rank_in_domain, regime_label\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":16,"line":405,"offset":14685},"start":{"column":4,"line":405,"offset":14673}},"type":"text","value":"Jaccard page"}],"depth":2,"position":{"end":{"column":16,"line":405,"offset":14685},"start":{"column":1,"line":405,"offset":14670}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Regime overlap (Jaccard)"}},"attrsText":"{ route: { caption: \"Regime overlap (Jaccard)\"} }","cli":"sql scf/regime_overlap_jaccard.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }","pi":{"args":["sql","scf/regime_overlap_jaccard.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/regime_overlap_jaccard.sql":true},"pos":["scf/regime_overlap_jaccard.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/regime_overlap_jaccard.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":431,"offset":15595},"start":{"column":1,"line":407,"offset":14687}},"type":"code","value":"-- @route.description \"Pairwise overlap of regimes based on shared SCF controls, including each regime''s total and the Jaccard similarity score.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n${paginate(\"scf_regime_overlap_jaccard\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       ''Regime A'' as  markdown,\n       ''Regime B'' as  markdown,\n       TRUE     AS search;              \nSELECT \n  ${md.link(\"regime_a\", [`''details/regime.sql?regime=''`, \"regime_a\"])} as \"Regime A\",\n  ${md.link(\"regime_b\", [`''details/regime.sql?regime=''`, \"regime_b\"])} as \"Regime B\",   \n  in_both AS \"In Both\",\n  a_total AS \"A Total\",\n  b_total AS \"B Total\",\n  jaccard AS \"Jaccard\"\nFROM \"scf_regime_overlap_jaccard\"\nORDER BY jaccard DESC, in_both DESC, regime_a, regime_b\n${pagination.limit}; \n${pagination.navigation}"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Long form of SCF x Regime mappings details"}},"attrsText":"{ route: { caption: \"Long form of SCF x Regime mappings details\" } }","cli":"sql scf/details/regime_control_unpivoted_details.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }","pi":{"args":["sql","scf/details/regime_control_unpivoted_details.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime_control_unpivoted_details.sql":true},"pos":["scf/details/regime_control_unpivoted_details.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime_control_unpivoted_details.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":458,"offset":16564},"start":{"column":1,"line":433,"offset":15597}},"type":"code","value":"SELECT\n  ''text'' AS component,\n $page_title||'' for SCF # ''||$scf_no AS title;\n\n${paginate(\"scf_regime_control_unpivoted\", \"WHERE scf_no = $scf_no\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"Regime\" as  markdown,\n       ''SCF #'' as  markdown,\n       TRUE     AS search;              \nSELECT\n  ${md.link(\"regime_label\", [`''regime.sql?regime=''`, \"regime_label\"])} as \"Regime\", \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_domain AS \"SCF Domain\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\",\n  regime_column_ordinal AS \"Regime Column Ordinal\"\nFROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nORDER BY scf_no, regime_column_ordinal\n${pagination.limit}; \n${pagination.navigation}"},{"children":[{"position":{"end":{"column":45,"line":460,"offset":16610},"start":{"column":4,"line":460,"offset":16569}},"type":"text","value":"Controls per regime (totals) details page"}],"depth":2,"position":{"end":{"column":45,"line":460,"offset":16610},"start":{"column":1,"line":460,"offset":16566}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls per regime (totals) details"}},"attrsText":"{ route: { caption: \"Controls per regime (totals) details\" } }","cli":"sql scf/details/regime.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }","pi":{"args":["sql","scf/details/regime.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime.sql":true},"pos":["scf/details/regime.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":483,"offset":17327},"start":{"column":1,"line":462,"offset":16612}},"type":"code","value":"SELECT\n  ''text'' AS component,\n $page_title||'' for ''||$regime AS title;\n\n${paginate(\"scf_regime_control\", \"WHERE regime_label = $regime\")}\n\nSELECT ''table'' AS component,\n       TRUE     AS sort,\n       \"SCF #\" as markdown,\n       TRUE     AS search;              \nSELECT  \n  ${md.link(\"scf_no\", [`''regime_control_unpivoted_details.sql?scf_no=''`, \"scf_no\"])} as \"SCF #\",\n  scf_control AS \"SCF Control\",\n  scf_control_question AS \"SCF Control Question\",\n  regime_raw_value AS \"Regime Marker\"\nFROM \"scf_regime_control\"\nWHERE regime_label = $regime\nORDER BY scf_no\n${pagination.limit}; \n${pagination.navWithParams(\"regime\")}"},{"children":[{"position":{"end":{"column":23,"line":485,"offset":17351},"start":{"column":4,"line":485,"offset":17332}},"type":"text","value":"Threat Catalog Page"}],"depth":2,"position":{"end":{"column":23,"line":485,"offset":17351},"start":{"column":1,"line":485,"offset":17329}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Threat Catalog","description":"Threat Catalog"}},"attrsText":"{ route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","cli":"sql scf/threat_catalog.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","pi":{"args":["sql","scf/threat_catalog.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/threat_catalog.sql":true},"pos":["scf/threat_catalog.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/threat_catalog.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":500,"offset":17746},"start":{"column":1,"line":487,"offset":17353}},"type":"code","value":"SELECT ''table'' as component,\n       TRUE as sort,\n       TRUE as search;\nSELECT\n    \"Threat Grouping\",\n    \"Threat #\",\n    \"Threat Description\",\n    \"≥ 5% of pre-tax income\",\n    \"≥ 0.5% of total assets\",\n    \"≥ 1% of total equity\",\n    \"≥ 0.5% of total revenue\"\nFROM scf_threat_catalog;"},{"children":[{"position":{"end":{"column":25,"line":502,"offset":17772},"start":{"column":4,"line":502,"offset":17751}},"type":"text","value":"Controls Library page"}],"depth":2,"position":{"end":{"column":25,"line":502,"offset":17772},"start":{"column":1,"line":502,"offset":17748}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Controls Library"}},"attrsText":"{ route: { caption: \"Controls Library\"} }","cli":"sql scf/controls.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/controls.sql { route: { caption: \"Controls Library\"} }","pi":{"args":["sql","scf/controls.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/controls.sql":true},"pos":["scf/controls.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/controls.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/controls.sql { route: { caption: \"Controls Library\"} }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":524,"offset":18504},"start":{"column":1,"line":504,"offset":17774}},"type":"code","value":"-- @route.description \"Discover and understand compliance controls across different regulatory frameworks. Select your applicable regimes to identify your control responsibilities.\"\nSELECT\n  ''text'' AS component,\n $page_title AS title;\n\n\n ${paginate(\"scf_regime_count\")}\n\n    SELECT ''table'' AS component,\n          TRUE     AS sort,\n          ''Regime'' as  markdown,\n          TRUE     AS search;              \n    SELECT  \n      ${md.link(\"regime\", [`''details/regime.sql?regime=''`, \"regime\"])} as Regime,\n      control_count AS \"Controls\"\n    FROM \"scf_regime_count\"\n    ORDER BY control_count DESC, regime\n    ${pagination.limit}; \n    ${pagination.navigation}"},{"children":[{"position":{"end":{"column":23,"line":526,"offset":18528},"start":{"column":4,"line":526,"offset":18509}},"type":"text","value":"Regime details page"}],"depth":2,"position":{"end":{"column":23,"line":526,"offset":18528},"start":{"column":1,"line":526,"offset":18506}},"type":"heading"},{"data":{"codeFM":{"attrs":{"route":{"caption":"Control details"}},"attrsText":"{ route: { caption: \"Control details\" } }","cli":"sql scf/details/regime_details.sql","cmdLang":"sql","fromPresets":["[Circular]"],"lang":"sql","langSpec":"[Circular]","meta":"scf/details/regime_details.sql { route: { caption: \"Control details\" } }","pi":{"args":["sql","scf/details/regime_details.sql"],"count":2,"flags":{"PRESET":true,"injectable":true,"interpolate":true,"scf/details/regime_details.sql":true},"pos":["scf/details/regime_details.sql"],"posCount":1}}},"isActionableCodeCandidate":true,"isBlob":false,"lang":"sql","language":"[Circular]","materializableIdentity":"scf/details/regime_details.sql","materializationArgs":{"deps":[],"graphs":[],"injectable":true,"injectedDep":[],"interpolate":true},"materializationAttrs":"[Circular]","materializationCodeFM":"[Circular]","meta":"scf/details/regime_details.sql { route: { caption: \"Control details\" } }","nature":"MATERIALIZABLE","position":{"end":{"column":4,"line":548,"offset":19085},"start":{"column":1,"line":528,"offset":18530}},"type":"code","value":" SELECT ''card'' AS component,\n           $page_title AS title,\n           1 AS columns;\nSELECT\n      $regime||'' ''||$scf_no AS title,\n      ''**SCF Domain:** '' || scf_domain || ''  \n\n'' ||\n      ''**SCF Control:** '' || scf_control || ''  \n\n'' ||\n      ''**SCF Control Question:** '' || scf_control_question || ''  \n\n'' ||\n      ''**Regime Marker:** '' || regime_raw_value \n      AS description_md\n  FROM \"scf_regime_control_unpivoted\"\nWHERE scf_no = $scf_no\nAND regime_label = $regime;"}],"data":{"documentFrontmatter":{"node":"[Circular]","parsed":"[Circular]"}},"position":{"end":{"column":1,"line":549,"offset":19086},"start":{"column":1,"line":1,"offset":0}},"type":"root"},"nodeSrcText":{},"relativeTo":{},"resource":{"file":"[Circular]","provenance":"[Circular]","strategy":{"encoding":"utf8-text","target":"local-fs"}}},"type":"code","value":"-- locals: ${Object.keys(__l).join(\", \")}\n-- mdastNode: ${safeJsonStringify(cell)}\nSET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');\nSET root_path   = ''/scf'';\n\nSELECT ''card'' AS component, '''' AS title, 2 AS columns;\nSELECT\n  IFNULL(json_extract(c.value,''$.payloads[0].caption''),\n         json_extract(c.value,''$.basename''))                         AS title,\n  json_extract(c.value,''$.payloads[0].description'')                  AS description_md,\n  json_extract(c.value,''$.path'')                                     AS link\nFROM json_each(\n       json_extract(\n         (SELECT jt.value\n          FROM json_tree(json($routes_json)) AS jt\n          WHERE jt.type=''object''\n            AND json_extract(jt.value,''$.path'') = $root_path\n          LIMIT 1),\n         ''$.children''\n       )\n     ) AS c\nWHERE IFNULL(json_extract(c.value,''$.virtual''), 0) <> 1;"}
 SET routes_json = sqlpage.read_file_as_text(''spry.d/auto/route/forest.auto.json'');
 SET root_path   = ''/scf'';
 
@@ -14884,6 +14926,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "index.sql { route: { caption: \"Home\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -14895,6 +14938,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "index.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "index.sql { route: { caption: \"Home\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -15061,6 +15105,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -15176,6 +15221,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -16693,6 +16739,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -17454,6 +17501,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -18806,6 +18854,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -18862,6 +18911,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -19589,6 +19639,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -20600,6 +20651,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -20700,6 +20752,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -20800,6 +20853,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -20900,6 +20954,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21000,6 +21055,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21100,6 +21156,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21200,6 +21257,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21266,6 +21324,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21366,6 +21425,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21467,6 +21527,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21567,6 +21628,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21667,6 +21729,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -21937,6 +22000,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -21948,6 +22012,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_control_unpivoted.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -22114,6 +22179,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -22229,6 +22295,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -23746,6 +23813,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -24507,6 +24575,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -25859,6 +25928,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -25915,6 +25985,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -26642,6 +26713,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -27627,6 +27699,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -27762,6 +27835,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -27862,6 +27936,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -27962,6 +28037,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28062,6 +28138,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28162,6 +28239,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28262,6 +28340,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28328,6 +28407,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28428,6 +28508,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28529,6 +28610,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28629,6 +28711,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28729,6 +28812,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -28996,6 +29080,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -29007,6 +29092,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_control.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -29173,6 +29259,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -29288,6 +29375,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -30805,6 +30893,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -31566,6 +31655,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -32918,6 +33008,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -32974,6 +33065,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -33701,6 +33793,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -34686,6 +34779,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -34795,6 +34889,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -34930,6 +35025,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35030,6 +35126,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35130,6 +35227,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35230,6 +35328,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35330,6 +35429,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35396,6 +35496,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35496,6 +35597,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35597,6 +35699,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35697,6 +35800,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -35797,6 +35901,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -36062,6 +36167,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -36073,6 +36179,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_count.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -36239,6 +36346,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -36354,6 +36462,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -37871,6 +37980,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -38632,6 +38742,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -39984,6 +40095,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -40040,6 +40152,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -40767,6 +40880,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -41752,6 +41866,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -41861,6 +41976,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -41970,6 +42086,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42105,6 +42222,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42205,6 +42323,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42305,6 +42424,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42405,6 +42525,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42471,6 +42592,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42571,6 +42693,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42672,6 +42795,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42772,6 +42896,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -42872,6 +42997,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -43136,6 +43262,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -43147,6 +43274,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_domain_count.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -43313,6 +43441,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -43428,6 +43557,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -44945,6 +45075,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -45706,6 +45837,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -47058,6 +47190,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -47114,6 +47247,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -47841,6 +47975,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -48826,6 +48961,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -48935,6 +49071,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49044,6 +49181,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49153,6 +49291,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49288,6 +49427,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49388,6 +49528,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49488,6 +49629,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49554,6 +49696,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49654,6 +49797,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49755,6 +49899,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49855,6 +50000,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -49955,6 +50101,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -50223,6 +50370,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -50234,6 +50382,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_domain_coverage.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -50400,6 +50549,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -50515,6 +50665,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -52032,6 +52183,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -52793,6 +52945,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -54145,6 +54298,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -54201,6 +54355,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -54928,6 +55083,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -55913,6 +56069,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56022,6 +56179,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56131,6 +56289,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56240,6 +56399,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56349,6 +56509,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56484,6 +56645,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56584,6 +56746,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56650,6 +56813,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56750,6 +56914,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56851,6 +57016,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -56951,6 +57117,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -57051,6 +57218,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -57318,6 +57486,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -57329,6 +57498,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_domain_rank.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -57495,6 +57665,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -57610,6 +57781,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -59127,6 +59299,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -59888,6 +60061,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -61240,6 +61414,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -61296,6 +61471,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -62023,6 +62199,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -63008,6 +63185,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63117,6 +63295,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63226,6 +63405,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63335,6 +63515,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63444,6 +63625,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63553,6 +63735,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63688,6 +63871,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63754,6 +63938,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63854,6 +64039,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -63955,6 +64141,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -64055,6 +64242,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -64155,6 +64343,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -64425,6 +64614,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -64436,6 +64626,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/regime_overlap_jaccard.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -64602,6 +64793,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -64717,6 +64909,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -66234,6 +66427,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -66995,6 +67189,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -68347,6 +68542,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -68403,6 +68599,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -69130,6 +69327,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -70115,6 +70313,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70224,6 +70423,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70333,6 +70533,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70442,6 +70643,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70551,6 +70753,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70660,6 +70863,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70769,6 +70973,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70870,6 +71075,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -70970,6 +71176,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -71071,6 +71278,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -71171,6 +71379,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -71271,6 +71480,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -71533,6 +71743,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -71544,6 +71755,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/details/regime_control_unpivoted_details.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -71710,6 +71922,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -71825,6 +72038,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -73342,6 +73556,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -74103,6 +74318,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -75455,6 +75671,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -75511,6 +75728,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -76238,6 +76456,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -77223,6 +77442,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77332,6 +77552,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77441,6 +77662,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77550,6 +77772,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77659,6 +77882,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77768,6 +77992,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77877,6 +78102,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -77986,6 +78212,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -78087,6 +78314,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -78188,6 +78416,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -78288,6 +78517,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -78388,6 +78618,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -78637,6 +78868,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -78648,6 +78880,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/details/regime.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -78814,6 +79047,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -78929,6 +79163,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -80446,6 +80681,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -81207,6 +81443,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -82559,6 +82796,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -82615,6 +82853,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -83342,6 +83581,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -84327,6 +84567,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84436,6 +84677,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84545,6 +84787,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84654,6 +84897,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84763,6 +85007,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84872,6 +85117,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -84981,6 +85227,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85090,6 +85337,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85156,6 +85404,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85292,6 +85541,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85392,6 +85642,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85492,6 +85743,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -85722,6 +85974,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -85733,6 +85986,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/threat_catalog.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -85899,6 +86153,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -86014,6 +86269,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -87531,6 +87787,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -88292,6 +88549,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -89644,6 +89902,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -89700,6 +89959,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -90427,6 +90687,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -91412,6 +91673,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -91521,6 +91783,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -91630,6 +91893,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -91739,6 +92003,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -91848,6 +92113,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -91957,6 +92223,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92066,6 +92333,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92175,6 +92443,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92241,6 +92510,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92341,6 +92611,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92476,6 +92747,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92576,6 +92848,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -92834,6 +93107,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -92845,6 +93119,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/controls.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -93011,6 +93286,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -93126,6 +93402,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -94643,6 +94920,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -95404,6 +95682,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -96756,6 +97035,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -96812,6 +97092,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -97539,6 +97820,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -98524,6 +98806,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -98633,6 +98916,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -98742,6 +99026,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -98851,6 +99136,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -98960,6 +99246,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99069,6 +99356,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99178,6 +99466,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99287,6 +99576,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99353,6 +99643,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99453,6 +99744,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99554,6 +99846,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99689,6 +99982,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -99934,6 +100228,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "interpolate": true
   },
   "materializationAttrs": "[Circular]",
+  "materializationCodeFM": "[Circular]",
   "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
   "nature": "MATERIALIZABLE",
   "origin": {
@@ -99945,6 +100240,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
     "materializableIdentity": "scf/details/regime_details.sql",
     "materializationArgs": "[Circular]",
     "materializationAttrs": "[Circular]",
+    "materializationCodeFM": "[Circular]",
     "meta": "scf/details/regime_details.sql { route: { caption: \"Control details\" } }",
     "nature": "MATERIALIZABLE",
     "position": {
@@ -100111,6 +100407,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/schema-info.dml.sqlite.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -100226,6 +100523,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
                     "injectedDep": [],
                     "interpolate": true
                   },
+                  "materializationCodeFM": "[Circular]",
                   "meta": "sql.d/tail/0000.sql ",
                   "nature": "MATERIALIZABLE",
                   "position": {
@@ -101743,6 +102041,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-db",
           "type": "code",
           "value": "#!/usr/bin/env -S bash\nrm -f scf-2025.3.sqlite.db                  # will be re-created by DuckDB `ATTACH`\n#cat prepare.duckdb.sql | duckdb \":memory:\"  # DuckDB processes in memory but creates SQLite DB\nsurveilr admin init -d scf-2025.3.sqlite.db\nsurveilr shell --engine duckdb prepare.duckdb.sql -d scf-2025.3.sqlite.db"
@@ -102504,6 +102803,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-env",
           "type": "code",
           "value": "export SPRY_DB=\"sqlite://scf-2025.3.sqlite.db?mode=rwc\"\nexport PORT=9227"
@@ -103856,6 +104156,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "prepare-sqlpage-dev",
           "type": "code",
           "value": "./spry.ts sp spc --fs dev-src.auto --destroy-first --conf sqlpage/sqlpage.json"
@@ -103912,6 +104213,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "clean",
           "type": "code",
           "value": "rm -rf dev-src.auto"
@@ -104639,6 +104941,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "graphs": [],
             "injectedDep": []
           },
+          "spawnableCodeFM": "[Circular]",
           "spawnableIdentity": "deploy",
           "type": "code",
           "value": "rm -rf dev-src.auto\n./spry.ts sp spc --package --conf sqlpage/sqlpage.json | sqlite3 scf-2025.3.sqlite.db"
@@ -105624,6 +105927,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "index.sql { route: { caption: \"Home\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -105733,6 +106037,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control_unpivoted.sql { route: { caption: \"Regime mappings\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -105842,6 +106147,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_control.sql { route: { caption: \"Clean list of regime mappings\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -105951,6 +106257,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_count.sql { route: { caption: \"Controls per regime (totals)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106060,6 +106367,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_count.sql { route: { caption: \"Domain x Regime counts\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106169,6 +106477,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_coverage.sql { route: { caption: \"Domain coverage % by regime\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106278,6 +106587,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_domain_rank.sql { route: { caption: \"Top regimes within each domain\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106387,6 +106697,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/regime_overlap_jaccard.sql { route: { caption: \"Regime overlap (Jaccard)\"} }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106453,6 +106764,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime_control_unpivoted_details.sql { route: { caption: \"Long form of SCF x Regime mappings details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106553,6 +106865,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/details/regime.sql { route: { caption: \"Controls per regime (totals) details\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106654,6 +106967,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/threat_catalog.sql { route: { caption: \"Threat Catalog\", description: \"Threat Catalog\" } }",
           "nature": "MATERIALIZABLE",
           "position": {
@@ -106763,6 +107077,7 @@ INSERT INTO sqlpage_files (path, contents, last_modified) VALUES ('spry.d/auto/c
             "interpolate": true
           },
           "materializationAttrs": "[Circular]",
+          "materializationCodeFM": "[Circular]",
           "meta": "scf/controls.sql { route: { caption: \"Controls Library\"} }",
           "nature": "MATERIALIZABLE",
           "position": {

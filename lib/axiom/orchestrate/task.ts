@@ -422,59 +422,108 @@ export function exectutionReport<
       const rs = recursionState(task);
       const iterations = rs ? rs.count : 1;
 
-      for (let i = 0; i < iterations; i++) {
-        const rendered = await interpolator.renderOne(task, {
-          body: (code) => !rs || rs.isFirst ? cis.content.body(code) : rs.body,
-          locals: (_, supplied) => ({
-            ...supplied,
-            TASK: task,
-            resolveRelPath: task.provenance.resolveRelPath,
-          }),
-        });
+      let finalContent: string | undefined;
+      let finalNature: "execution-result" | "render-result" | undefined;
 
-        if (rendered.error) return fail(ctx, rendered.error);
+      // helper: collect stderr text from exec results (best effort)
+      const stderrText = (execResult: unknown): string => {
+        if (!execResult) return "";
+        const arr = Array.isArray(execResult) ? execResult : [execResult];
+        const parts: string[] = [];
+        for (const r of arr) {
+          // r is whatever your shell/spawn returns; these fields match your usage of stdout
+          const stderr = (r as { stderr?: Uint8Array }).stderr;
+          if (stderr && stderr.length) parts.push(td.decode(stderr));
+        }
+        return parts.join("\n");
+      };
 
-        const spawnable = spawnConf && task.using
-          ? using(spawnConf, task.using, undefined, { shell: sh })
-          : (task.language.id !== "shell"
-            ? usingLanguage(task.language, undefined, { shell: sh })
-            : undefined);
+      try {
+        for (let i = 0; i < iterations; i++) {
+          const rendered = await interpolator.renderOne(task, {
+            body: (code) =>
+              !rs || rs.isFirst ? cis.content.body(code) : rs.body,
+            locals: (_, supplied) => ({
+              ...supplied,
+              TASK: task,
+              resolveRelPath: task.provenance.resolveRelPath,
+            }),
+          });
 
-        const execResult = spawnable
-          ? await spawnable.spawn({ kind: "text", text: rendered.text })
-          : (task.language.id == "shell"
-            ? await sh.auto(rendered.text, undefined, task)
-            : undefined);
+          if (rendered.error) {
+            const msg = rendered.error instanceof Error
+              ? (rendered.error.stack ?? rendered.error.message)
+              : String(rendered.error);
 
-        if (execResult) {
-          const er = Array.isArray(execResult) ? execResult : [execResult];
-          if (er.length) {
-            const aggER = sh.aggregatedRunResults(er);
-            if (!aggER.success) {
-              const error = new Error(
-                `Shell execution failed (exitCode=${aggER.exitCode})`,
-              );
-              return fail(ctx, error, { disposition: "continue", ...aggER });
+            replaceContents(task, msg, "execution-result");
+            return fail(ctx, rendered.error);
+          }
+
+          const spawnable = spawnConf && task.using
+            ? using(spawnConf, task.using, undefined, { shell: sh })
+            : (task.language.id !== "shell"
+              ? usingLanguage(task.language, undefined, { shell: sh })
+              : undefined);
+
+          const execResult = spawnable
+            ? await spawnable.spawn({ kind: "text", text: rendered.text })
+            : (task.language.id == "shell"
+              ? await sh.auto(rendered.text, undefined, task)
+              : undefined);
+
+          if (!execResult) {
+            const msg =
+              "execResult is NULL (don't know how to handle this executable block)";
+            replaceContents(task, msg, "execution-result");
+            return fail(ctx, msg);
+          }
+
+          // check success
+          {
+            const er = Array.isArray(execResult) ? execResult : [execResult];
+            if (er.length) {
+              const aggER = sh.aggregatedRunResults(er);
+              if (!aggER.success) {
+                const errOut = stderrText(execResult).trim();
+                const msg = errOut.length
+                  ? errOut
+                  : `Shell execution failed (exitCode=${aggER.exitCode})`;
+
+                replaceContents(task, msg, "execution-result");
+                const error = new Error(
+                  `Shell execution failed (exitCode=${aggER.exitCode})`,
+                );
+                return fail(ctx, error, { disposition: "continue", ...aggER });
+              }
             }
           }
-        }
 
-        if (execResult) {
+          // success output
           const output = Array.isArray(execResult)
-            ? execResult.map((er) => td.decode(er.stdout)).join("\n")
-            : td.decode(execResult.stdout);
+            ? execResult.map((r) =>
+              td.decode((r as { stdout: Uint8Array }).stdout)
+            )
+              .join("\n")
+            : td.decode((execResult as { stdout: Uint8Array }).stdout);
 
           if (task.spawnableArgs.capture) {
             cis.memory.memoize?.(output, {
               identity: task.taskId(),
               captureSpecs: task.spawnableArgs.capture,
             });
-            replaceContents(task, output, "execution-result");
+
+            // do not overwrite the final cell with empty output in recursion
+            if (output.length > 0) {
+              finalContent = output;
+              finalNature = "execution-result";
+            }
           } else {
-            replaceContents(task, rendered.text, "render-result");
+            finalContent = rendered.text;
+            finalNature = "render-result";
           }
 
           if (rs) {
+            if (output.length === 0) break;
             if (rs.sameAsLast(output)) break;
             rs.remember(output);
             rs.body = output;
@@ -482,17 +531,18 @@ export function exectutionReport<
           } else {
             break;
           }
-        } else {
-          replaceContents(
-            task,
-            "execResult is NULL (don't know how to handle this executable block)",
-            "render-result",
-          );
-          return ok(ctx);
         }
-      }
 
-      return ok(ctx);
+        if (finalContent !== undefined && finalNature !== undefined) {
+          replaceContents(task, finalContent, finalNature);
+        }
+
+        return ok(ctx);
+      } catch (e) {
+        const msg = e instanceof Error ? (e.stack ?? e.message) : String(e);
+        replaceContents(task, msg, "execution-result");
+        return fail(ctx, e);
+      }
     }, { eventBus: tasksEventBus.bus });
   };
 
