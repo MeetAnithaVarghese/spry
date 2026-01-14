@@ -228,9 +228,6 @@ export function defineLanguageInitCatalog<const M extends LanguageInitCatalog>(
   return m;
 }
 
-// lib/spawn/code-shell.ts
-// PATCH: add in-process execution hook support
-
 export type InProcessExecutionContext<I extends LanguageInitBase> = {
   bin: string; // kept for symmetry; not used by function engines for now
   init?: I;
@@ -238,6 +235,8 @@ export type InProcessExecutionContext<I extends LanguageInitBase> = {
   runtimeArgs?: readonly string[];
   programArgs?: readonly string[];
   mode: Exclude<ExecutionMode, "auto">;
+  cwd?: string;
+  env?: Record<string, string | undefined>;
 };
 
 export type InProcessExecutionResult<Baggage = unknown> = {
@@ -314,42 +313,6 @@ export type PlanContext<I extends LanguageInitBase> = {
 
 /* ------------------------------ Engine layer ------------------------------ */
 
-/**
- * A LanguageEngine is a concrete runtime implementation for a LanguageSpec.
- *
- * Multiple engines may share a language (e.g., SQL: psql/sqlite3/duckdb).
- * Engine identity is NOT the language id: it is a distinct runtime marker.
- */
-export interface LanguageEngine<
-  L extends LanguageSpec = LanguageSpec,
-  I extends LanguageInitBase = LanguageInitBase,
-> {
-  readonly kind: "language-engine";
-
-  /** Language metadata/spec (from content/code.ts registry). */
-  readonly language: L;
-
-  /** Engine identity marker (runtime). */
-  readonly id: object;
-
-  /** Candidate argv0 values in preference order. */
-  readonly defaultBins: readonly string[];
-
-  readonly capabilities: ModeCapabilities;
-  readonly preferredMode?: Exclude<ExecutionMode, "auto">;
-
-  resolveInit(
-    input: LanguageInitRef<I> | undefined,
-    catalog: LanguageInitCatalog<LanguageInitBase & EngineTagged> | undefined,
-  ): ResolvedInit<I>;
-
-  planInvocation(ctx: PlanContext<I>): Promise<InvocationPlan> | InvocationPlan;
-
-  mapEnv?(
-    init: { init?: I; env?: Record<string, string | undefined> },
-  ): Record<string, string | undefined> | undefined;
-}
-
 export function createLanguageEngine<
   L extends LanguageSpec,
   I extends LanguageInitBase,
@@ -425,9 +388,6 @@ export interface LanguageShell<Baggage = unknown> {
   ): Promise<LanguageSpawnResult<Baggage>>;
 }
 
-// lib/spawn/code-shell.ts
-// PATCH: modify LanguageSpawnShell.spawn() to use engine.execute when present
-
 export class LanguageSpawnShell<Baggage = unknown>
   implements LanguageShell<Baggage> {
   readonly kind = "language-shell" as const;
@@ -460,7 +420,6 @@ export class LanguageSpawnShell<Baggage = unknown>
       preferred: req.engine.preferredMode,
     });
 
-    // If engine has an in-process executor, use it.
     if (req.engine.execute) {
       const started = performance.now();
       const r = await req.engine.execute({
@@ -470,6 +429,8 @@ export class LanguageSpawnShell<Baggage = unknown>
         runtimeArgs: req.runtimeArgs,
         programArgs: req.programArgs,
         mode,
+        cwd: _cwd,
+        env: _env,
       });
       const durationMs = r.durationMs ?? (performance.now() - started);
       return {
@@ -492,11 +453,15 @@ export class LanguageSpawnShell<Baggage = unknown>
       mode,
     });
 
+    const effectiveCwd = plan.cwd ?? _cwd;
+    const effectiveEnv = mergeEnvMaps(_env, plan.env);
+
     try {
       const result = await this.shell.spawnArgv(
         plan.argv,
         plan.stdin,
         req.baggage,
+        { cwd: effectiveCwd, env: effectiveEnv },
       );
       return { ...result, argv: plan.argv };
     } finally {

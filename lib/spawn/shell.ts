@@ -98,7 +98,6 @@ export function shell<Baggage = unknown>(init?: {
   cwd?: string;
   env?: Record<string, string | undefined>;
   tmpDir?: string;
-  /** Optional, strongly-typed event bus for shell lifecycle */
   bus?: ReturnType<typeof eventBus<ShellBusEvents<Baggage>>>;
 }) {
   const cwd = init?.cwd;
@@ -117,6 +116,11 @@ export function shell<Baggage = unknown>(init?: {
     stdout: Uint8Array;
     stderr: Uint8Array;
     baggage?: Baggage;
+  };
+
+  type SpawnOverrides = {
+    cwd?: string;
+    env?: Record<string, string | undefined>;
   };
 
   const emit = <K extends ShellKey>(type: K, ...detail: MaybeArgs<K>): void => {
@@ -138,18 +142,31 @@ export function shell<Baggage = unknown>(init?: {
     return pairs.length ? Object.fromEntries(pairs) : {};
   }
 
+  function mergeEnvMaps(
+    a?: Record<string, string | undefined>,
+    b?: Record<string, string | undefined>,
+  ) {
+    if (!a && !b) return undefined;
+    return { ...(a ?? {}), ...(b ?? {}) };
+  }
+
   const run = async (
     cmd: string,
     args: readonly string[],
     stdin?: Uint8Array,
     baggage?: Baggage,
+    overrides?: SpawnOverrides,
   ): Promise<RunResult> => {
     const argsArr = [...args];
+
+    const effectiveCwd = overrides?.cwd ?? cwd;
+    const effectiveEnv = mergeEnvMaps(env, overrides?.env);
+
     emit("spawn:start", {
       cmd,
       args: argsArr,
-      cwd,
-      env: cleanEnv(env),
+      cwd: effectiveCwd,
+      env: cleanEnv(effectiveEnv),
       hasStdin: !!(stdin && stdin.length),
       baggage,
     });
@@ -157,8 +174,8 @@ export function shell<Baggage = unknown>(init?: {
     const started = performance.now();
     const command = new Deno.Command(cmd, {
       args: argsArr,
-      cwd,
-      env: cleanEnv(env),
+      cwd: effectiveCwd,
+      env: cleanEnv(effectiveEnv),
       stdin: stdin && stdin.length ? "piped" : "null",
       stdout: "piped",
       stderr: "piped",
@@ -215,7 +232,6 @@ export function shell<Baggage = unknown>(init?: {
     }
   };
 
-  // simple quoted argv splitter for spawnText()
   const splitArgvLine = (line: string): string[] => {
     const out: string[] = [];
     let cur = "";
@@ -258,6 +274,7 @@ export function shell<Baggage = unknown>(init?: {
     argv: readonly string[],
     stdin?: Uint8Array,
     baggage?: Baggage,
+    overrides?: SpawnOverrides,
   ) => {
     if (!argv.length) {
       return Promise.resolve<RunResult>({
@@ -269,15 +286,20 @@ export function shell<Baggage = unknown>(init?: {
       });
     }
     const [cmd, ...args] = argv;
-    return run(cmd, args, stdin, baggage);
+    return run(cmd, args, stdin, baggage, overrides);
   };
 
-  const spawnText = (line: string, stdin?: Uint8Array, baggage?: Baggage) =>
-    spawnArgv(splitArgvLine(line), stdin, baggage);
+  const spawnText = (
+    line: string,
+    stdin?: Uint8Array,
+    baggage?: Baggage,
+    overrides?: SpawnOverrides,
+  ) => spawnArgv(splitArgvLine(line), stdin, baggage, overrides);
 
   const denoTaskEval = async (
     program: string,
     baggage?: Baggage,
+    overrides?: SpawnOverrides,
   ) => {
     const lines = program.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
     const results: Array<
@@ -294,6 +316,7 @@ export function shell<Baggage = unknown>(init?: {
         ["deno", "task", "--eval", line],
         undefined,
         baggage,
+        overrides,
       );
       const durationMs = performance.now() - started;
       emit("task:line:done", {
@@ -315,6 +338,7 @@ export function shell<Baggage = unknown>(init?: {
     script: string,
     stdin?: Uint8Array,
     baggage?: Baggage,
+    overrides?: SpawnOverrides,
   ) => {
     const file = await Deno.makeTempFile({
       dir: tmpDir,
@@ -324,7 +348,7 @@ export function shell<Baggage = unknown>(init?: {
     try {
       await Deno.writeTextFile(file, script);
       await Deno.chmod(file, 0o755);
-      const res = await spawnArgv([file], stdin, baggage);
+      const res = await spawnArgv([file], stdin, baggage, overrides);
       return res;
     } finally {
       try {
@@ -340,14 +364,15 @@ export function shell<Baggage = unknown>(init?: {
     source: string,
     stdin?: Uint8Array,
     baggage?: B,
+    overrides?: SpawnOverrides,
   ) => {
     const first = source.split(/\r?\n/, 1)[0] ?? "";
     if (first.startsWith("#!")) {
       emit("auto:mode", { mode: "shebang", baggage });
-      return spawnShebang(source, stdin, baggage);
+      return spawnShebang(source, stdin, baggage, overrides);
     } else {
       emit("auto:mode", { mode: "eval", baggage });
-      return denoTaskEval(source, baggage);
+      return denoTaskEval(source, baggage, overrides);
     }
   };
 
