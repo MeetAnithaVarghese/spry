@@ -264,6 +264,13 @@ export function detectLanguageByShebang(
     extensions: [".env"],
     comment: { line: ["#"], block: [] },
   });
+  registerLanguage({
+    id: "http",
+    aliases: ["curl", "wget", "fetch", "rest"],
+    extensions: [".http", ".rest"],
+    mime: "message/http",
+    comment: { line: ["#"], block: [] },
+  });
 })();
 
 /**

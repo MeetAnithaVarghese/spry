@@ -277,7 +277,7 @@ This shows the output of each task
   ./spry.ts run Spryfile.md --verbose rich
   ```
 
-```spry exectutionReportLog
+```spry executionReportLog
 If you run `./spry rb report doctor.md` the output log of the report will be
 inserted here.
 ```

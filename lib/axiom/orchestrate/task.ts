@@ -385,7 +385,7 @@ export function tasksRunbook<
  * @returns An object containing the executor, underlying shell, interpolator,
  *          and text-logging event buses.
  */
-export function exectutionReport<
+export function executionReport<
   T extends ExecutableTask,
   Context extends { readonly runId: string },
 >(
@@ -506,20 +506,16 @@ export function exectutionReport<
               .join("\n")
             : td.decode((execResult as { stdout: Uint8Array }).stdout);
 
+          // Always update the cell with the execution output (report semantics)
+          finalContent = output;
+          finalNature = "execution-result";
+
+          // Memoization is an extra behavior, controlled by capture, but does not affect replacement
           if (task.spawnableArgs.capture) {
             cis.memory.memoize?.(output, {
               identity: task.taskId(),
               captureSpecs: task.spawnableArgs.capture,
             });
-
-            // do not overwrite the final cell with empty output in recursion
-            if (output.length > 0) {
-              finalContent = output;
-              finalNature = "execution-result";
-            }
-          } else {
-            finalContent = rendered.text;
-            finalNature = "render-result";
           }
 
           if (rs) {

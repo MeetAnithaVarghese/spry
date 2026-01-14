@@ -34,6 +34,7 @@ const fixtures = {
   runbook1MdPath: ff.pmdPath("runbook-01.md"),
   runbook2MdPath: ff.pmdPath("runbook-02.md"),
   runbook3MdPath: ff.pmdPath("runbook-03.md"),
+  runbook4MdPath: ff.pmdPath("runbook-04.md"),
   contrib1MdPath: ff.pmdPath("contribute-01.md"),
   include1MdPath: ff.pmdPath("include-01.md"),
   extension1MdPath: ff.pmdPath("extension-01.md"),
@@ -61,6 +62,7 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
       fixtures.runbook1MdPath,
       fixtures.runbook2MdPath,
       fixtures.runbook3MdPath,
+      fixtures.runbook4MdPath,
       fixtures.contrib1MdPath,
       fixtures.include1MdPath,
     ],
@@ -245,8 +247,23 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
     });
   });
 
+  await t.step(ff.relToCWD(fixtures.runbook4MdPath), () => {
+    const [_, _runbook1, _runbook2, _runbook3, runbook4] = me;
+
+    assert(runbook4);
+    const { mdastRoot: root } = runbook4;
+    const gr = graph(root);
+
+    assertEquals(gr.relCounts, {
+      isImportant: 1,
+      isCode: 6,
+      isActionableCodeCandidate: 6,
+      codeDependsOn: 1,
+    });
+  });
+
   await t.step(ff.relToCWD(fixtures.contrib1MdPath), () => {
-    const [_, _runbook1, _runbook2, _runbook3, contrib1] = me;
+    const [_, _runbook1, _runbook2, _runbook3, _runbook4, contrib1] = me;
 
     assert(contrib1);
     const { mdastRoot: root } = contrib1;
@@ -354,7 +371,8 @@ Deno.test(`Axiom regression / smoke test`, async (t) => {
   });
 
   await t.step(ff.relToCWD(fixtures.include1MdPath), () => {
-    const [_, _runbook1, _runbook2, _runbook3, _contrib1, include1] = me;
+    const [_, _runbook1, _runbook2, _runbook3, _runbook4, _contrib1, include1] =
+      me;
 
     assert(include1);
     const { mdastRoot: root } = include1;

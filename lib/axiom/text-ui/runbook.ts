@@ -43,7 +43,7 @@ import {
 } from "../../universal/task.ts";
 import { computeSemVerSync } from "../../universal/version.ts";
 import { ansiPrettyNodeIssues } from "../mdast/node-issues.ts";
-import { exectutionReport, tasksRunbook } from "../orchestrate/task.ts";
+import { executionReport, tasksRunbook } from "../orchestrate/task.ts";
 import {
   ExecutableTask,
   PlaybookProjection,
@@ -488,11 +488,11 @@ export class CLI {
           this.preface({ issues });
           const plan = executionPlan(tasks);
           // create a runbook that will mutate the original markdown with output
-          const er = exectutionReport({ directives });
+          const er = executionReport({ directives });
           await er.execute(plan); // the results all go back into the mdast code cells
           for (const src of sources) {
             const logNode = select(
-              `code[lang="spry"][meta="exectutionReportLog"]`,
+              `code[lang="spry"][meta="executionReportLog"]`,
               src.mdastRoot,
             ) as Code;
             if (logNode) {
@@ -564,6 +564,12 @@ export class CLI {
                 ? {
                   engine: "using",
                   label: task.using,
+                  linesOfCode: [],
+                }
+                : task.language.id === "http"
+                ? {
+                  engine: "using",
+                  label: "HTTP",
                   linesOfCode: [],
                 }
                 : sh.strategy(task.value),

@@ -89,6 +89,8 @@ import {
   envInit,
   envrcEngine,
   envrcInit,
+  httpEngine,
+  httpInit,
 } from "./function-shell.ts";
 import {
   bashEngine,
@@ -216,6 +218,11 @@ export function catalogFromYaml(
       continue;
     }
 
+    if (engine === "http") {
+      out[name] = httpInit({ ...base });
+      continue;
+    }
+
     // ----------------------------- SQL engines -----------------------------
 
     if (engine === "postgres" || engine === "psql" || engine === "pg") {
@@ -329,7 +336,7 @@ export function catalogFromYaml(
 
     throw new Error(
       `catalogFromYaml: entry '${name}' has unknown engine '${engine}'. ` +
-        `Expected postgres|sqlite|duckdb|surveilr|bash|sh|zsh|fish|pwsh|cmd.`,
+        `Expected env|envrc|http|postgres|sqlite|duckdb|surveilr|bash|sh|zsh|fish|pwsh|cmd.`,
     );
   }
 
@@ -477,6 +484,7 @@ function engineFromCatalogEntry(
   // in-process functions
   if (id === envEngine.id) return envEngine;
   if (id === envrcEngine.id) return envrcEngine;
+  if (id === httpEngine.id) return httpEngine;
 
   // SQL
   if (id === psqlEngine.id) return psqlEngine;
@@ -507,6 +515,7 @@ export function engineNameFromCatalogEntry(
   // in-process engines
   if (id === envEngine.id) return "env";
   if (id === envrcEngine.id) return "envrc";
+  if (id === httpEngine.id) return "http";
 
   // SQL
   if (id === psqlEngine.id) return "postgres";
@@ -538,6 +547,7 @@ function engineFromLanguageSpec(
     // function engines
     envEngine,
     envrcEngine,
+    httpEngine,
 
     // SQL engines
     psqlEngine,

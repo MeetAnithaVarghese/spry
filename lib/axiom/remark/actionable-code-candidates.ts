@@ -331,7 +331,8 @@ export const actionableCodeCandidates: Plugin<
           if (args.success) {
             const identity = codeFM.pi.pos[0];
             const nature: ActionableCodeCandidate["nature"] =
-              args.data.executable || codeFM.langSpec?.id == "shell"
+              args.data.executable || codeFM.langSpec?.id == "shell" ||
+                codeFM.langSpec?.id == "http"
                 ? "EXECUTABLE" as const
                 : "MATERIALIZABLE" as const;
 
